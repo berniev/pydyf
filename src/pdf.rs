@@ -25,6 +25,7 @@ pub struct PDF {
     pub catalog: Dictionary,
     pub current_position: usize,
     pub xref_position: Option<usize>,
+    pub default_page_size: PageSize,
 }
 
 impl Default for PDF {
@@ -36,6 +37,7 @@ impl Default for PDF {
             catalog: Dictionary::new(None),
             current_position: 0,
             xref_position: None,
+            default_page_size: PageSize::default(),
         }
     }
 }
@@ -43,7 +45,13 @@ impl Default for PDF {
 impl PDF {
 
     pub fn new() -> Self {
+        Self::new_with_size(PageSize::default())
+    }
+
+    /// Create a new PDF document with a specific default page size.
+    pub fn new_with_size(size: PageSize) -> Self {
         let mut pdf = PDF {
+            default_page_size: size,
             ..Default::default()
         };
 
@@ -61,6 +69,12 @@ impl PDF {
         pdf.catalog = Dictionary::new(Some(catalog_values));
 
         pdf
+    }
+
+    /// Set the default page size for the document.
+    pub fn with_default_page_size(mut self, size: PageSize) -> Self {
+        self.default_page_size = size;
+        self
     }
 
     /// Add a page to the document.
@@ -103,10 +117,11 @@ impl PDF {
         self.pages.values.insert("Kids".to_string(), kids);
     }
 
-    pub fn add_page_simple(&mut self, size: PageSize, contents: &[u8]) {
+    pub fn add_page_simple(&mut self, size: Option<PageSize>, contents: &[u8]) {
+        let page_size = size.unwrap_or(self.default_page_size);
         let mut page_values = HashMap::new();
         page_values.insert("Type".to_string(), b"/Page".to_vec());
-        page_values.insert("MediaBox".to_string(), size.to_mediabox());
+        page_values.insert("MediaBox".to_string(), page_size.to_mediabox());
         page_values.insert("Contents".to_string(), contents.to_vec());
 
         self.add_page(Dictionary::new(Some(page_values)));

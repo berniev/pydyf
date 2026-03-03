@@ -1,9 +1,16 @@
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PageSize {
     A4,
     Letter,
     Legal,
     A3,
     Custom(f64, f64), // width, height in points
+}
+
+impl Default for PageSize {
+    fn default() -> Self {
+        PageSize::A4
+    }
 }
 
 impl PageSize {

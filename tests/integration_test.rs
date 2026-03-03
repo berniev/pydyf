@@ -64,7 +64,7 @@ fn test_add_page_simple_with_pagesize() {
     let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
 
     // A4 size should be 595x842
-    pdf.add_page_simple(PageSize::A4, &content_ref);
+    pdf.add_page_simple(Some(PageSize::A4), &content_ref);
 
     let page_obj = pdf.objects.last().unwrap();
     let data = page_obj.data();
@@ -72,6 +72,23 @@ fn test_add_page_simple_with_pagesize() {
 
     assert!(data_str.contains("/MediaBox [0 0 595 842]"));
     assert!(data_str.contains("/Type /Page"));
+}
+
+#[test]
+fn test_add_page_simple_default_size() {
+    let mut pdf = PDF::new_with_size(PageSize::Letter);
+    let stream = Stream::new();
+    pdf.add_object(Box::new(stream));
+    let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
+
+    // Should use Letter size (612x792)
+    pdf.add_page_simple(None, &content_ref);
+
+    let page_obj = pdf.objects.last().unwrap();
+    let data = page_obj.data();
+    let data_str = String::from_utf8_lossy(&data);
+
+    assert!(data_str.contains("/MediaBox [0 0 612 792]"));
 }
 
 #[test]
