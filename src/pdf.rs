@@ -3,6 +3,7 @@ use std::io::Write;
 
 use crate::dictionary::Dictionary;
 use crate::object::{BaseObject, ObjectStatus, PdfObject};
+use crate::page::PageSize;
 use crate::string::encode_pdf_string;
 
 /// PDF file identifier mode.
@@ -26,19 +27,24 @@ pub struct PDF {
     pub xref_position: Option<usize>,
 }
 
-impl PDF {
-    /// Create a new PDF document.
-    ///
-    /// Initializes the document with required structures including the catalog,
-    /// pages tree, and object 0 sentinel.
-    pub fn new() -> Self {
-        let mut pdf = PDF {
+impl Default for PDF {
+    fn default() -> Self {
+        PDF {
             objects: Vec::new(),
             pages: Dictionary::new(None),
             info: Dictionary::new(None),
             catalog: Dictionary::new(None),
             current_position: 0,
             xref_position: None,
+        }
+    }
+}
+
+impl PDF {
+
+    pub fn new() -> Self {
+        let mut pdf = PDF {
+            ..Default::default()
         };
 
         let zero_object = BaseObject::sentinel();
@@ -95,6 +101,15 @@ impl PDF {
         }
         kids.extend(format!("{} 0 R]", page_number).as_bytes());
         self.pages.values.insert("Kids".to_string(), kids);
+    }
+
+    pub fn add_page_simple(&mut self, size: PageSize, contents: &[u8]) {
+        let mut page_values = HashMap::new();
+        page_values.insert("Type".to_string(), b"/Page".to_vec());
+        page_values.insert("MediaBox".to_string(), size.to_mediabox());
+        page_values.insert("Contents".to_string(), contents.to_vec());
+
+        self.add_page(Dictionary::new(Some(page_values)));
     }
 
     pub fn add_object(&mut self, mut object: Box<dyn PdfObject>) -> usize {

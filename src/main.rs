@@ -8,6 +8,7 @@ mod dictionary;
 mod encoding;
 mod error;
 mod object;
+mod page;
 mod pdf;
 mod stream;
 mod string;

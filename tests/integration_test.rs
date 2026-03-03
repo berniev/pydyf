@@ -1,4 +1,4 @@
-use pydyf::{PDF, Dictionary, Stream};
+use pydyf::{PDF, Dictionary, Stream, PageSize};
 use std::collections::HashMap;
 
 fn create_page_with_content(content_stream_ref: Vec<u8>) -> Dictionary {
@@ -53,7 +53,34 @@ fn test_text_operations() {
     stream.set_font_size("Helvetica", 12.0);
     stream.set_text_matrix(1.0, 0.0, 0.0, 1.0, 100.0, 700.0);
     stream.show_text_string("Test");
-    stream.end_text();
-
     assert!(stream.stream.len() > 0);
+}
+
+#[test]
+fn test_add_page_simple_with_pagesize() {
+    let mut pdf = PDF::new();
+    let stream = Stream::new();
+    pdf.add_object(Box::new(stream));
+    let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
+
+    // A4 size should be 595x842
+    pdf.add_page_simple(PageSize::A4, &content_ref);
+
+    let page_obj = pdf.objects.last().unwrap();
+    let data = page_obj.data();
+    let data_str = String::from_utf8_lossy(&data);
+
+    assert!(data_str.contains("/MediaBox [0 0 595 842]"));
+    assert!(data_str.contains("/Type /Page"));
+}
+
+#[test]
+fn test_pagesize_custom_validation() {
+    let size = PageSize::Custom(-100.0, 500.0);
+    let dimensions = size.dimensions();
+    assert_eq!(dimensions.0, 0.0);
+    assert_eq!(dimensions.1, 500.0);
+
+    let mediabox = size.to_mediabox();
+    assert_eq!(String::from_utf8_lossy(&mediabox), "[0 0 0 500]");
 }
