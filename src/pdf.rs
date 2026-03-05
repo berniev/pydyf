@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-use std::io::Write;
-
 use crate::objects::base::BaseObject;
 use crate::objects::status::ObjectStatus;
 use crate::objects::stream::StreamObject;
 use crate::{Array, ArrayObject, DictionaryObject, PdfObject};
+use std::collections::HashMap;
+use std::io::Write;
+use std::sync::Arc;
 
 use crate::objects::string::encode_pdf_string;
 use crate::page::{Page, PageSize};
@@ -51,23 +51,16 @@ impl PDF {
             ..Default::default()
         };
 
-        let zero_object = BaseObject::sentinel();
+        let zero_object = BaseObject::sentinel(); // mandatory Object 0 (BaseObject)
         pdf.add_object(Box::new(zero_object));
 
-        let mut pages_values = HashMap::new();
-        pages_values.insert("Type".to_string(), b"/Pages".to_vec());
-        pages_values.insert("Kids".to_string(), b"[]".to_vec());
-        pages_values.insert("Count".to_string(), b"0".to_vec());
-        pages_values.insert("MediaBox".to_string(), size.to_mediabox());
-        pdf.page_tree = DictionaryObject::new(Some(pages_values));
-
-        let mut catalog_values = HashMap::new();
-        catalog_values.insert("Type".to_string(), b"/Catalog".to_vec());
-        pdf.catalog = DictionaryObject::new(Some(catalog_values));
+        pdf.page_tree.values.push((
+            "MediaBox".to_string(),
+            Arc::new(ArrayObject::from_size(size)),
+        ));
 
         pdf
     }
-
     /// Set the default page size for the document.
     pub fn with_default_page_size(mut self, size: PageSize) -> Self {
         self.default_page_size = size;

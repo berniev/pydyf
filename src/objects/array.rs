@@ -1,11 +1,12 @@
+use std::sync::Arc;
 use crate::encoding::to_bytes_num;
 use crate::objects::metadata::PdfMetadata;
 use crate::objects::pdf_object::PdfObject;
-
+use crate::{NumberObject, PageSize};
 
 pub struct ArrayObject {
     pub metadata: PdfMetadata,
-    pub values: Vec<Box<dyn PdfObject>>,
+    pub values: Vec<Arc<dyn PdfObject>>,
 }
 
 impl ArrayObject {
@@ -14,6 +15,16 @@ impl ArrayObject {
             metadata: PdfMetadata::default(),
             values,
         }
+    }
+    
+    pub fn from_size(size: PageSize) -> Self {
+        let (width, height) = size.dimensions();
+        Self::new(Some(vec![
+            Arc::new(NumberObject::from(0.0)),
+            Arc::new(NumberObject::from(0.0)),
+            Arc::new(NumberObject::from(width)),
+            Arc::new(NumberObject::from(height)),
+        ]))
     }
 }
 

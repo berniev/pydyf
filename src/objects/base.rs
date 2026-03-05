@@ -2,6 +2,27 @@ pub(crate) use crate::objects::metadata::PdfMetadata;
 use crate::objects::pdf_object::PdfObject;
 pub(crate) use crate::objects::status::ObjectStatus;
 
+//---------------- IndirectReference -----------------
+
+pub struct IndirectReference {
+    pub metadata: PdfMetadata,
+    pub id: usize,
+}
+
+impl PdfObject for IndirectReference {
+    fn metadata(&self) -> &PdfMetadata { &self.metadata }
+
+    fn metadata_mut(&mut self) -> &mut PdfMetadata { &mut self.metadata }
+    
+    fn data(&self) -> Vec<u8> {
+        format!("{} 0 R", self.id).into_bytes()
+    }
+    
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any { self }
+}
+
+//------------------- BaseObject ---------------------
+
 #[derive(Debug, Clone)]
 pub struct BaseObject {
     pub metadata: PdfMetadata,

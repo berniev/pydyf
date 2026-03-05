@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::objects::metadata::PdfMetadata;
 use crate::objects::pdf_object::PdfObject;
 use crate::{ArrayObject, NameObject, NumberObject, NumberType};
@@ -6,11 +7,11 @@ use crate::{ArrayObject, NameObject, NumberObject, NumberType};
 
 pub struct DictionaryObject {
     pub metadata: PdfMetadata,
-    pub values: Vec<(String, Box<dyn PdfObject>)>,
+    pub values: Vec<(String, Arc<dyn PdfObject>)>,
 }
 
 impl DictionaryObject {
-    pub fn new(values: Option<Vec<(String, Box<dyn PdfObject>)>>) -> Self {
+    pub fn new(values: Option<Vec<(String, Arc<dyn PdfObject>)>>) -> Self {
         Self {
             metadata: PdfMetadata::default(),
             values: values.unwrap_or_default(),
@@ -20,7 +21,7 @@ impl DictionaryObject {
     fn typed(name: &str) -> Self {
         Self::new(Some(vec![(
             "Type".to_string(),
-            Box::new(NameObject::new(name.to_string())),
+            Arc::new(NameObject::new(name.to_string())),
         )]))
     }
     pub fn catalog() -> Self {
@@ -30,15 +31,27 @@ impl DictionaryObject {
     pub fn pages_tree() -> Self {
         let mut dict = Self::typed("Pages");
         dict.values
-            .push(("Kids".to_string(), Box::new(ArrayObject::new(None))));
+            .push(("Kids".to_string(), Arc::new(ArrayObject::new(None))));
         dict.values
-            .push(("Count".to_string(), Box::new(NumberObject::new(NumberType::from(0.0)))));
+            .push(("Count".to_string(), Arc::new(NumberObject::new(NumberType::from(0.0)))));
         dict
     }
 
     pub fn reference(&self) -> Vec<u8> {
         let number = self.metadata.number.unwrap_or(0);
         format!("{} {} R", number, self.metadata.generation).into_bytes()
+    }
+    
+    pub fn set(&mut self, key: &str, value: Arc<dyn PdfObject>) {
+        if let Some(pos) = self.values.iter().position(|(k, _)| k == key) {
+            self.values[pos].1 = value;
+        } else {
+            self.values.push((key.to_string(), value));
+        }
+    }
+
+    pub fn get(&self, key: &str) -> Option<&Arc<dyn PdfObject>> {
+        self.values.iter().find(|(k, _)| k == key).map(|(_, v)| v)
     }
 }
 

@@ -5,11 +5,14 @@ use crate::objects::string::encode_pdf_string;
 use crate::util::{
     CMYK, Color, CompressionMethod, EvenOdd, Matrix, PosnXY, RGB, Size, StrokeOrFill, ToPdf,
 };
-use crate::{DictionaryObject, NumberObject, PdfObject, objects};
+use crate::{DictionaryObject, NumberObject, PdfObject};
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
 use std::collections::HashMap;
 use std::io::Write as IoWrite;
+use std::sync::Arc;
+
+//------------------------ Stream Object -----------------------
 
 /// PDF content stream.
 ///
@@ -23,7 +26,7 @@ use std::io::Write as IoWrite;
 pub struct StreamObject {
     pub metadata: PdfMetadata,
     pub stream: Vec<Vec<u8>>, // sequence of operator calls
-    pub extra: HashMap<String, Vec<u8>>,
+    pub extra: Vec<(String, Arc<dyn PdfObject>)>,
     pub compress: CompressionMethod, // using flate
 }
 
@@ -32,7 +35,7 @@ impl Default for StreamObject {
         StreamObject {
             metadata: PdfMetadata::default(),
             stream: Vec::new(),
-            extra: HashMap::new(),
+            extra: Vec::new(),
             compress: CompressionMethod::None,
         }
     }
@@ -58,7 +61,7 @@ impl StreamObject {
     pub fn with_data(
         mut self,
         stream: Option<Vec<Vec<u8>>>,
-        extra: Option<HashMap<String, Vec<u8>>>,
+        extra: Option<Vec<(String, Arc<dyn PdfObject>)>>,
     ) -> Self {
         if let Some(s) = stream {
             self.stream = s;
@@ -549,43 +552,32 @@ impl PdfObject for StreamObject {
 
     fn data(&self) -> Vec<u8> {
         let mut stream_bytes = self.stream.join(&b'\n');
-        let mut extra_values = self.extra.clone();
 
-        match self.compress {
-            CompressionMethod::Flate => {
-                let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-                encoder.write_all(&stream_bytes).unwrap();
-                stream_bytes = encoder.finish().unwrap();
-            }
-            CompressionMethod::None => {}
-        };
+        if let CompressionMethod::Flate = self.compress {
+            let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+            encoder.write_all(&stream_bytes).unwrap();
+            stream_bytes = encoder.finish().unwrap();
+        }
 
-        // Add Length as a proper PdfObject
-        extra_values.push(
+        let mut dict_values = self.extra.clone();
+        dict_values.push((
             "Length".to_string(),
-            Box::new(NumberObject::new(objects::number::NumberType::Real(
-                stream_bytes.len() as f64,
-            ))),
-        );
-
-        let extra_dict = DictionaryObject {
-            metadata: PdfMetadata::default(),
-            values: extra_values, // This now matches exactly
-        };
-
-        let mut result = extra_dict.data();
+            Arc::new(NumberObject::from(stream_bytes.len() as f64)),
+        ));
+        let mut dict = DictionaryObject::new(Some(dict_values));
+        let mut result = dict.data();
         result.extend(b"\nstream\n");
         result.extend(stream_bytes);
         result.extend(b"\nendstream");
 
         result
     }
+
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self
     }
 
-    /// Stream objects are never compressible in PDF object streams.
     fn is_compressible(&self) -> bool {
-        false
+        false // never compressible in PDF object streams
     }
 }
