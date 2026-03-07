@@ -127,11 +127,8 @@ impl PDF {
         self.page_ids.push(id);
     }
 
-    pub fn add_page_simple(&mut self, size: Option<PageSize>, contents: &[u8]) {
-        let mut page = Page::new();
-        if let Some(s) = size {
-            page.set_size(s);
-        }
+    pub fn add_page_simple(&mut self, size: PageSize, contents: &[u8]) {
+        let mut page = Page::new(size);
         page.set_contents(contents.to_vec());
         self.add_page(page);
     }

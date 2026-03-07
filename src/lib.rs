@@ -95,6 +95,7 @@ pub mod text;
 pub mod page;
 pub mod util;
 mod writer;
+mod page_size;
 
 // Re-export main types for convenience
 pub use objects::array::{Array, ArrayObject};
@@ -110,9 +111,9 @@ pub use objects::name::NameObject;
 pub use objects::string::StringObject;
 pub use objects::null::NullObject;
 pub use error::{PdfError, PdfResult};
-pub use gradient::{ColorStop, LinearGradient, RadialGradient};
+pub use gradient::{ColorStop};
 pub use graphics_state::GraphicsStateManager;
 pub use pdf::{FileIdentifierMode, PDF};
 pub use resources::ResourceDictionary;
 pub use text::{wrap_text, StandardFont, WrapMode};
-pub use page::{Page, PageSize};
+pub use page::{Page};

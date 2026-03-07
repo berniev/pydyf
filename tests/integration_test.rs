@@ -62,7 +62,7 @@ fn test_add_page_simple_with_pagesize() {
     let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
 
     // A4 size should be 595x842
-    pdf.add_page_simple(Some(PageSize::A4), &content_ref);
+    pdf.add_page_simple(PageSize::A4, &content_ref);
 
     let page_obj = pdf.objects.last().unwrap();
     let data = page_obj.data();
@@ -81,7 +81,7 @@ fn test_add_page_simple_default_size() {
     let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
 
     // Should use Letter size (612x792) inherited from root
-    pdf.add_page_simple(None, &content_ref);
+    pdf.add_page_simple(PageSize::A4, &content_ref);
 
     let page_obj = pdf.objects.last().unwrap();
     let data = page_obj.data();

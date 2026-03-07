@@ -15,8 +15,7 @@ use std::sync::Arc;
 
 /// PDF content stream.
 ///
-/// A Stream represents a sequence of PDF graphics and text operators.
-/// Content streams are used to define page content, including:
+/// Content streams define page content, eg:
 /// - Graphics: paths, rectangles, curves
 /// - Text: fonts, positioning, display
 /// - Colors: RGB, CMYK, grayscale
