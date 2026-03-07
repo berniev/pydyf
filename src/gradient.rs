@@ -1,60 +1,12 @@
-use crate::DictionaryObject;
-use crate::objects::stream::StreamObject;
-use crate::pdf::PDF;
-use crate::util::{PosnPoints, DimsPoints, RGBA};
 use std::collections::HashMap;
+use std::sync::Arc;
 
-fn common(size: DimsPoints) {
-    let gs_name = if self.stops.len() >= 2 {
-        let first = &self.stops[0].rgba;
-        let last = &self.stops[self.stops.len() - 1].rgba;
-
-        // Check if gradient has transparency
-        let has_transparency = first.alpha < 1.0 || last.alpha < 1.0;
-
-        let function_str = format!(
-            "<< /FunctionType 2 /Domain [0 1] /C0 [{} {} {}] /C1 [{} {} {}] /N 1 >>",
-            first.red, first.green, first.blue, last.red, last.green, last.blue
-        );
-        shading_values.insert("Function".to_string(), function_str.into_bytes());
-
-        // If transparent, create soft mask for alpha channel
-        if has_transparency {
-            let gs_name = format!("GS{}", *resource_counter);
-            *resource_counter += 1;
-
-            // Create alpha shading (DeviceGray for opacity)
-            let mut alpha_shading_values = HashMap::new();
-            alpha_shading_values.insert("ShadingType".to_string(), b"3".to_vec());
-            alpha_shading_values.insert("ColorSpace".to_string(), b"/DeviceGray".to_vec());
-            alpha_shading_values.insert(
-                "Coords".to_string(),
-                format!("[{} {} 0 {} {} {}]", cx, cy, cx, cy, radius).into_bytes(),
-            );
-
-            let alpha_function_str = format!(
-                "<< /FunctionType 2 /Domain [0 1] /C0 [{}] /C1 [{}] /N 1 >>",
-                first.alpha, last.alpha
-            );
-            alpha_shading_values
-                .insert("Function".to_string(), alpha_function_str.into_bytes());
-            alpha_shading_values.insert("Extend".to_string(), b"[true true]".to_vec());
-
-            let alpha_shading_dict = DictionaryObject::new(Some(alpha_shading_values));
-            let alpha_shading_num = pdf.objects.len();
-            pdf.add_object(Box::new(alpha_shading_dict));
-
-            // Create soft mask form XObject
-            create_soft_mask_for_shading(pdf, alpha_shading_num, size.width, size.height, &gs_name);
-
-            Some(gs_name)
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-}
+use crate::{
+    Array, ArrayObject, BooleanObject, DictionaryObject, NameObject, NumberObject, PdfObject, PDF,
+};
+use crate::objects::base::IndirectReference;
+use crate::objects::stream::StreamObject;
+use crate::util::{DimsPoints, PosnPoints, RGBA};
 
 //--------------------------- Color Stop ---------------------------//
 
@@ -70,18 +22,28 @@ impl ColorStop {
     }
 }
 
-//--------------------------- Linear Gradient ---------------------------//
+//--------------------------- Gradient Kind ---------------------------//
 
-pub struct LinearGradient {
-    angle: f32, // (CSS convention: 0° = north/up, 90° = east/right)
-    stops: Vec<ColorStop>,
+#[derive(Debug, Clone)]
+pub enum GradientKind {
+    /// Linear gradient with an angle in degrees (CSS convention: 0° is north/up, clockwise).
+    Linear { angle: f32 },
+    /// Radial gradient from the center.
+    Radial,
 }
 
-impl LinearGradient {
-    pub fn new(angle: f32) -> Self {
-        LinearGradient {
-            angle,
+//--------------------------- Gradient ---------------------------//
+
+pub struct Gradient {
+    pub stops: Vec<ColorStop>,
+    pub kind: GradientKind,
+}
+
+impl Gradient {
+    pub fn new(kind: GradientKind) -> Self {
+        Gradient {
             stops: Vec::new(),
+            kind,
         }
     }
 
@@ -89,6 +51,9 @@ impl LinearGradient {
         self.stops.push(ColorStop::new(offset, rgba));
     }
 
+    /// Creates the PDF pattern and necessary resources (Shadings, Functions, Soft Masks).
+    ///
+    /// Returns a tuple of (Pattern Name, optional Graphics State Name for transparency).
     pub fn create_pattern(
         &self,
         pdf: &mut PDF,
@@ -97,207 +62,188 @@ impl LinearGradient {
         size: DimsPoints,
         stroke_width: f64,
     ) -> Option<(String, Option<String>)> {
-        // Check if gradient ends in transparent - skip rendering (can't represent in PDF)
-        if self.stops.len() >= 2 && self.stops.last().unwrap().rgba.alpha == 0.0 {
+        if self.stops.len() < 2 {
             return None;
         }
 
-        if self.stops.is_empty() {
-            return None;
-        }
+        // 1. Determine Geometry Strategy
+        let (shading_type, coords) = self.get_shading_params(posn, size, stroke_width);
 
         let pattern_name = format!("P{}", *resource_counter);
         *resource_counter += 1;
 
-        // Create shading dictionary for linear gradient (Type 2 - Axial)
-        let mut shading_values = HashMap::new();
-        shading_values.insert("ShadingType".to_string(), b"2".to_vec());
-        shading_values.insert("ColorSpace".to_string(), b"/DeviceRGB".to_vec());
+        let first = &self.stops[0].rgba;
+        let last = &self.stops.last().unwrap().rgba;
 
-        // Get gradient angle and convert to coordinates
-        // CSS/Slint: 0° = up/north, clockwise. Convert to math convention: 0° = right/east, counter-clockwise
-        let math_angle = 90.0 - self.angle;
-        let angle_rad = math_angle * std::f32::consts::PI / 180.0;
-        let cos = angle_rad.cos() as f64;
-        let sin = angle_rad.sin() as f64;
+        let extend = Arc::new(ArrayObject::new(Some(vec![
+            Arc::new(BooleanObject::new(true)) as Arc<dyn PdfObject>,
+            Arc::new(BooleanObject::new(true)),
+        ])));
 
-        // Define coords in absolute PDF page space
-        let cx = posn.x + size.width / 2.0;
-        let cy = posn.y + size.height / 2.0;
-
-        // Gradient half-length: distance from center to edge in gradient direction
-        // Add stroke_width to extend gradient beyond path for strokes
-        let half_len = (size.width * cos.abs() + size.height * sin.abs()) / 2.0 + stroke_width;
-
-        // Direction vector: cos points right, sin points up (in math coords)
-        // PDF Y-axis is inverted, so reverse Y direction to match CSS gradient
-        let x0 = cx - cos * half_len;
-        let y0 = cy + sin * half_len; // Start of gradient (top for 0deg)
-        let x1 = cx + cos * half_len;
-        let y1 = cy - sin * half_len; // End of gradient (bottom for 0deg)
-
-        shading_values.insert(
-            "Coords".to_string(),
-            format!("[{} {} {} {}]", x0, y0, x1, y1).into_bytes(),
+        // 2. Create Color Function (Type 2 - Exponential Interpolation)
+        let color_func = create_interpolation_function(
+            vec![first.red as f64, first.green as f64, first.blue as f64],
+            vec![last.red as f64, last.green as f64, last.blue as f64],
         );
+        let color_func_num = pdf.add_object(Box::new(color_func));
 
-        common();
+        // 3. Create Color Shading Dictionary
+        let mut shading_dict = DictionaryObject::new(None);
+        shading_dict.set("ShadingType", Arc::new(NumberObject::from(shading_type as i64)));
+        shading_dict.set("ColorSpace", Arc::new(NameObject::new("DeviceRGB".to_string())));
+        shading_dict.set("Coords", Arc::new(Array::new(Some(coords.clone()))));
+        shading_dict.set("Function", Arc::new(IndirectReference { 
+            metadata: Default::default(), 
+            id: color_func_num 
+        }));
+        shading_dict.set("Extend", extend.clone());
 
-        shading_values.insert("Extend".to_string(), b"[true true]".to_vec());
+        let shading_num = pdf.add_object(Box::new(shading_dict));
 
-        let shading_dict = DictionaryObject::new(Some(shading_values));
-        let shading_num = pdf.objects.len();
-        pdf.add_object(Box::new(shading_dict));
+        // 4. Handle Transparency (Soft Mask)
+        let has_transparency = first.alpha < 1.0 || last.alpha < 1.0;
+        let gs_name = if has_transparency {
+            let name = format!("GS{}", *resource_counter);
+            *resource_counter += 1;
 
-        // Create pattern dictionary
-        let mut pattern_values = HashMap::new();
-        pattern_values.insert("Type".to_string(), b"/Pattern".to_vec());
-        pattern_values.insert("PatternType".to_string(), b"2".to_vec());
-        pattern_values.insert(
-            "Shading".to_string(),
-            format!("{} 0 R", shading_num).into_bytes(),
-        );
+            // Alpha Interpolation Function
+            let alpha_func = create_interpolation_function(
+                vec![first.alpha as f64],
+                vec![last.alpha as f64],
+            );
+            let alpha_func_num = pdf.add_object(Box::new(alpha_func));
 
-        let pattern_dict = DictionaryObject::new(Some(pattern_values));
+            // Alpha Shading (DeviceGray)
+            let mut alpha_shading = DictionaryObject::new(None);
+            alpha_shading.set("ShadingType", Arc::new(NumberObject::from(shading_type as i64)));
+            alpha_shading.set("ColorSpace", Arc::new(NameObject::new("DeviceGray".to_string())));
+            alpha_shading.set("Coords", Arc::new(Array::new(Some(coords))));
+            alpha_shading.set("Function", Arc::new(IndirectReference { 
+                metadata: Default::default(), 
+                id: alpha_func_num 
+            }));
+            alpha_shading.set("Extend", extend);
+
+            let alpha_shading_num = pdf.add_object(Box::new(alpha_shading));
+
+            // Create the Soft Mask group and ExtGState
+            create_soft_mask_for_shading(pdf, alpha_shading_num, size.width, size.height);
+
+            Some(name)
+        } else {
+            None
+        };
+
+        // 5. Create Pattern Dictionary
+        let mut pattern_dict = DictionaryObject::typed("Pattern");
+        pattern_dict.set("PatternType", Arc::new(NumberObject::from(2)));
+        pattern_dict.set("Shading", Arc::new(IndirectReference {
+            metadata: Default::default(),
+            id: shading_num
+        }));
+
         pdf.add_object(Box::new(pattern_dict));
 
         Some((pattern_name, gs_name))
     }
-}
-//--------------------------- Radial Gradient ---------------------------//
 
-pub struct RadialGradient {
-    stops: Vec<ColorStop>, // Color stops along the gradient
-}
-
-impl RadialGradient {
-    pub fn new() -> Self {
-        RadialGradient { stops: Vec::new() }
-    }
-
-    pub fn add_stop(&mut self, offset: f32, rgba: RGBA) {
-        self.stops.push(ColorStop::new(offset, rgba));
-    }
-
-    pub fn create_pattern(
+    /// Calculates geometry parameters (Type and Coords) based on gradient kind.
+    fn get_shading_params(
         &self,
-        pdf: &mut PDF,
-        resource_counter: &mut u32,
         posn: PosnPoints,
         size: DimsPoints,
-    ) -> Option<(String, Option<String>)> {
-        // Check if gradient ends in transparent - skip rendering (can't represent in PDF)
-        if self.stops.len() >= 2 && self.stops.last().unwrap().rgba.alpha == 0.0 {
-            return None;
+        stroke_width: f64,
+    ) -> (u8, Vec<f64>) {
+        match self.kind {
+            GradientKind::Linear { angle } => {
+                let math_angle = 90.0 - angle;
+                let angle_rad = (math_angle as f64).to_radians();
+                let cos = angle_rad.cos();
+                let sin = angle_rad.sin();
+
+                let cx = posn.x + size.width / 2.0;
+                let cy = posn.y + size.height / 2.0;
+
+                let half_len = (size.width * cos.abs() + size.height * sin.abs()) / 2.0 + stroke_width;
+
+                let x0 = cx - cos * half_len;
+                let y0 = cy + sin * half_len;
+                let x1 = cx + cos * half_len;
+                let y1 = cy - sin * half_len;
+
+                (2, vec![x0, y0, x1, y1])
+            }
+            GradientKind::Radial => {
+                let cx = posn.x + size.width / 2.0;
+                let cy = posn.y + size.height / 2.0;
+                let radius = size.width.min(size.height) * 1.5;
+                // [x0 y0 r0 x1 y1 r1]
+                (3, vec![cx, cy, 0.0, cx, cy, radius])
+            }
         }
-
-        if self.stops.is_empty() {
-            return None;
-        }
-
-        let pattern_name = format!("P{}", *resource_counter);
-        *resource_counter += 1;
-
-        // Create shading dictionary for radial gradient (Type 3)
-        let mut shading_values = HashMap::new();
-        shading_values.insert("ShadingType".to_string(), b"3".to_vec());
-        shading_values.insert("ColorSpace".to_string(), b"/DeviceRGB".to_vec());
-
-        // Center point and radius in absolute PDF page space
-        // Extend radius to cover paths that may extend beyond their nominal box
-        let cx = posn.x + size.width / 2.0;
-        let cy = posn.y + size.height / 2.0; // PDF y-axis
-        let radius = size.width.min(size.height) * 1.5; // Use 1.5x size to cover extended paths
-
-        common();
-        
-        // Coords: [x0 y0 r0 x1 y1 r1] for circles from center
-        shading_values.insert(
-            "Coords".to_string(),
-            format!("[{} {} 0 {} {} {}]", cx, cy, cx, cy, radius).into_bytes(),
-        );
-
-        // Build color function from gradient stops
- 
-        shading_values.insert("Extend".to_string(), b"[true true]".to_vec());
-
-        let shading_dict = DictionaryObject::new(Some(shading_values));
-        let shading_num = pdf.objects.len();
-        pdf.add_object(Box::new(shading_dict));
-
-        // Create pattern dictionary
-        let mut pattern_values = HashMap::new();
-        pattern_values.insert("Type".to_string(), b"/Pattern".to_vec());
-        pattern_values.insert("PatternType".to_string(), b"2".to_vec());
-        pattern_values.insert(
-            "Shading".to_string(),
-            format!("{} 0 R", shading_num).into_bytes(),
-        );
-
-        let pattern_dict = DictionaryObject::new(Some(pattern_values));
-        pdf.add_object(Box::new(pattern_dict));
-
-        Some((pattern_name, gs_name))
     }
 }
 
-impl Default for RadialGradient {
-    fn default() -> Self {
-        Self::new()
-    }
+//--------------------------- Helpers ---------------------------//
+
+/// Creates a Type 2 (Exponential Interpolation) Function dictionary.
+fn create_interpolation_function(c0: Vec<f64>, c1: Vec<f64>) -> DictionaryObject {
+    let mut dict = DictionaryObject::new(None);
+    dict.set("FunctionType", Arc::new(NumberObject::from(2)));
+    dict.set("Domain", Arc::new(Array::new(Some(vec![0.0, 1.0]))));
+    dict.set("C0", Arc::new(Array::new(Some(c0))));
+    dict.set("C1", Arc::new(Array::new(Some(c1))));
+    dict.set("N", Arc::new(NumberObject::from(1))); // Linear interpolation
+    dict
 }
 
-//--------------------------- Conic Gradient ---------------------------//
-
+/// Orchestrates the creation of the Soft Mask (/SMask) object graph.
 fn create_soft_mask_for_shading(
     pdf: &mut PDF,
     alpha_shading_num: usize,
     width: f64,
     height: f64,
-    _gs_name: &str,
 ) {
-    // Create form XObject for the soft mask (transparency group)
-    let mut form_extra = HashMap::new();
-    form_extra.insert("Type".to_string(), b"/XObject".to_vec());
-    form_extra.insert("Subtype".to_string(), b"/Form".to_vec());
-    form_extra.insert("FormType".to_string(), b"1".to_vec());
-    form_extra.insert(
-        "BBox".to_string(),
-        format!("[0 0 {} {}]", width, height).into_bytes(),
-    );
-    // Mark as transparency group for soft mask
-    form_extra.insert(
-        "Group".to_string(),
-        b"<< /Type /Group /S /Transparency /CS /DeviceGray >>".to_vec(),
-    );
+    // 1. Create Form XObject (Transparency Group)
+    let mut form_extra = Vec::new();
+    form_extra.push(("Type".to_string(), Arc::new(NameObject::new("XObject".to_string())) as Arc<dyn PdfObject>));
+    form_extra.push(("Subtype".to_string(), Arc::new(NameObject::new("Form".to_string()))));
+    form_extra.push(("FormType".to_string(), Arc::new(NumberObject::from(1))));
+    form_extra.push(("BBox".to_string(), Arc::new(Array::new(Some(vec![0.0, 0.0, width, height])))));
 
-    // Create resources dict with shading
-    let resources_str = format!("<< /Shading << /Sh0 {} 0 R >> >>", alpha_shading_num);
-    form_extra.insert("Resources".to_string(), resources_str.into_bytes());
+    let mut group_dict = DictionaryObject::new(None);
+    group_dict.set("Type", Arc::new(NameObject::new("Group".to_string())));
+    group_dict.set("S", Arc::new(NameObject::new("Transparency".to_string())));
+    group_dict.set("CS", Arc::new(NameObject::new("DeviceGray".to_string())));
+    form_extra.push(("Group".to_string(), Arc::new(group_dict)));
 
-    // Stream content that paints the shading
-    let stream_content = b"/Sh0 sh".to_vec();
-    let form_stream = StreamObject::new().with_data(Some(vec![stream_content]), Some(form_extra));
+    let mut resources = DictionaryObject::new(None);
+    let mut shading_res = DictionaryObject::new(None);
+    shading_res.set("Sh0", Arc::new(IndirectReference {
+        metadata: Default::default(),
+        id: alpha_shading_num
+    }));
+    resources.set("Shading", Arc::new(shading_res));
+    form_extra.push(("Resources".to_string(), Arc::new(resources)));
 
-    let form_number = pdf.objects.len();
-    pdf.add_object(Box::new(form_stream));
+    let form_stream = StreamObject::new()
+        .with_data(Some(vec![b"/Sh0 sh".to_vec()]), Some(form_extra));
+    let form_number = pdf.add_object(Box::new(form_stream));
 
-    // Create SMask dictionary
-    let mut smask_values = HashMap::new();
-    smask_values.insert("Type".to_string(), b"/Mask".to_vec());
-    smask_values.insert("S".to_string(), b"/Luminosity".to_vec());
-    smask_values.insert("G".to_string(), format!("{} 0 R", form_number).into_bytes());
-    let smask_dict = DictionaryObject::new(Some(smask_values));
-    let smask_number = pdf.objects.len();
-    pdf.add_object(Box::new(smask_dict));
+    // 2. Create Mask Dictionary
+    let mut smask_dict = DictionaryObject::typed("Mask");
+    smask_dict.set("S", Arc::new(NameObject::new("Luminosity".to_string())));
+    smask_dict.set("G", Arc::new(IndirectReference {
+        metadata: Default::default(),
+        id: form_number
+    }));
+    let smask_number = pdf.add_object(Box::new(smask_dict));
 
-    // Create ExtGState with SMask
-    let mut gs_values = HashMap::new();
-    gs_values.insert("Type".to_string(), b"/ExtGState".to_vec());
-    gs_values.insert(
-        "SMask".to_string(),
-        format!("{} 0 R", smask_number).into_bytes(),
-    );
-    let gs_dict = DictionaryObject::new(Some(gs_values));
+    // 3. Create ExtGState with the SMask
+    let mut gs_dict = DictionaryObject::typed("ExtGState");
+    gs_dict.set("SMask", Arc::new(IndirectReference {
+        metadata: Default::default(),
+        id: smask_number
+    }));
     pdf.add_object(Box::new(gs_dict));
 }

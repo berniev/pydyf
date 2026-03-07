@@ -10,10 +10,10 @@ pub struct ArrayObject {
 }
 
 impl ArrayObject {
-    pub fn new(values: Option<_>) -> Self {
+    pub fn new(values: Option<Vec<Arc<dyn PdfObject>>>) -> Self {
         Self {
             metadata: PdfMetadata::default(),
-            values,
+            values: values.unwrap_or_default(),
         }
     }
     
