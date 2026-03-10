@@ -1,27 +1,26 @@
-use crate::page::Page;
+use crate::page::{PageObject, PageTreeNode};
 use crate::page::PageSize;
 
 use crate::objects::base::BaseObject;
-use crate::{ArrayObject, DictionaryObject, NameObject, NumberObject, NumberType, PdfObject};
+use crate::{DictionaryObject, NameObject, PdfObject};
 use std::rc::Rc;
+
+//--------------------------- Stream -------------------------
 
 pub struct StreamObject {
     data: Vec<u8>,
     metadata: DictionaryObject,
 }
 
-pub const DEFAULT_VERSION: TargetVersion = TargetVersion::Auto;
-pub const DEFAULT_PAGE_SIZE: PageSize = PageSize::A4;
-
 //--------------------------- Catalog -------------------------
 
 /// Spec:
 /// Document Catalog:
-///     The primary dictionary object containing references directly or indirectly to all other 
-///     objects in the document with the exception that there may be objects in the trailer that 
+///     The primary dictionary object containing references directly or indirectly to all other
+///     objects in the document with the exception that there may be objects in the trailer that
 ///     are not referred to by the catalog
-/// 
-///  Catalog 
+///
+///  Catalog
 ///          Page Tree
 ///                           Page
 ///                                          Content Stream
@@ -49,7 +48,7 @@ pub const DEFAULT_PAGE_SIZE: PageSize = PageSize::A4;
 ///     Names              dictionary     Opt     1.2
 ///     Dests              dictionary     Opt     1.1   indirect reference
 ///     ViewerPreferences  dictionary     Opt     1.2
-///     PageLayout         name           Opt 
+///     PageLayout         name           Opt
 ///         SinglePage (def)
 ///         OneColumn
 ///         TwoColumnLeft
@@ -82,53 +81,24 @@ pub const DEFAULT_PAGE_SIZE: PageSize = PageSize::A4;
 ///     Requirements        array          Opt    1.7
 ///     Collection          dictionary     Opt    1.7
 ///     NeedsRendering      boolean        Opt    1.7
-/// 
-pub struct DocumentCatalog {
-    pub catalog: DictionaryObject,
-}
-
-impl DocumentCatalog {
-    pub fn new() -> Self {
-        Self {
-            catalog: DictionaryObject::typed("Catalog"),
-        }
-    }
-}
-
-//--------------------------- Page Tree -------------------------
-
-/// Spec:
-/// Page Tree Nodes:
-///     Type    name        "Pages"    Reqd
-///     Parent  dictionary             Prohibited in root, else Reqd indirect reference  
-///     Kids    array                  Reqd  indirect references
-///     Count   integer                Reqd  Number of descendant leaf nodes (page objects)
-pub struct PageTree {
-    pub dict: DictionaryObject,
-}
-
-impl PageTree {
-    pub fn new() -> Self {
-        let mut dict = DictionaryObject::typed("Pages");
-        dict.set("Kids", Rc::new(ArrayObject::new(None)));
-        dict.set("Count", Rc::new(NumberObject::new(NumberType::from(0.0))));
-        Self { dict }
-    }
-}
+///
 
 //--------------------------- Version -------------------------
 
+pub const DEFAULT_VERSION: TargetVersion = TargetVersion::Auto;
+
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum TargetVersion {
-    Auto, // Use the lowest working version
+    Auto,
     V1_4,
     V1_5,
 }
 
 impl TargetVersion {
+    
     pub fn as_str(&self) -> &str {
         match self {
-            TargetVersion::Auto => DEFAULT_VERSION.as_str(), // Default floor
+            TargetVersion::Auto => "Auto",
             TargetVersion::V1_4 => "1.4",
             TargetVersion::V1_5 => "1.5",
         }
@@ -165,41 +135,32 @@ pub struct PDF {
     pub version: TargetVersion,
     pub objects: Vec<Box<dyn PdfObject>>,
     pub info: DictionaryObject,
-    pub catalog: DocumentCatalog,
-    pub page_tree: DictionaryObject,
+    pub catalog: DictionaryObject,
+    pub page_tree: PageTreeNode,
     pub page_ids: Vec<usize>,
     pub xref_position: Option<usize>,
 }
 
-impl Default for PDF {
-    fn default() -> Self {
-        PDF {
+impl PDF {
+    
+    pub fn new() -> Self {
+        let mut pdf = PDF {
             version: DEFAULT_VERSION,
             info: DictionaryObject::new(None),
-            catalog: DocumentCatalog::new(),
-            page_tree: DictionaryObject::new(None),
+            catalog: DictionaryObject::typed("Catalog"),
+            page_tree: PageTreeNode::new(),
             objects: Vec::new(),
             page_ids: vec![],
             xref_position: None,
-        }
-    }
-}
-
-impl PDF {
-    pub fn new() -> Self {
-        let mut pdf = PDF {
-            ..Default::default()
         };
 
-        pdf.add_object(Box::new(BaseObject::sentinel())); // object zero
-
-        pdf.page_tree.set("MediaBox", Rc::new([0]));
-
-        pdf
+        pdf.add_object(Box::new(BaseObject::sentinel()));
+        pdf // object zero
     }
 
     pub fn with_version(mut self, version: TargetVersion) -> Self {
         self.version = version;
+        
         self
     }
 
@@ -209,35 +170,6 @@ impl PDF {
         self.objects.push(object);
 
         number
-    }
-
-    pub fn add_page(&mut self, page: Page) {
-        let dict = page.into_dictionary();
-        let id = self.add_object(Box::new(dict));
-        self.page_ids.push(id);
-    }
-
-    pub fn page_references(&self) -> Vec<Vec<u8>> {
-        let kids_str = self
-            .page_tree
-            .get("Kids")
-            .map(|v| String::from_utf8_lossy(&v.data()).to_string())
-            .unwrap_or_else(|| "[]".to_string());
-
-        // Parse references in format "[1 0 R 2 0 R 3 0 R]"
-        kids_str
-            .trim_matches(|c| c == '[' || c == ']')
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .chunks(3)
-            .filter_map(|chunk| {
-                if chunk.len() == 3 && chunk[2] == "R" {
-                    Some(format!("{} {} {}", chunk[0], chunk[1], chunk[2]).into_bytes())
-                } else {
-                    None
-                }
-            })
-            .collect()
     }
 
     fn get_standard_fonts_dict() -> DictionaryObject {

@@ -4,10 +4,10 @@ use pydyf::StreamObject;
 use pydyf::color::{Color, RGB};
 use pydyf::page_size::PageSize;
 use pydyf::util::{Dims, EvenOdd, Posn, StrokeOrFill};
-use pydyf::{PDF, Page};
+use pydyf::{PDF, PageObject};
 
-fn create_page_with_content(page_size: PageSize, content_stream_ref: Vec<u8>) -> Page {
-    let mut page = Page::new(page_size);
+fn create_page_with_content(page_size: PageSize, content_stream_ref: Vec<u8>) -> PageObject {
+    let mut page = PageObject::new(page_size);
     page.set_contents(content_stream_ref);
     page
 }
@@ -19,7 +19,7 @@ fn test_empty_page() {
 
     pdf.add_object(Box::new(stream));
     let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
-    let page = Page::new(PageSize::A4).with_contents(content_ref);
+    let page = PageObject::new(PageSize::A4).with_contents(content_ref);
     pdf.add_page(page);
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();

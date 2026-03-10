@@ -15,15 +15,17 @@ pub struct NameObject {
 }
 
 impl NameObject {
+    
     pub fn new(value: String) -> Self {
         Self {
-            metadata: PdfMetadata::default(),
+            metadata: PdfMetadata::new(),
             value,
         }
     }
 }
 
 impl PdfObject for NameObject {
+    
     fn metadata(&self) -> &PdfMetadata {
         &self.metadata
     }

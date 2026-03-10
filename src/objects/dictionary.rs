@@ -1,9 +1,10 @@
+use std::default::Default;
 use std::rc::Rc;
-
 use crate::NameObject;
 use crate::objects::metadata::PdfMetadata;
 use crate::objects::pdf_object::PdfObject;
 use crate::objects::base::IndirectReference;
+
 //--------------------------- DictionaryObject----------------------//
 
 /// Spec:
@@ -11,25 +12,26 @@ use crate::objects::base::IndirectReference;
 ///     An associative table containing pairs of objects, the first object being a name object
 ///     serving as the key and the second object serving as the value and may be any kind of object
 ///     including another dictionary.
-/// Entrees:
+/// Entries:
 ///     The entries in a dictionary represent an associative table and as such shall be unordered
 ///     even though an arbitrary order may be imposed upon them when written in a file. That
 ///     ordering shall be ignored.
 ///     Multiple entries in the same dictionary shall not have the same key.
 ///     A dictionary shall be written as a sequence of key-value pairs enclosed in double angle
 ///     brackets (<< … >>) (using LESS-THAN SIGNs (3Ch) and GREATER-THAN SIGNs (3Eh)).
-/// Resource Dictionary:
-///     Associates resource names, used in content streams, with the resource objects themselves and
-///     organized into various categories (e.g., Font, ColorSpace, Pattern)
+///     The value of a Type entry shall be either defined in this standard or a registered name.
+///         name "Type"    Opt
+///         name "Subtype" Opt (requires Type)
 pub struct DictionaryObject {
     pub metadata: PdfMetadata,
     pub values: Vec<(String, Rc<dyn PdfObject>)>,
 }
 
 impl DictionaryObject {
+
     pub fn new(values: Option<Vec<(String, Rc<dyn PdfObject>)>>) -> Self {
         Self {
-            metadata: PdfMetadata::default(),
+            metadata: PdfMetadata::new(),
             values: values.unwrap_or_default(),
         }
     }
@@ -55,10 +57,8 @@ impl DictionaryObject {
     }
 
     pub fn set_indirect(&mut self, key: &str, id: usize) {
-        self.set(key, Rc::new(IndirectReference {
-            metadata: Default::default(),
-            id,
-        }));
+        let ir = IndirectReference {metadata: Default::default(), id};
+        self.set(key, Rc::new(ir));
     }
 
     pub fn get(&self, key: &str) -> Option<&Rc<dyn PdfObject>> {
@@ -67,6 +67,7 @@ impl DictionaryObject {
 }
 
 impl PdfObject for DictionaryObject {
+
     fn metadata(&self) -> &PdfMetadata {
         &self.metadata
     }

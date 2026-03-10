@@ -1,8 +1,8 @@
-use pydyf::{PDF, PageSize, Page, Stream, FileIdentifierMode};
+use pydyf::{PDF, PageSize, PageObject, Stream, FileIdentifierMode};
 use std::fs::File;
 
-fn create_page_with_content(content_stream_ref: Vec<u8>) -> Page {
-    let mut page = Page::new();
+fn create_page_with_content(content_stream_ref: Vec<u8>) -> PageObject {
+    let mut page = PageObject::new();
     page.set_contents(content_stream_ref);
     page
 }

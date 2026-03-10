@@ -1,9 +1,11 @@
 use std::rc::Rc;
 
-use crate::{ArrayObject, DictionaryObject, NameObject, NumberObject, PdfObject};
 use crate::util::Dims;
+use crate::{ArrayObject, DictionaryObject, NameObject, NumberObject, PdfObject};
 
 //--------------------------- Page Size ---------------------------//
+
+pub const DEFAULT_PAGE_SIZE: PageSize = PageSize::A4;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PageSize {
@@ -25,10 +27,22 @@ impl PageSize {
     /// Returns 0.0 for negative custom dimensions.
     pub fn dimensions(&self) -> Dims {
         match self {
-            PageSize::A4 => Dims { width: 595.0, height: 842.0 },
-            PageSize::Letter => Dims { width: 612.0, height: 792.0 },
-            PageSize::Legal => Dims { width: 612.0, height: 1008.0 },
-            PageSize::A3 => Dims { width: 842.0, height: 1191.0 },
+            PageSize::A4 => Dims {
+                width: 595.0,
+                height: 842.0,
+            },
+            PageSize::Letter => Dims {
+                width: 612.0,
+                height: 792.0,
+            },
+            PageSize::Legal => Dims {
+                width: 612.0,
+                height: 1008.0,
+            },
+            PageSize::A3 => Dims {
+                width: 842.0,
+                height: 1191.0,
+            },
             PageSize::Custom(dims) => Dims {
                 width: dims.width.max(0.0),
                 height: dims.height.max(0.0),
@@ -48,9 +62,12 @@ impl PageSize {
 }
 //--------------------------- Page ---------------------------//
 
+/// Resource Dictionary:
 /// Spec:
 /// Page:
 ///     a dictionary specifying the attributes of a single page of the document.
+///     organized into various categories (e.g., Font, ColorSpace, Pattern)
+///     A page object cannot have children.
 /// Entries:
 /// Key                   Ver             Type              Value
 /// Type                       Reqd       name              "Page"
@@ -83,50 +100,88 @@ impl PageSize {
 /// PresSteps             1.5  Opt        dictionary
 /// UserUnit              1.6  Opt        number
 /// VP                    1.6  Opt        dictionary
-pub struct Page {
-    pub size: PageSize,
-    pub contents: Option<Rc<dyn PdfObject>>,
-    pub resources: DictionaryObject,
-    pub custom_dict: DictionaryObject, // For any other /Page entries
+pub struct PageObject {
+    id: usize,
+    parent: usize,
+    resources: DictionaryObject,
+    media_box: ArrayObject,
 }
 
-impl Page {
-    pub fn new(size: PageSize) -> Self {
+impl PageObject {
+    pub fn new(id: usize, parent: usize) -> Self {
         Self {
-            size,
-            contents: None,
-            resources: DictionaryObject::new(None),
-            custom_dict: DictionaryObject::new(None),
+            id,
+            parent,
+            resources: DictionaryObject::typed("Resources"),
+            media_box: ArrayObject::new(None),
+        }
+    }
+}
+
+//--------------------------- Page Tree -------------------------
+
+/// Spec:
+/// Page Tree Nodes:
+///     Type    name        "Pages"    Reqd
+///     Parent  dictionary             Prohibited in root, else Reqd indirect ref to pagetree entry
+///     Kids    array                  Reqd  indirect references to descendant leaf nodes (pages)
+///     Count   integer                Reqd  Number of descendant leaf nodes (pages)
+pub enum PageTreeItem {
+    Page(PageObject),
+    Node(PageTreeNode),
+}
+
+impl PageTreeItem {
+    pub fn id(&self) -> usize {
+        match self {
+            PageTreeItem::Page(page) => page.id,
+            PageTreeItem::Node(node) => node.id,
+        }
+    }
+}
+
+pub struct PageTreeNode {
+    id: usize,
+    parent: usize,
+    kids: Vec<PageTreeItem>,
+}
+
+impl PageTreeNode {
+    pub fn new() -> Self {
+        Self {
+            id: 0,
+            parent: 0,
+            kids: Vec::new(),
         }
     }
 
-    pub fn with_contents(mut self, contents: Option<Rc<dyn PdfObject>>) -> Self {
-        self.contents = contents;
-
-        self
+    pub fn id(&self) -> usize {
+        self.id
     }
 
-    pub fn set_contents(&mut self, contents: Option<Rc<dyn PdfObject>>) {
-        self.contents = contents;
+    pub fn count(&self) -> usize {
+        self.kids
+            .iter()
+            .map(|kid| match kid {
+                PageTreeItem::Page(_) => 1,
+                PageTreeItem::Node(node) => node.count(),
+            })
+            .sum()
     }
 
-    pub fn set_parent(&mut self, parent_id: usize) {
-        self.custom_dict.set_indirect("Parent", parent_id);
+    pub fn add_page(&mut self, page: PageObject) {
+        self.kids.push(PageTreeItem::Page(page));
     }
 
-    pub fn into_dictionary(self) -> DictionaryObject {
-        let mut dict = self.custom_dict;
-        dict.set("Type", Rc::new(NameObject::new("Page".to_string())));
-        dict.set("MediaBox", Rc::new(self.size.as_array()));
+    pub fn add_page_tree_node(&mut self, page_tree_node: PageTreeNode) {
+        self.kids.push(PageTreeItem::Node(page_tree_node));
+    }
 
-        if let Some(contents) = self.contents {
-            dict.set("Contents", contents);
+    pub fn kids_array(&self) -> Vec<u8> {
+        let mut items: Vec<String> = Vec::new();
+        for kid in &self.kids {
+            items.push(format!("{} 0 R", kid.id()));
         }
-
-        if !self.resources.values.is_empty() {
-            dict.set("Resources", Rc::new(self.resources));
-        }
-
-        dict
+        format!("[{}]", items.join(" ")).into_bytes()
     }
 }

@@ -4,21 +4,6 @@ use std::io::Write;
 use crate::objects::string::encode_pdf_string;
 use crate::{ArrayObject, FileIdentifierMode, PDF, PdfObject, StreamObject};
 use crate::objects::metadata::ObjectStatus;
-//---------------------------- PdfWriter ------------------
-
-pub struct PdfWriter<W: Write, S: WriteStrategy> {
-    stream: PdfStream<W>,
-    strategy: S,
-}
-
-impl<W: Write, S: WriteStrategy> PdfWriter<W, S> {
-    pub fn perform(&mut self, pdf: &mut PDF) -> std::io::Result<()> {
-        self.strategy.write_header(&mut self.stream)?;
-        self.strategy.perform(pdf, &mut self.stream)?;
-
-        Ok(())
-    }
-}
 
 //------------------------------ PdfStream ------------------
 
@@ -28,10 +13,28 @@ struct PdfStream<W: Write> {
 }
 
 impl<W: Write> PdfStream<W> {
+
     fn write_line(&mut self, bytes: &[u8]) -> std::io::Result<()> {
         self.output.write_all(bytes)?;
         self.output.write_all(b"\n")?;
         self.pos += bytes.len() + 1;
+
+        Ok(())
+    }
+}
+
+//---------------------------- PdfWriter ------------------
+
+pub struct PdfWriter<W: Write, S: WriteStrategy> {
+    stream: PdfStream<W>,
+    strategy: S,
+}
+
+impl<W: Write, S: WriteStrategy> PdfWriter<W, S> {
+
+    pub fn perform(&mut self, pdf: &mut PDF) -> std::io::Result<()> {
+        self.strategy.write_header(&mut self.stream)?;
+        self.strategy.perform(pdf, &mut self.stream)?;
 
         Ok(())
     }
@@ -118,6 +121,7 @@ pub trait WriteStrategy {
         stream.write_line(&header)?;
         stream.write_line(b"%\xf0\x9f\x96\xa4") // Binary marker
     }
+
     // Writing a single, uncompressed object
     // Both Legacy and Compressed writers need this for Streams/Images.
     fn write_single_object<W: Write>(

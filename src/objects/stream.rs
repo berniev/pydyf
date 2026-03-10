@@ -92,9 +92,10 @@ pub struct StreamObject {
 }
 
 impl StreamObject {
+    
     pub fn new() -> Self {
         StreamObject {
-            metadata: PdfMetadata::default(),
+            metadata: PdfMetadata::new(),
             stream: Vec::new(),
             extra: Vec::new(),
             compress: CompressionMethod::None,
@@ -584,6 +585,7 @@ impl StreamObject {
 }
 
 impl PdfObject for StreamObject {
+    
     fn metadata(&self) -> &PdfMetadata {
         &self.metadata
     }

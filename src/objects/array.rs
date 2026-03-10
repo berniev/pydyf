@@ -21,22 +21,24 @@ pub struct ArrayObject {
 }
 
 impl ArrayObject {
+    
     pub fn new(values: Option<Vec<Rc<dyn PdfObject>>>) -> Self {
         Self {
-            metadata: PdfMetadata::default(),
+            metadata: PdfMetadata::new(),
             values: values.unwrap_or_default(),
         }
     }
 
     pub fn push_indirect(&mut self, id: usize) {
         self.values.push(Rc::new(IndirectReference {
-            metadata: PdfMetadata::default(),
+            metadata: Default::default(),
             id,
         }));
     }
 }
 
 impl PdfObject for ArrayObject {
+    
     fn metadata(&self) -> &PdfMetadata {
         &self.metadata
     }

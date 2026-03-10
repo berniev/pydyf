@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use pydyf::{PDF, Page, StreamObject, PdfObject};
+use pydyf::{PDF, PageObject, StreamObject, PdfObject};
 use pydyf::page::PageSize;
 use pydyf::color::{RGB, Color};
 use pydyf::util::{Dims, EvenOdd, Posn, StrokeOrFill};
@@ -17,7 +17,7 @@ fn test_add_page() {
     pdf.add_object(Box::new(stream));
 
     let content_ref = Some(format!("{} 0 R", pdf.objects.len() - 1).into_bytes().into());
-    let mut page = Page::new(PageSize::A4);
+    let mut page = PageObject::new(PageSize::A4);
     page.set_contents(content_ref);
     pdf.add_page(page);
 
@@ -61,7 +61,7 @@ fn test_add_page_simple_with_pagesize() {
     let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
 
     // A4 size should be 595x842
-    let mut page = Page::new(PageSize::A4);
+    let mut page = PageObject::new(PageSize::A4);
     page.set_contents(Some(Rc::new(content_ref)));
     pdf.add_page(page);
 
@@ -81,7 +81,7 @@ fn test_add_page_simple_default_size() {
     pdf.add_object(Box::new(stream));
     let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
 
-    let mut page = Page::new(PageSize::A4);
+    let mut page = PageObject::new(PageSize::A4);
     page.set_contents(Some(Rc::new(content_ref)));
     pdf.add_page(page);
 

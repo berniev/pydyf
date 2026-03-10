@@ -29,4 +29,4 @@ pub use graphics_state::GraphicsStateManager;
 pub use pdf::{FileIdentifierMode, PDF};
 pub use resources::ResourceDictionary;
 pub use text::{wrap_text, StandardFont, WrapMode};
-pub use page::{Page};
+pub use page::{PageObject};

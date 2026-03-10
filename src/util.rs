@@ -68,12 +68,14 @@ pub struct Matrix {
 }
 
 impl Matrix {
+    
     pub fn new(a: f64, b: f64, c: f64, d: f64, e: f64, f: f64) -> Self {
         Matrix { a, b, c, d, e, f }
     }
 }
 
 impl ToPdf for Matrix {
+    
     fn to_pdf(&self) -> String {
         format!(
             "{} {} {} {} {} {}",

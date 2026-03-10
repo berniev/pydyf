@@ -11,14 +11,16 @@ pub struct NullObject {
 }
 
 impl NullObject {
+    
     pub fn new() -> Self {
         Self {
-            metadata: PdfMetadata::default(),
+            metadata: PdfMetadata::new(),
         }
     }
 }
 
 impl PdfObject for NullObject {
+    
     fn metadata(&self) -> &PdfMetadata {
         &self.metadata
     }

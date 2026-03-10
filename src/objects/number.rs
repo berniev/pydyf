@@ -51,9 +51,10 @@ pub struct NumberObject {
 }
 
 impl NumberObject {
+    
     pub fn new(value: NumberType) -> Self {
         Self {
-            metadata: PdfMetadata::default(),
+            metadata: PdfMetadata::new(),
             value,
         }
     }
@@ -78,6 +79,7 @@ impl NumberObject {
 }
 
 impl PdfObject for NumberObject {
+    
     fn metadata(&self) -> &PdfMetadata {
         &self.metadata
     }

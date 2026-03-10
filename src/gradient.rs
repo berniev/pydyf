@@ -143,7 +143,7 @@ impl Gradient {
             "ColorSpace",
             Rc::new(NameObject::new("DeviceRGB".to_string())),
         );
-        shading_dict.set("Coords", Rc::new(ArrayObject::new(Some(coords.clone()))));
+        shading_dict.set("Coords", to_array(coords.clone()));
         shading_dict.set_indirect("Function", color_func_num);
         shading_dict.set("Extend", extend.clone());
 
@@ -172,7 +172,7 @@ impl Gradient {
                 "ColorSpace",
                 Rc::new(NameObject::new("DeviceGray".to_string())),
             );
-            alpha_shading.set("Coords", Rc::new(ArrayObject::new(Some(coords))));
+            alpha_shading.set("Coords", to_array(coords));
             alpha_shading.set_indirect("Function", alpha_func_num);
             alpha_shading.set("Extend", extend);
 

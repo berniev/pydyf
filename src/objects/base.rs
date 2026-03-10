@@ -41,6 +41,7 @@ pub struct BaseObject {
 }
 
 impl BaseObject {
+    
     /// Creates the specific sentinel object required for PDF object 0.
     /// This ensures Object 0 is 'Free' and has the '65535' generation number.
     pub fn sentinel() -> Self {
@@ -48,13 +49,14 @@ impl BaseObject {
             metadata: PdfMetadata {
                 generation_number: 65535,
                 status: ObjectStatus::Free,
-                ..PdfMetadata::default()
+                ..PdfMetadata::new()
             },
         }
     }
 }
 
 impl PdfObject for BaseObject {
+    
     fn metadata(&self) -> &PdfMetadata {
         &self.metadata
     }
