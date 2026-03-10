@@ -1,5 +1,5 @@
-use crate::page::{PageObject, PageTreeNode};
 use crate::page::PageSize;
+use crate::page::{PageObject, PageTreeNode};
 
 use crate::objects::base::BaseObject;
 use crate::{DictionaryObject, NameObject, PdfObject};
@@ -95,7 +95,6 @@ pub enum TargetVersion {
 }
 
 impl TargetVersion {
-    
     pub fn as_str(&self) -> &str {
         match self {
             TargetVersion::Auto => "Auto",
@@ -134,7 +133,6 @@ pub enum FileIdentifierMode {
 pub struct PDF {
     pub version: TargetVersion,
     pub objects: Vec<Box<dyn PdfObject>>,
-    pub info: DictionaryObject,
     pub catalog: DictionaryObject,
     pub page_tree: PageTreeNode,
     pub page_ids: Vec<usize>,
@@ -142,25 +140,23 @@ pub struct PDF {
 }
 
 impl PDF {
-    
     pub fn new() -> Self {
         let mut pdf = PDF {
             version: DEFAULT_VERSION,
-            info: DictionaryObject::new(None),
             catalog: DictionaryObject::typed("Catalog"),
             page_tree: PageTreeNode::new(),
             objects: Vec::new(),
             page_ids: vec![],
             xref_position: None,
         };
+        pdf.add_object(Box::new(BaseObject::sentinel())); // object zero
 
-        pdf.add_object(Box::new(BaseObject::sentinel()));
-        pdf // object zero
+        pdf
     }
 
     pub fn with_version(mut self, version: TargetVersion) -> Self {
         self.version = version;
-        
+
         self
     }
 
@@ -186,6 +182,7 @@ impl PDF {
             f.set("BaseFont", Rc::new(NameObject::new(name.to_string())));
             font_dict.set(name, Rc::new(f));
         }
+
         font_dict
     }
 
@@ -203,6 +200,7 @@ impl PDF {
             ));
         }
         font_dict.push_str(" >>");
+
         font_dict.into_bytes()
     }
 }

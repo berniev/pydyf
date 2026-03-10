@@ -124,14 +124,20 @@ mod tests {
     #[test]
     fn test_add_resources() {
         let mut resources = ResourceDictionary::new();
-        let mut extgstate = resources.implement("ExtGState").unwrap();
-        extgstate.add("GS0", 5);
-        let mut pattern = resources.implement("P0").unwrap();
-        pattern.add("P0", 8);
+
+        {
+            let mut extgstate = resources.implement("ExtGState").unwrap();
+
+            extgstate.add("GS0", 5);
+            assert_eq!(extgstate.count(), 1);
+        }
+        {
+            let mut pattern = resources.implement("Pattern").unwrap();
+            pattern.add("P0", 8);
+            assert_eq!(pattern.count(), 1);
+        }
 
         assert!(!resources.is_empty());
-        assert_eq!(extgstate.count(), 1);
-        assert_eq!(pattern.count(), 1);
 
         let dict = resources.to_dict();
         assert!(dict.contains_key("ExtGState"));

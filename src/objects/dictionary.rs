@@ -61,6 +61,18 @@ impl DictionaryObject {
         self.set(key, Rc::new(ir));
     }
 
+    pub fn len(&self) -> usize {
+        self.values.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
+
+    pub fn contains_key(&self, key: &str) -> bool {
+        self.values.iter().any(|(k, _)| k == key)
+    }
+
     pub fn get(&self, key: &str) -> Option<&Rc<dyn PdfObject>> {
         self.values.iter().find(|(k, _)| k == key).map(|(_, v)| v)
     }
@@ -94,5 +106,28 @@ impl PdfObject for DictionaryObject {
 
     fn is_compressible(&self) -> bool {
         self.metadata.generation_number == 0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::NameObject;
+
+    #[test]
+    fn test_dictionary_methods() {
+        let mut dict = DictionaryObject::new(None);
+        assert!(dict.is_empty());
+        assert_eq!(dict.len(), 0);
+
+        dict.set("Key1", Rc::new(NameObject::new("Value1".to_string())));
+        assert!(!dict.is_empty());
+        assert_eq!(dict.len(), 1);
+        assert!(dict.contains_key("Key1"));
+        assert!(!dict.contains_key("Key2"));
+
+        dict.set("Key2", Rc::new(NameObject::new("Value2".to_string())));
+        assert_eq!(dict.len(), 2);
+        assert!(dict.contains_key("Key2"));
     }
 }
