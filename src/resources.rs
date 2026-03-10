@@ -1,36 +1,15 @@
 use std::collections::HashMap;
 
-/// Manages PDF resource dictionaries for pages.
-///
-/// Handles creation and organization of resource dictionaries that contain
-/// ExtGState, Pattern, Font, and other resources needed by page content.
-///
-/// # Example
-///
-/// ```rust
-/// use pydyf::resources::ResourceDictionary;
-///
-/// let mut resources = ResourceDictionary::new();
-/// resources.add_extgstate("GS0".to_string(), 5);
-/// resources.add_pattern("P0".to_string(), 8);
-///
-/// let dict = resources.build();
-/// ```
 pub struct ResourceDictionary {
-    /// ExtGState resources (name -> object number)
     extgstates: HashMap<String, usize>,
-    /// Pattern resources (name -> object number)
     patterns: HashMap<String, usize>,
-    /// Font resources (name -> object number)
     fonts: HashMap<String, usize>,
-    /// Shading resources (name -> object number)
     shadings: HashMap<String, usize>,
-    /// XObject resources (name -> object number)
     xobjects: HashMap<String, usize>,
 }
 
 impl ResourceDictionary {
-    /// Create a new empty resource dictionary.
+
     pub fn new() -> Self {
         ResourceDictionary {
             extgstates: HashMap::new(),
@@ -41,52 +20,22 @@ impl ResourceDictionary {
         }
     }
 
-    /// Add an ExtGState resource.
-    ///
-    /// # Arguments
-    ///
-    /// * `name` - Resource name (e.g., "GS0")
-    /// * `obj_num` - Object number in the PDF
     pub fn add_extgstate(&mut self, name: String, obj_num: usize) {
         self.extgstates.insert(name, obj_num);
     }
 
-    /// Add a Pattern resource.
-    ///
-    /// # Arguments
-    ///
-    /// * `name` - Resource name (e.g., "P0")
-    /// * `obj_num` - Object number in the PDF
     pub fn add_pattern(&mut self, name: String, obj_num: usize) {
         self.patterns.insert(name, obj_num);
     }
 
-    /// Add a Font resource.
-    ///
-    /// # Arguments
-    ///
-    /// * `name` - Resource name (e.g., "F0")
-    /// * `obj_num` - Object number in the PDF
     pub fn add_font(&mut self, name: String, obj_num: usize) {
         self.fonts.insert(name, obj_num);
     }
 
-    /// Add a Shading resource.
-    ///
-    /// # Arguments
-    ///
-    /// * `name` - Resource name (e.g., "Sh0")
-    /// * `obj_num` - Object number in the PDF
     pub fn add_shading(&mut self, name: String, obj_num: usize) {
         self.shadings.insert(name, obj_num);
     }
 
-    /// Add an XObject resource.
-    ///
-    /// # Arguments
-    ///
-    /// * `name` - Resource name (e.g., "Im0")
-    /// * `obj_num` - Object number in the PDF
     pub fn add_xobject(&mut self, name: String, obj_num: usize) {
         self.xobjects.insert(name, obj_num);
     }
@@ -100,7 +49,6 @@ impl ResourceDictionary {
     pub fn build(&self) -> HashMap<String, Vec<u8>> {
         let mut resources_dict = HashMap::new();
 
-        // Build ExtGState dictionary
         if !self.extgstates.is_empty() {
             let mut extgstate_values = Vec::new();
             extgstate_values.push(b"<<".to_vec());
@@ -113,7 +61,6 @@ impl ResourceDictionary {
             resources_dict.insert("ExtGState".to_string(), extgstate_values.concat());
         }
 
-        // Build Pattern dictionary
         if !self.patterns.is_empty() {
             let mut pattern_values = Vec::new();
             pattern_values.push(b"<<".to_vec());
@@ -126,7 +73,6 @@ impl ResourceDictionary {
             resources_dict.insert("Pattern".to_string(), pattern_values.concat());
         }
 
-        // Build Font dictionary
         if !self.fonts.is_empty() {
             let mut font_values = Vec::new();
             font_values.push(b"<<".to_vec());
@@ -139,7 +85,6 @@ impl ResourceDictionary {
             resources_dict.insert("Font".to_string(), font_values.concat());
         }
 
-        // Build Shading dictionary
         if !self.shadings.is_empty() {
             let mut shading_values = Vec::new();
             shading_values.push(b"<<".to_vec());
@@ -152,7 +97,6 @@ impl ResourceDictionary {
             resources_dict.insert("Shading".to_string(), shading_values.concat());
         }
 
-        // Build XObject dictionary
         if !self.xobjects.is_empty() {
             let mut xobject_values = Vec::new();
             xobject_values.push(b"<<".to_vec());
@@ -168,10 +112,6 @@ impl ResourceDictionary {
         resources_dict
     }
 
-    /// Build the complete Resources dictionary entry as bytes.
-    ///
-    /// This creates the full `/Resources << ... >>` entry suitable for
-    /// including in a page dictionary.
     pub fn build_bytes(&self) -> Vec<u8> {
         let dict = self.build();
         if dict.is_empty() {
@@ -188,12 +128,11 @@ impl ResourceDictionary {
             result.push(b' ');
             result.extend(value);
         }
-
         result.extend(b" >>");
+
         result
     }
 
-    /// Check if the resource dictionary is empty.
     pub fn is_empty(&self) -> bool {
         self.extgstates.is_empty()
             && self.patterns.is_empty()
@@ -202,7 +141,6 @@ impl ResourceDictionary {
             && self.xobjects.is_empty()
     }
 
-    /// Clear all resources.
     pub fn clear(&mut self) {
         self.extgstates.clear();
         self.patterns.clear();
@@ -211,9 +149,6 @@ impl ResourceDictionary {
         self.xobjects.clear();
     }
 
-    /// Merge another resource dictionary into this one.
-    ///
-    /// If there are duplicate names, the other dictionary's values will overwrite this one's.
     pub fn merge(&mut self, other: &ResourceDictionary) {
         self.extgstates.extend(other.extgstates.clone());
         self.patterns.extend(other.patterns.clone());
@@ -222,17 +157,14 @@ impl ResourceDictionary {
         self.xobjects.extend(other.xobjects.clone());
     }
 
-    /// Get the number of ExtGState resources.
     pub fn extgstate_count(&self) -> usize {
         self.extgstates.len()
     }
 
-    /// Get the number of Pattern resources.
     pub fn pattern_count(&self) -> usize {
         self.patterns.len()
     }
 
-    /// Get the number of Font resources.
     pub fn font_count(&self) -> usize {
         self.fonts.len()
     }

@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::util::Dims;
-use crate::{ArrayObject, DictionaryObject, NameObject, NumberObject, PdfObject};
+use crate::{ArrayObject, DictionaryObject, NumberObject, PdfObject};
 
 //--------------------------- Page Size ---------------------------//
 
@@ -53,16 +53,16 @@ impl PageSize {
     pub fn as_array(&self) -> ArrayObject {
         let dims = self.dimensions();
         ArrayObject::new(Some(vec![
-            Rc::new(NumberObject::from(0.0)) as Rc<dyn PdfObject>,
+            Rc::new(NumberObject::from(0.0)),
             Rc::new(NumberObject::from(0.0)),
             Rc::new(NumberObject::from(dims.width)),
             Rc::new(NumberObject::from(dims.height)),
         ]))
     }
 }
+
 //--------------------------- Page ---------------------------//
 
-/// Resource Dictionary:
 /// Spec:
 /// Page:
 ///     a dictionary specifying the attributes of a single page of the document.
@@ -103,18 +103,29 @@ impl PageSize {
 pub struct PageObject {
     id: usize,
     parent: usize,
-    resources: DictionaryObject,
-    media_box: ArrayObject,
+    resources: Option<DictionaryObject>,
+    media_box: Option<PageSize>,
 }
 
 impl PageObject {
+
     pub fn new(id: usize, parent: usize) -> Self {
         Self {
             id,
             parent,
-            resources: DictionaryObject::typed("Resources"),
-            media_box: ArrayObject::new(None),
+            resources: None,
+            media_box: None,
         }
+    }
+
+    /// If None, the page will later try to inherit from its parent.
+    pub fn set_media_box(&mut self, size: PageSize) {
+        self.media_box = Some(size);
+    }
+
+    /// If None, the page will later try to inherit from its parent.
+    pub fn set_resources(&mut self, resources: DictionaryObject) {
+        self.resources = Some(resources);
     }
 }
 
@@ -144,6 +155,8 @@ pub struct PageTreeNode {
     id: usize,
     parent: usize,
     kids: Vec<PageTreeItem>,
+    media_box: Option<PageSize>,         // Shared dimensions
+    resources: Option<DictionaryObject>, // Shared fonts, etc.
 }
 
 impl PageTreeNode {
@@ -152,6 +165,8 @@ impl PageTreeNode {
             id: 0,
             parent: 0,
             kids: Vec::new(),
+            media_box:None,
+            resources:None,
         }
     }
 
@@ -183,5 +198,13 @@ impl PageTreeNode {
             items.push(format!("{} 0 R", kid.id()));
         }
         format!("[{}]", items.join(" ")).into_bytes()
+    }
+
+    pub fn set_media_box(&mut self, size: PageSize) {
+        self.media_box = Some(size);
+    }
+
+    pub fn set_resources(&mut self, resources: DictionaryObject) {
+        self.resources = Some(resources);
     }
 }
