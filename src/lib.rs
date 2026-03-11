@@ -8,21 +8,17 @@ pub mod resources;
 pub mod text;
 pub mod page;
 pub mod util;
-mod writer;
+pub mod writer;
 pub mod color;
+pub mod cross_ref;
 
 // Re-export main types for convenience
-pub use objects::array::ArrayObject;
 pub use objects::dictionary::DictionaryObject;
 pub use objects::stream::StreamObject;
-pub use objects::base::BaseObject;
-pub use objects::metadata::PdfMetadata;
 pub use objects::pdf_object::PdfObject;
 pub use objects::number::{NumberObject, NumberType};
-pub use objects::boolean::BooleanObject;
 pub use objects::name::NameObject;
 pub use objects::string::StringObject;
-pub use objects::null::NullObject;
 pub use error::{PdfError, PdfResult};
 pub use gradient::{ColorStop};
 pub use graphics_state::GraphicsStateManager;

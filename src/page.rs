@@ -1,7 +1,38 @@
-use std::rc::Rc;
+use std::fmt;
+use std::iter::Sum;
 
+use crate::ResourceDictionary;
 use crate::util::Dims;
-use crate::{ArrayObject, DictionaryObject, NumberObject, ResourceDictionary};
+
+//--------------------------- Offset ---------------------------//
+
+///// Usage: let object_num: ObjectNum = 100u64.into();
+#[derive(Clone, Debug)]
+pub struct ObjectId(u64);
+
+impl From<u64> for ObjectId {
+    fn from(value: u64) -> Self {
+        ObjectId(value)
+    }
+}
+
+impl From<ObjectId> for u64 {
+    fn from(object_num: ObjectId) -> u64 {
+        object_num.0
+    }
+}
+
+impl Sum for ObjectId {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        ObjectId(iter.map(|id| id.0).sum())
+    }
+}
+
+impl fmt::Display for ObjectId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 //--------------------------- Page Size ---------------------------//
 
@@ -49,16 +80,6 @@ impl PageSize {
             },
         }
     }
-
-    pub fn as_array(&self) -> ArrayObject {
-        let dims = self.dimensions();
-        ArrayObject::new(Some(vec![
-            Rc::new(NumberObject::from(0.0)),
-            Rc::new(NumberObject::from(0.0)),
-            Rc::new(NumberObject::from(dims.width)),
-            Rc::new(NumberObject::from(dims.height)),
-        ]))
-    }
 }
 
 //--------------------------- Page ---------------------------//
@@ -100,21 +121,26 @@ impl PageSize {
 /// PresSteps             1.5  Opt        dictionary
 /// UserUnit              1.6  Opt        number
 /// VP                    1.6  Opt        dictionary
+
 pub struct PageObject {
-    id: usize,
-    parent: usize,
+    id: ObjectId,
+    parent: ObjectId,
     resources: Option<ResourceDictionary>,
-    media_box: Option<PageSize>,
+    pub media_box: Option<PageSize>,
 }
 
 impl PageObject {
-    pub fn new(id: usize, parent: usize) -> Self {
+    pub fn new(parent: ObjectId) -> Self {
         Self {
-            id,
+            id: 0.into(),
             parent,
             resources: None,
             media_box: None,
         }
+    }
+
+    pub fn set_id(&mut self, id: ObjectId) {
+        self.id = id;
     }
 
     /// If None, the page will later try to inherit from its parent.
@@ -142,43 +168,43 @@ pub enum PageTreeItem {
 }
 
 impl PageTreeItem {
-    pub fn id(&self) -> usize {
+    pub fn id(&self) -> ObjectId {
         match self {
-            PageTreeItem::Page(page) => page.id,
-            PageTreeItem::Node(node) => node.id,
+            PageTreeItem::Page(page) => page.id.clone(),
+            PageTreeItem::Node(node) => node.id.clone(),
         }
     }
 }
 
 pub struct PageTreeNode {
-    id: usize,
-    parent: usize,
+    id: ObjectId,
+    parent_id: Option<ObjectId>, // root is None
     kids: Vec<PageTreeItem>,
     media_box: Option<PageSize>,           // Shared dimensions
     resources: Option<ResourceDictionary>, // Shared fonts, etc.
 }
 
 impl PageTreeNode {
-    pub fn new() -> Self {
+    pub fn new(parent: Option<ObjectId>) -> Self {
         Self {
-            id: 0,
-            parent: 0,
+            id: 0.into(),
+            parent_id: parent,
             kids: Vec::new(),
             media_box: None,
             resources: None,
         }
     }
 
-    pub fn id(&self) -> usize {
-        self.id
+    pub fn id(&self) -> ObjectId {
+        self.id.clone()
     }
 
-    pub fn count(&self) -> usize {
+    pub fn count(&self) -> ObjectId {
         self.kids
             .iter()
             .map(|kid| match kid {
-                PageTreeItem::Page(_) => 1,
-                PageTreeItem::Node(node) => node.count(),
+                PageTreeItem::Page(_) => ObjectId(1),
+                PageTreeItem::Node(node) => node.count().into(),
             })
             .sum()
     }
@@ -187,7 +213,7 @@ impl PageTreeNode {
         self.kids.push(PageTreeItem::Page(page));
     }
 
-    pub fn add_page_tree_node(&mut self, page_tree_node: PageTreeNode) {
+    pub fn add_node(&mut self, page_tree_node: PageTreeNode) {
         self.kids.push(PageTreeItem::Node(page_tree_node));
     }
 

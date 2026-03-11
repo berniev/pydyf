@@ -1,5 +1,6 @@
 use crate::encoding::f_to_pdf_num;
 use std::fmt::Display;
+
 //------------------------- ToPdf -----------------------------
 
 pub trait ToPdf {
@@ -25,14 +26,18 @@ pub struct Posn<T> {
     pub y: T,
 }
 
-impl<T> ToPdf for Posn<T> 
-where 
-    T: Display + Copy + Into<f64> 
+impl<T> ToPdf for Posn<T>
+where
+    T: Display + Copy + Into<f64>,
 {
     fn to_pdf(&self) -> String {
-        format!("{} {}", f_to_pdf_num(self.x.into()), f_to_pdf_num(self.y.into()))
+        format!(
+            "{} {}",
+            f_to_pdf_num(self.x.into()),
+            f_to_pdf_num(self.y.into())
+        )
     }
-    
+
     fn as_string(&self) -> String {
         format!("({} x {})", self.x, self.y)
     }
@@ -68,14 +73,12 @@ pub struct Matrix {
 }
 
 impl Matrix {
-    
     pub fn new(a: f64, b: f64, c: f64, d: f64, e: f64, f: f64) -> Self {
         Matrix { a, b, c, d, e, f }
     }
 }
 
 impl ToPdf for Matrix {
-    
     fn to_pdf(&self) -> String {
         format!(
             "{} {} {} {} {} {}",

@@ -1,9 +1,5 @@
-use crate::objects::base::PdfMetadata;
-
 pub trait PdfObject {
-    fn metadata(&self) -> &PdfMetadata;
-    fn metadata_mut(&mut self) -> &mut PdfMetadata;
-    fn data(&self) -> Vec<u8>;
+     fn data(&self) -> Vec<u8>;
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any; // Downcast to Any for type checking
 
     fn indirect(&self) -> Vec<u8> {

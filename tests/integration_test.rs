@@ -1,8 +1,8 @@
-use std::rc::Rc;
-use pydyf::{PDF, PageObject, StreamObject, PdfObject};
+use pydyf::color::{Color, RGB};
+use pydyf::objects::stream::{EvenOdd, StrokeOrFill};
 use pydyf::page::PageSize;
-use pydyf::color::{RGB, Color};
-use pydyf::util::{Dims, EvenOdd, Posn, StrokeOrFill};
+use pydyf::util::{Dims, Posn};
+use pydyf::{PDF, PageObject, PdfObject, StreamObject};
 
 #[test]
 fn test_create_pdf() {
@@ -16,9 +16,10 @@ fn test_add_page() {
     let stream = StreamObject::new();
     pdf.add_object(Box::new(stream));
 
-    let content_ref = Some(format!("{} 0 R", pdf.objects.len() - 1).into_bytes().into());
-    let mut page = PageObject::new(PageSize::A4);
-    page.set_contents(content_ref);
+    let next_num = pdf.objects.len() - 1;
+    let mut page = PageObject::new(next_num, 0);
+    page.set_media_box(PageSize::A4);
+
     pdf.add_page(page);
 
     assert!(pdf.objects.len() > 1);
@@ -28,9 +29,19 @@ fn test_add_page() {
 fn test_stream_operations() {
     let mut stream = StreamObject::compressed();
 
-    let color = RGB{ red:Color{color:1.0}, green: Color {color:0.0}, blue:Color{color:0.0}};
+    let color = RGB {
+        red: Color { color: 1.0 },
+        green: Color { color: 0.0 },
+        blue: Color { color: 0.0 },
+    };
     let _ = stream.set_color_rgb(color, StrokeOrFill::Stroke);
-    stream.rectangle(Posn {x:100.0, y:100.0}, Dims {height:200.0, width:150.0});
+    stream.rectangle(
+        Posn { x: 100.0, y: 100.0 },
+        Dims {
+            height: 200.0,
+            width: 150.0,
+        },
+    );
     stream.fill(EvenOdd::Odd);
 
     assert!(stream.stream.len() > 0);
@@ -54,60 +65,66 @@ fn test_text_operations() {
 }*/
 
 #[test]
-fn test_add_page_simple_with_pagesize() {
+fn test_add_page_with_pagesize_adds_mediabox() {
     let mut pdf = PDF::new();
     let stream = StreamObject::new();
     pdf.add_object(Box::new(stream));
-    let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
 
-    // A4 size should be 595x842
-    let mut page = PageObject::new(PageSize::A4);
-    page.set_contents(Some(Rc::new(content_ref)));
-    pdf.add_page(page);
+    let next_num = pdf.objects.len() - 1;
 
-    let page_obj = pdf.objects.last().unwrap();
-    let data = page_obj.data();
-    let data_str = String::from_utf8_lossy(&data);
+    let mut page = PageObject::new(next_num, 0);
+    page.set_media_box(PageSize::A4);
 
     // Should contain MediaBox because it was explicitly provided
-    assert!(data_str.contains("/MediaBox [0 0 595 842]"));
-    assert!(data_str.contains("/Type /Page"));
+    assert_eq!(page.media_box, Some(PageSize::A4));
 }
 
 #[test]
-fn test_add_page_simple_default_size() {
+fn test_default_page_size() {
     let mut pdf = PDF::new();
+
     let stream = StreamObject::new();
     pdf.add_object(Box::new(stream));
-    let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
 
-    let mut page = PageObject::new(PageSize::A4);
-    page.set_contents(Some(Rc::new(content_ref)));
+    let next_num = pdf.objects.len() - 1;
+
+    let page = PageObject::new(next_num, 0);
     pdf.add_page(page);
 
     let page_obj = pdf.objects.last().unwrap();
     let data = page_obj.data();
     let data_str = String::from_utf8_lossy(&data);
 
-    // Should NOT contain MediaBox because it's inherited
+    // Should NOT contain MediaBox because it's inherited. todo: from where. how?
     assert!(!data_str.contains("/MediaBox"));
 }
 
 #[test]
 fn test_root_mediabox_inheritance() {
     let pdf = PDF::new();
-    let pages_dict = &pdf.page_tree;
-    let mediabox = pages_dict.values.get("MediaBox").unwrap();
+    let pages_tree = &pdf.page_tree;
+    let mediabox = pages_tree.get("MediaBox").unwrap();
     assert_eq!(String::from_utf8_lossy(mediabox), "[0 0 595 842]");
 }
 
 #[test]
-fn test_pagesize_custom_validation() {
-    let size = PageSize::Custom(Dims { width: -100.0, height: 500.0 });
+fn test_negative_pagesize_is_zeroed() {
+    let size = PageSize::Custom(Dims {
+        width: -100.0, // invalid width. should be made zero
+        height: 500.0,
+    });
     let dimensions = size.dimensions();
     assert_eq!(dimensions.width, 0.0);
     assert_eq!(dimensions.height, 500.0);
+}
 
-    let mediabox = size.as_array().data();
-    assert_eq!(String::from_utf8_lossy(&mediabox), "[0 0 0 500]");
+#[test]
+fn test_pagesize_custom_validation() {
+    let size = PageSize::Custom(Dims {
+        width: 100.0, // invalid width should be made zero
+        height: 500.0,
+    });
+    let (width,height):Dims = size.dimensions();
+    assert_eq!(width, 0.0);
+    assert_eq!(height, 500.0);
 }

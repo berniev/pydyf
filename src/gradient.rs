@@ -5,7 +5,7 @@ use crate::color::RGBA;
 use crate::objects::stream::StreamObject;
 use crate::util::{Dims, Posn};
 use crate::{
-    ArrayObject, BooleanObject, DictionaryObject, NameObject, NumberObject, PDF, PdfObject,
+    DictionaryObject, NameObject, NumberObject, PDF, PdfObject,
 };
 //--------------------------- PDF Function ---------------------------//
 

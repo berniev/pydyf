@@ -1,9 +1,8 @@
-use std::collections::HashMap;
 use std::io::Write;
 
+use crate::cross_ref::ObjectStatus;
 use crate::objects::string::encode_pdf_string;
-use crate::{ArrayObject, FileIdentifierMode, PDF, PdfObject, StreamObject};
-use crate::objects::metadata::ObjectStatus;
+use crate::{FileIdentifierMode, PDF, PdfObject};
 
 //------------------------------ PdfStream ------------------
 
@@ -13,7 +12,6 @@ struct PdfStream<W: Write> {
 }
 
 impl<W: Write> PdfStream<W> {
-
     fn write_line(&mut self, bytes: &[u8]) -> std::io::Result<()> {
         self.output.write_all(bytes)?;
         self.output.write_all(b"\n")?;
@@ -31,10 +29,9 @@ pub struct PdfWriter<W: Write, S: WriteStrategy> {
 }
 
 impl<W: Write, S: WriteStrategy> PdfWriter<W, S> {
-
     pub fn perform(&mut self, pdf: &mut PDF) -> std::io::Result<()> {
         self.strategy.write_header(&mut self.stream)?;
-        self.strategy.perform(pdf, &mut self.stream)?;
+        self.strategy.write_the_rest(pdf, &mut self.stream)?;
 
         Ok(())
     }
@@ -43,7 +40,6 @@ impl<W: Write, S: WriteStrategy> PdfWriter<W, S> {
 //---------------------------- WriteStrategy -----------------
 
 pub trait WriteStrategy {
-
     //////////////////////////////////////////////////////////
     // These MUST be supplied in every strategy implementation
     //////////////////////////////////////////////////////////
@@ -52,7 +48,7 @@ pub trait WriteStrategy {
     fn get_version(&self) -> &[u8];
 
     fn write_body<W: Write>(&self, pdf: &mut PDF, stream: &mut PdfStream<W>)
-                            -> std::io::Result<()>;
+    -> std::io::Result<()>;
 
     fn write_index<W: Write>(
         &self,
@@ -109,7 +105,7 @@ pub trait WriteStrategy {
                         String::from_utf8_lossy(&s1),
                         String::from_utf8_lossy(&s2)
                     )
-                        .into_bytes(),
+                    .into_bytes(),
                 )
             }
         }
@@ -134,7 +130,11 @@ pub trait WriteStrategy {
     }
 
     // 4. ORCHESTRATOR: The shared "Skeleton" of the performance
-    fn perform<W: Write>(&self, pdf: &mut PDF, stream: &mut PdfStream<W>) -> std::io::Result<()> {
+    fn write_the_rest<W: Write>(
+        &self,
+        pdf: &mut PDF,
+        stream: &mut PdfStream<W>,
+    ) -> std::io::Result<()> {
         self.write_header(stream)?;
         self.write_body(pdf, stream)?;
         self.write_index(pdf, stream)?;
@@ -185,7 +185,7 @@ impl LegacyStrategy {
         Ok(())
     }
 
-        fn write_legacy_xref<W: Write>(&mut self, output: &mut W) -> std::io::Result<()> {
+    fn write_legacy_xref<W: Write>(&mut self, output: &mut W) -> std::io::Result<()> {
         self.write_line(format!("0 {}", self.objects.len()).as_bytes(), output)?;
 
         let xref_entries: Vec<String> = self
@@ -226,7 +226,6 @@ impl LegacyStrategy {
 
         Ok(())
     }
-
 }
 
 impl WriteStrategy for LegacyStrategy {
@@ -252,7 +251,11 @@ impl WriteStrategy for LegacyStrategy {
         todo!()
     }
 
-    fn perform<W: Write>(&self, pdf: &mut PDF, stream: &mut PdfStream<W>) -> std::io::Result<()> {
+    fn write_the_rest<W: Write>(
+        &self,
+        pdf: &mut PDF,
+        stream: &mut PdfStream<W>,
+    ) -> std::io::Result<()> {
         stream.write_line(b"1.4")?;
 
         // 2. Objects
@@ -266,8 +269,6 @@ impl WriteStrategy for LegacyStrategy {
         // ... (write standard xref and trailer) ...
         Ok(())
     }
-
-
 }
 
 //------------------------ Compressed Strategy -----------------
@@ -275,153 +276,154 @@ impl WriteStrategy for LegacyStrategy {
 pub struct CompressedStrategy;
 
 impl CompressedStrategy {
-    //If a file has object streams, the cross-reference table is replaced with a cross-reference stream,
-    // which has a binary format and is therefore harder to read
-    /// Write compressed PDF using object streams and cross-reference streams (PDF 1.5+)
-    fn write_compressed<W: Write>(&mut self, output: &mut W) -> std::io::Result<()> {
-        // Separate compressible objects from non-compressible ones
-        let mut compressed_data: Vec<(usize, Vec<u8>)> = Vec::new(); // (obj_num, data)
-        let mut indirect_to_write = Vec::new();
+    /*//If a file has object streams, the cross-reference table is replaced with a cross-reference stream,
+        // which has a binary format and is therefore harder to read
+        /// Write compressed PDF using object streams and cross-reference streams (PDF 1.5+)
+        fn write_compressed<W: Write>(&mut self, output: &mut W) -> std::io::Result<()> {
+            // Separate compressible objects from non-compressible ones
+            let mut compressed_data: Vec<(usize, Vec<u8>)> = Vec::new(); // (obj_num, data)
+            let mut indirect_to_write = Vec::new();
 
-        let catalog_num = self.catalog.metadata.number;
-        let pages_num = self.page_tree.metadata.number;
+            let catalog_num = self.catalog.metadata.number;
+            let pages_num = self.page_tree.metadata.number;
 
-        for obj in &mut self.objects {
-            let meta = obj.metadata();
-            if meta.status == ObjectStatus::Free {
-                continue;
-            }
+            for obj in &mut self.objects {
+                let meta = obj.metadata();
+                if meta.status == ObjectStatus::Free {
+                    continue;
+                }
 
-            // Don't compress Catalog, Pages, or inherently non-compressible objects (streams)
-            let is_catalog_or_pages = meta.number == catalog_num || meta.number == pages_num;
+                // Don't compress Catalog, Pages, or inherently non-compressible objects (streams)
+                let is_catalog_or_pages = meta.number == catalog_num || meta.number == pages_num;
 
-            if obj.is_compressible() && !is_catalog_or_pages {
-                compressed_data.push((meta.number.unwrap_or(0), obj.data()));
-            } else {
-                // Write non-compressible objects directly
-                obj.metadata_mut().offset = self.current_position;
-                let indirect = obj.indirect();
-                let len = indirect.len();
-                indirect_to_write.push(indirect);
-                self.current_position += len + 1;
-            }
-        }
-
-        // Write non-compressible objects first
-        for indirect_obj in &indirect_to_write {
-            output.write_all(indirect_obj)?;
-            output.write_all(b"\n")?;
-        }
-
-        // Build object stream from compressed objects
-        let mut stream_parts: Vec<Vec<u8>> = vec![Vec::new()];
-        let mut position = 0;
-        let mut first_part_entries = Vec::new();
-
-        for (obj_num, data) in &compressed_data {
-            stream_parts.push(data.clone());
-            first_part_entries.push(obj_num.to_string());
-            first_part_entries.push(position.to_string());
-            position += data.len() + 1;
-        }
-
-        stream_parts[0] = first_part_entries.join(" ").into_bytes();
-
-        let mut extra = HashMap::new();
-        extra.insert("Type".to_string(), b"/ObjStm".to_vec());
-        extra.insert(
-            "N".to_string(),
-            compressed_data.len().to_string().into_bytes(),
-        );
-        extra.insert(
-            "First".to_string(),
-            (stream_parts[0].len() + 1).to_string().into_bytes(),
-        );
-
-        let obj_stream_number = self.objects.len();
-        let mut object_stream =
-            StreamObject::compressed().with_data(Some(stream_parts), Some(extra));
-        object_stream.metadata.object_number = Some(obj_stream_number);
-        object_stream.metadata.offset = self.current_position;
-
-        let obj_stream_indirect = object_stream.indirect();
-        let len = obj_stream_indirect.len();
-        self.write_line(obj_stream_indirect)?;
-        output.write_all(&obj_stream_indirect)?;
-        output.write_all(b"\n")?;
-        self.current_position += len + 1;
-
-        let mut xref: Vec<(u8, usize, u32)> = Vec::new();
-
-        for obj in &self.objects {
-            let meta = obj.metadata();
-            let obj_num = meta.number.unwrap_or(0);
-
-            // Check if this object was actually compressed (not just compressible)
-            if let Some(pos) = compressed_data.iter().position(|(n, _)| *n == obj_num) {
-                // Type 2: compressed object
-                xref.push((2, obj_stream_number, pos as u32));
-            } else {
-                let flag = if meta.status == ObjectStatus::Free {
-                    0 // free
+                if obj.is_compressible() && !is_catalog_or_pages {
+                    compressed_data.push((meta.number.unwrap_or(0), obj.data()));
                 } else {
-                    1 // normal object
-                };
-                xref.push((flag, meta.offset, meta.generation));
+                    // Write non-compressible objects directly
+                    obj.metadata_mut().offset = self.current_position;
+                    let indirect = obj.indirect();
+                    let len = indirect.len();
+                    indirect_to_write.push(indirect);
+                    self.current_position += len + 1;
+                }
             }
+
+            // Write non-compressible objects first
+            for indirect_obj in &indirect_to_write {
+                output.write_all(indirect_obj)?;
+                output.write_all(b"\n")?;
+            }
+
+            // Build object stream from compressed objects
+            let mut stream_parts: Vec<Vec<u8>> = vec![Vec::new()];
+            let mut position = 0;
+            let mut first_part_entries = Vec::new();
+
+            for (obj_num, data) in &compressed_data {
+                stream_parts.push(data.clone());
+                first_part_entries.push(obj_num.to_string());
+                first_part_entries.push(position.to_string());
+                position += data.len() + 1;
+            }
+
+            stream_parts[0] = first_part_entries.join(" ").into_bytes();
+
+            let mut extra = HashMap::new();
+            extra.insert("Type".to_string(), b"/ObjStm".to_vec());
+            extra.insert(
+                "N".to_string(),
+                compressed_data.len().to_string().into_bytes(),
+            );
+            extra.insert(
+                "First".to_string(),
+                (stream_parts[0].len() + 1).to_string().into_bytes(),
+            );
+
+            let obj_stream_number = self.objects.len();
+            let mut object_stream =
+                StreamObject::compressed().with_data(Some(stream_parts), Some(extra));
+            object_stream.metadata.object_number = Some(obj_stream_number);
+            object_stream.metadata.offset = self.current_position;
+
+            let obj_stream_indirect = object_stream.indirect();
+            let len = obj_stream_indirect.len();
+            self.write_line(obj_stream_indirect)?;
+            output.write_all(&obj_stream_indirect)?;
+            output.write_all(b"\n")?;
+            self.current_position += len + 1;
+
+            let mut xref: Vec<(u8, usize, u32)> = Vec::new();
+
+            for obj in &self.objects {
+                let meta = obj.metadata();
+                let obj_num = meta.number.unwrap_or(0);
+
+                // Check if this object was actually compressed (not just compressible)
+                if let Some(pos) = compressed_data.iter().position(|(n, _)| *n == obj_num) {
+                    // Type 2: compressed object
+                    xref.push((2, obj_stream_number, pos as u32));
+                } else {
+                    let flag = if meta.status == ObjectStatus::Free {
+                        0 // free
+                    } else {
+                        1 // normal object
+                    };
+                    xref.push((flag, meta.offset, meta.generation));
+                }
+            }
+
+            xref.push((1, object_stream.metadata.offset, 0)); // Add object stream itself as type 1
+            xref.push((1, self.current_position, 0)); // Add xref stream itself as type 1
+
+            let field2_size = ((self.current_position + 1) as f64).log(256.0).ceil() as usize;
+
+            // field3 needs to handle max generation (65535 for free objects) and max index
+            let max_generation = xref.iter().map(|(_, _, g)| *g).max().unwrap_or(0);
+            let max_index = compressed_data.len().max(1) as u32;
+            let max_field3 = max_generation.max(max_index);
+            let field3_size = if max_field3 == 0 {
+                1
+            } else {
+                (max_field3 as f64).log(256.0).ceil() as usize
+            };
+
+            let mut xref_stream_data = Vec::new();
+            for (flag, field2, field3) in &xref {
+                xref_stream_data.push(*flag);
+                let field2_bytes = field2.to_be_bytes();
+                xref_stream_data.extend(&field2_bytes[8 - field2_size..]);
+                let field3_bytes = field3.to_be_bytes();
+                xref_stream_data.extend(&field3_bytes[4 - field3_size..]);
+            }
+
+            let mut xref_extra = HashMap::new();
+            xref_extra.insert("Type".to_string(), b"/XRef".to_vec());
+
+            // objstm number is self.objects.len(), xref stream is self.objects.len() + 1
+            // Size is highest object number + 1, so self.objects.len() + 2
+            let xref_stream_number = self.objects.len() + 1;
+            let total_size = self.objects.len() + 2;
+
+            let index_array = ArrayObject::new(Some(vec![0.0, total_size as f64]));
+            xref_extra.insert("Index".to_string(), index_array.data());
+
+            let w_array = ArrayObject::new(Some(vec![1.0, field2_size as f64, field3_size as f64]));
+            xref_extra.insert("W".to_string(), w_array.data());
+
+            xref_extra.insert("Size".to_string(), total_size.to_string().into_bytes());
+            xref_extra.insert("Root".to_string(), self.catalog.reference());
+
+            let mut xref_stream = StreamObject::compressed()
+                .with_data(Some(vec![xref_stream_data]), Some(xref_extra));
+            xref_stream.metadata.object_number = Some(xref_stream_number);
+            self.xref_position = Some(self.current_position);
+            xref_stream.metadata.offset = self.current_position;
+
+            self.write_line(&xref_stream.indirect(), output)?;
+
+            Ok(())
         }
-
-        xref.push((1, object_stream.metadata.offset, 0)); // Add object stream itself as type 1
-        xref.push((1, self.current_position, 0)); // Add xref stream itself as type 1
-
-        let field2_size = ((self.current_position + 1) as f64).log(256.0).ceil() as usize;
-
-        // field3 needs to handle max generation (65535 for free objects) and max index
-        let max_generation = xref.iter().map(|(_, _, g)| *g).max().unwrap_or(0);
-        let max_index = compressed_data.len().max(1) as u32;
-        let max_field3 = max_generation.max(max_index);
-        let field3_size = if max_field3 == 0 {
-            1
-        } else {
-            (max_field3 as f64).log(256.0).ceil() as usize
-        };
-
-        let mut xref_stream_data = Vec::new();
-        for (flag, field2, field3) in &xref {
-            xref_stream_data.push(*flag);
-            let field2_bytes = field2.to_be_bytes();
-            xref_stream_data.extend(&field2_bytes[8 - field2_size..]);
-            let field3_bytes = field3.to_be_bytes();
-            xref_stream_data.extend(&field3_bytes[4 - field3_size..]);
-        }
-
-        let mut xref_extra = HashMap::new();
-        xref_extra.insert("Type".to_string(), b"/XRef".to_vec());
-
-        // objstm number is self.objects.len(), xref stream is self.objects.len() + 1
-        // Size is highest object number + 1, so self.objects.len() + 2
-        let xref_stream_number = self.objects.len() + 1;
-        let total_size = self.objects.len() + 2;
-
-        let index_array = ArrayObject::new(Some(vec![0.0, total_size as f64]));
-        xref_extra.insert("Index".to_string(), index_array.data());
-
-        let w_array = ArrayObject::new(Some(vec![1.0, field2_size as f64, field3_size as f64]));
-        xref_extra.insert("W".to_string(), w_array.data());
-
-        xref_extra.insert("Size".to_string(), total_size.to_string().into_bytes());
-        xref_extra.insert("Root".to_string(), self.catalog.reference());
-
-        let mut xref_stream = StreamObject::compressed()
-            .with_data(Some(vec![xref_stream_data]), Some(xref_extra));
-        xref_stream.metadata.object_number = Some(xref_stream_number);
-        self.xref_position = Some(self.current_position);
-        xref_stream.metadata.offset = self.current_position;
-
-        self.write_line(&xref_stream.indirect(), output)?;
-
-        Ok(())
-    }
+    */
 }
 
 impl WriteStrategy for CompressedStrategy {
@@ -447,10 +449,13 @@ impl WriteStrategy for CompressedStrategy {
         todo!()
     }
 
-    fn perform<W: Write>(&self, pdf: &mut PDF, stream: &mut PdfStream<W>) -> std::io::Result<()> {
+    fn write_the_rest<W: Write>(
+        &self,
+        pdf: &mut PDF,
+        stream: &mut PdfStream<W>,
+    ) -> std::io::Result<()> {
         // ... implements Object Streams and XRef Streams ...
 
         Ok(())
     }
 }
-

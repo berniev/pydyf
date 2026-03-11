@@ -3,7 +3,7 @@
 
 use std::rc::Rc;
 use pydyf::{PageObject, PDF};
-use pydyf::page_size::PageSize;
+use pydyf::page::PageSize;
 
 fn main() {
     println!("PyDyf - PDF library for Rust");

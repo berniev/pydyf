@@ -1,5 +1,7 @@
 use pydyf::{PDF, PageSize, PageObject, Stream, FileIdentifierMode};
 use std::fs::File;
+use pydyf::page::PageSize;
+use pydyf::page::PageTreeItem::Page;
 
 fn create_page_with_content(content_stream_ref: Vec<u8>) -> PageObject {
     let mut page = PageObject::new();
@@ -9,7 +11,9 @@ fn create_page_with_content(content_stream_ref: Vec<u8>) -> PageObject {
 
 #[test]
 fn test_generate_simple_uncompressed_pdf() {
-    let mut pdf = PDF::new(PageSize::A4);
+    let mut pdf = PDF::new();
+    let mut page = Page::new(PageSize::A4);
+    pdf.add_page(page);
     let mut stream = Stream::new();
 
     let _ = stream.set_color_rgb(1.0, 0.0, 0.0, false);

@@ -1,4 +1,3 @@
-use crate::objects::metadata::PdfMetadata;
 use crate::PdfObject;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -46,7 +45,6 @@ impl From<f32> for NumberType {
 ///     integers and are ordered
 #[derive(Debug, Clone, PartialEq)]
 pub struct NumberObject {
-    pub metadata: PdfMetadata,
     pub value: NumberType,
 }
 
@@ -54,7 +52,6 @@ impl NumberObject {
     
     pub fn new(value: NumberType) -> Self {
         Self {
-            metadata: PdfMetadata::new(),
             value,
         }
     }
@@ -80,14 +77,6 @@ impl NumberObject {
 
 impl PdfObject for NumberObject {
     
-    fn metadata(&self) -> &PdfMetadata {
-        &self.metadata
-    }
-
-    fn metadata_mut(&mut self) -> &mut PdfMetadata {
-        &mut self.metadata
-    }
-
     fn data(&self) -> Vec<u8> {
         match self.value {
             NumberType::Integer(i) => i.to_string().into_bytes(),
@@ -107,9 +96,6 @@ impl PdfObject for NumberObject {
         self
     }
 
-    fn is_compressible(&self) -> bool {
-        self.metadata.generation_number == 0
-    }
 }
 
 impl From<NumberType> for NumberObject {

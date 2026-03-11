@@ -1,9 +1,7 @@
 use std::default::Default;
 use std::rc::Rc;
 use crate::NameObject;
-use crate::objects::metadata::PdfMetadata;
 use crate::objects::pdf_object::PdfObject;
-use crate::objects::base::IndirectReference;
 
 //--------------------------- DictionaryObject----------------------//
 
@@ -23,7 +21,6 @@ use crate::objects::base::IndirectReference;
 ///         name "Type"    Opt
 ///         name "Subtype" Opt (requires Type)
 pub struct DictionaryObject {
-    pub metadata: PdfMetadata,
     pub values: Vec<(String, Rc<dyn PdfObject>)>,
 }
 
@@ -31,7 +28,6 @@ impl DictionaryObject {
 
     pub fn new(values: Option<Vec<(String, Rc<dyn PdfObject>)>>) -> Self {
         Self {
-            metadata: PdfMetadata::new(),
             values: values.unwrap_or_default(),
         }
     }
@@ -43,11 +39,6 @@ impl DictionaryObject {
         )]))
     }
 
-    pub fn reference(&self) -> Vec<u8> {
-        let number = self.metadata.object_number.unwrap_or(0);
-        format!("{} {} R", number, self.metadata.generation_number).into_bytes()
-    }
-    
     pub fn set(&mut self, key: &str, value: Rc<dyn PdfObject>) {
         if let Some(pos) = self.values.iter().position(|(k, _)| k == key) {
             self.values[pos].1 = value;
@@ -79,14 +70,6 @@ impl DictionaryObject {
 }
 
 impl PdfObject for DictionaryObject {
-
-    fn metadata(&self) -> &PdfMetadata {
-        &self.metadata
-    }
-
-    fn metadata_mut(&mut self) -> &mut PdfMetadata {
-        &mut self.metadata
-    }
 
     fn data(&self) -> Vec<u8> {
         let mut result = b"<<".to_vec();

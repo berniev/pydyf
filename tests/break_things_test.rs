@@ -2,13 +2,16 @@ use std::fs::File;
 
 use pydyf::StreamObject;
 use pydyf::color::{Color, RGB};
-use pydyf::page_size::PageSize;
-use pydyf::util::{Dims, EvenOdd, Posn, StrokeOrFill};
+use pydyf::objects::stream::{EvenOdd, StrokeOrFill};
+use pydyf::page::PageSize;
+use pydyf::util::{Dims, Matrix, Posn};
 use pydyf::{PDF, PageObject};
 
-fn create_page_with_content(page_size: PageSize, content_stream_ref: Vec<u8>) -> PageObject {
-    let mut page = PageObject::new(page_size);
-    page.set_contents(content_stream_ref);
+fn create_page_with_content(page_size: PageSize, content_ref: Vec<u8>) -> PageObject {
+    let content_index = String::from_utf8(content_ref).unwrap();
+    let mut page = PageObject::new(content_index.parse().unwrap());
+    page.set_media_box(page_size);
+
     page
 }
 
@@ -18,8 +21,10 @@ fn test_empty_page() {
     let stream = StreamObject::new();
 
     pdf.add_object(Box::new(stream));
-    let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
-    let page = PageObject::new(PageSize::A4).with_contents(content_ref);
+    let next_num = pdf.objects.len() - 1;
+
+    let mut page = PageObject::new(next_num, 0);
+    page.set_media_box(PageSize::A4);
     pdf.add_page(page);
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
@@ -78,21 +83,79 @@ fn test_extreme_coordinates() {
     let mut pdf = PDF::new();
     let mut stream = StreamObject::new();
 
-    let _ = stream.set_color_rgb(1.0, 0.0, 0.0, false);
-    stream.rectangle(-1000.0, -1000.0, 100.0, 100.0);
-    stream.fill(false);
+    let _ = stream.set_color_rgb(
+        RGB {
+            red: Color { color: 1.0 },
+            green: Color { color: 0.0 },
+            blue: Color { color: 0.0 },
+        },
+        StrokeOrFill::Fill,
+    );
+    stream.rectangle(
+        Posn {
+            x: -1000.0,
+            y: -1000.0,
+        },
+        Dims {
+            width: 100.0,
+            height: 100.0,
+        },
+    );
+    stream.fill(EvenOdd::Odd);
 
-    let _ = stream.set_color_rgb(0.0, 1.0, 0.0, false);
-    stream.rectangle(10000.0, 10000.0, 100.0, 100.0);
-    stream.fill(false);
+    let _ = stream.set_color_rgb(
+        RGB {
+            red: Color { color: 0.0 },
+            green: Color { color: 1.0 },
+            blue: Color { color: 0.0 },
+        },
+        StrokeOrFill::Fill,
+    );
+    stream.rectangle(
+        Posn {
+            x: 10000.0,
+            y: 10000.0,
+        },
+        Dims {
+            width: 100.0,
+            height: 100.0,
+        },
+    );
+    stream.fill(EvenOdd::Odd);
 
-    let _ = stream.set_color_rgb(0.0, 0.0, 1.0, false);
-    stream.rectangle(0.0, 0.0, 0.0, 0.0);
-    stream.fill(false);
+    let _ = stream.set_color_rgb(
+        RGB {
+            red: Color { color: 0.0 },
+            green: Color { color: 0.0 },
+            blue: Color { color: 1.0 },
+        },
+        StrokeOrFill::Fill,
+    );
+    stream.rectangle(
+        Posn { x: 0.0, y: 0.0 },
+        Dims {
+            width: 0.0,
+            height: 0.0,
+        },
+    );
+    stream.fill(EvenOdd::Odd);
 
-    let _ = stream.set_color_rgb(0.5, 0.5, 0.5, false);
-    stream.rectangle(100.0, 100.0, 10000.0, 10000.0);
-    stream.fill(false);
+    let _ = stream.set_color_rgb(
+        RGB {
+            red: Color { color: 0.5 },
+            green: Color { color: 0.5 },
+            blue: Color { color: 0.5 },
+        },
+        StrokeOrFill::Fill,
+    );
+    stream.rectangle(
+        Posn { x: 100.0, y: 100.0 },
+        Dims {
+            width: 10000.0,
+            height: 10000.0,
+        },
+    );
+    stream.fill(EvenOdd::Odd);
 
     pdf.add_object(Box::new(stream));
     let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
@@ -115,7 +178,14 @@ fn test_very_long_text() {
     let mut pdf = PDF::new();
     let mut stream = StreamObject::new();
 
-    let _ = stream.set_color_rgb(0.0, 0.0, 0.0, false);
+    let _ = stream.set_color_rgb(
+        RGB {
+            red: Color { color: 0.0 },
+            green: Color { color: 0.0 },
+            blue: Color { color: 0.0 },
+        },
+        StrokeOrFill::Fill,
+    );
     stream.begin_text();
     stream.set_font_size("Courier", 8.0);
 
@@ -147,20 +217,55 @@ fn test_special_characters_text() {
     let mut pdf = PDF::new();
     let mut stream = StreamObject::new();
 
-    let _ = stream.set_color_rgb(0.0, 0.0, 0.0, false);
+    let _ = stream.set_color_rgb(
+        RGB {
+            red: Color { color: 0.0 },
+            green: Color { color: 0.0 },
+            blue: Color { color: 0.0 },
+        },
+        StrokeOrFill::Fill,
+    );
     stream.begin_text();
     stream.set_font_size("Helvetica", 12.0);
 
-    stream.set_text_matrix(1.0, 0.0, 0.0, 1.0, 50.0, 700.0);
+    stream.set_text_matrix(Matrix {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+        d: 1.0,
+        e: 50.0,
+        f: 700.0,
+    });
     stream.show_text_string("Parentheses: (test)");
 
-    stream.set_text_matrix(1.0, 0.0, 0.0, 1.0, 50.0, 680.0);
+    stream.set_text_matrix(Matrix {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+        d: 1.0,
+        e: 50.0,
+        f: 680.0,
+    });
     stream.show_text_string("Backslash: \\ test");
 
-    stream.set_text_matrix(1.0, 0.0, 0.0, 1.0, 50.0, 660.0);
+    stream.set_text_matrix(Matrix {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+        d: 1.0,
+        e: 50.0,
+        f: 660.0,
+    });
     stream.show_text_string("Quotes: \"test\"");
 
-    stream.set_text_matrix(1.0, 0.0, 0.0, 1.0, 50.0, 640.0);
+    stream.set_text_matrix(Matrix {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+        d: 1.0,
+        e: 50.0,
+        f: 640.0,
+    });
     stream.show_text_string("Mixed: (\\) \"test\" \\n");
 
     stream.end_text();
@@ -186,9 +291,22 @@ fn test_huge_rectangle() {
     let mut pdf = PDF::new();
     let mut stream = StreamObject::new();
 
-    let _ = stream.set_color_rgb(1.0, 0.0, 0.0, false);
-    stream.rectangle(0.0, 0.0, 5000.0, 5000.0);
-    stream.fill(false);
+    let _ = stream.set_color_rgb(
+        RGB {
+            red: Color { color: 1.0 },
+            green: Color { color: 0.0 },
+            blue: Color { color: 0.0 },
+        },
+        StrokeOrFill::Fill,
+    );
+    stream.rectangle(
+        Posn { x: 0.0, y: 0.0 },
+        Dims {
+            width: 5000.0,
+            height: 5000.0,
+        },
+    );
+    stream.fill(EvenOdd::Odd);
 
     pdf.add_object(Box::new(stream));
     let content_ref = format!("{} 0 R", pdf.objects.len() - 1).into_bytes();
@@ -232,19 +350,47 @@ fn test_extreme_font_sizes() {
     let mut pdf = PDF::new();
     let mut stream = StreamObject::new();
 
-    let _ = stream.set_color_rgb(0.0, 0.0, 0.0, false);
+    let _ = stream.set_color_rgb(
+        RGB {
+            red: Color { color: 0.0 },
+            green: Color { color: 0.0 },
+            blue: Color { color: 0.0 },
+        },
+        StrokeOrFill::Fill,
+    );
     stream.begin_text();
 
     stream.set_font_size("Helvetica", 0.1);
-    stream.set_text_matrix(1.0, 0.0, 0.0, 1.0, 50.0, 700.0);
+    stream.set_text_matrix(Matrix {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+        d: 1.0,
+        e: 50.0,
+        f: 700.0,
+    });
     stream.show_text_string("Tiny");
 
     stream.set_font_size("Helvetica", 1.0);
-    stream.set_text_matrix(1.0, 0.0, 0.0, 1.0, 50.0, 650.0);
+    stream.set_text_matrix(Matrix {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+        d: 1.0,
+        e: 50.0,
+        f: 650.0,
+    });
     stream.show_text_string("Small");
 
     stream.set_font_size("Helvetica", 200.0);
-    stream.set_text_matrix(1.0, 0.0, 0.0, 1.0, 50.0, 500.0);
+    stream.set_text_matrix(Matrix {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+        d: 1.0,
+        e: 50.0,
+        f: 500.0,
+    });
     stream.show_text_string("BIG");
 
     stream.end_text();
@@ -271,9 +417,22 @@ fn test_overlapping_operations() {
     let mut stream = StreamObject::new();
 
     stream.begin_text();
-    let _ = stream.set_color_rgb(1.0, 0.0, 0.0, false);
-    stream.rectangle(100.0, 100.0, 200.0, 150.0);
-    stream.fill(false);
+    let _ = stream.set_color_rgb(
+        RGB {
+            red: Color { color: 1.0 },
+            green: Color { color: 0.0 },
+            blue: Color { color: 0.0 },
+        },
+        StrokeOrFill::Fill,
+    );
+    stream.rectangle(
+        Posn { x: 100.0, y: 100.0 },
+        Dims {
+            width: 200.0,
+            height: 150.0,
+        },
+    );
+    stream.fill(EvenOdd::Odd);
     stream.end_text();
 
     pdf.add_object(Box::new(stream));

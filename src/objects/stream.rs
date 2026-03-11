@@ -7,7 +7,6 @@ use flate2::write::ZlibEncoder;
 use crate::color::{CMYK, Color, ColorSpace, RGB};
 use crate::encoding::{ascii85_encode, f_to_pdf_num};
 use crate::error::{PdfError, PdfResult};
-use crate::objects::metadata::PdfMetadata;
 use crate::objects::string::encode_pdf_string;
 use crate::util::{Dims, Matrix, Posn, ToPdf};
 use crate::{DictionaryObject, NumberObject, PdfObject};
@@ -85,7 +84,6 @@ pub enum StrokeOrFill {
 ///    JPXDecode        no   1.5  image           Wwavelet-based JPEG2000 standard
 ///    Crypt            yes  1.5  data            Data encrypted by a security handler
 pub struct StreamObject {
-    pub metadata: PdfMetadata,
     pub stream: Vec<Vec<u8>>,
     pub extra: Vec<(String, Rc<dyn PdfObject>)>,
     pub compress: CompressionMethod,
@@ -95,7 +93,6 @@ impl StreamObject {
     
     pub fn new() -> Self {
         StreamObject {
-            metadata: PdfMetadata::new(),
             stream: Vec::new(),
             extra: Vec::new(),
             compress: CompressionMethod::None,
@@ -586,14 +583,6 @@ impl StreamObject {
 
 impl PdfObject for StreamObject {
     
-    fn metadata(&self) -> &PdfMetadata {
-        &self.metadata
-    }
-
-    fn metadata_mut(&mut self) -> &mut PdfMetadata {
-        &mut self.metadata
-    }
-
     fn data(&self) -> Vec<u8> {
         let stream_bytes = match self.compress {
             CompressionMethod::None => self.stream.join(&b'\n'),

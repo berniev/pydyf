@@ -1,33 +1,22 @@
 use crate::PdfObject;
-use crate::objects::metadata::PdfMetadata;
 
 /// Spec:
 /// String Object:
 ///     Consists of a series of bytes (unsigned integer values in the range 0 to 255) and the bytes
 ///     are not integer objects, but are stored in a more compact form
 pub struct StringObject {
-    pub metadata: PdfMetadata,
     pub value: String,
 }
 
 impl StringObject {
     pub fn new(value: String) -> Self {
         Self {
-            metadata: PdfMetadata::default(),
             value,
         }
     }
 }
 
 impl PdfObject for StringObject {
-    fn metadata(&self) -> &PdfMetadata {
-        &self.metadata
-    }
-
-    fn metadata_mut(&mut self) -> &mut PdfMetadata {
-        &mut self.metadata
-    }
-
     fn data(&self) -> Vec<u8> {
         encode_pdf_string(&self.value)
     }
@@ -36,9 +25,6 @@ impl PdfObject for StringObject {
         self
     }
 
-    fn is_compressible(&self) -> bool {
-        self.metadata.generation_number == 0
-    }
 }
 
 pub fn encode_pdf_string(string: &str) -> Vec<u8> {
