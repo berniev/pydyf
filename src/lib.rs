@@ -19,6 +19,8 @@ pub use objects::stream::StreamObject;
 pub use objects::pdf_object::PdfObject;
 pub use objects::number::{NumberObject, NumberType};
 pub use objects::name::NameObject;
+pub use objects::array::ArrayObject;
+pub use objects::metadata::PdfMetadata;
 pub use objects::string::StringObject;
 pub use error::{PdfError, PdfResult};
 pub use gradient::{ColorStop};

@@ -3,7 +3,7 @@ use once_cell::sync::Lazy;
 use crate::pdf::PdfVersion;
 use crate::{DictionaryObject};
 use crate::page::{ObjectId, PageTreeNode};
-use crate::objects::array::ArrayObject;
+use crate::ArrayObject;
 
 //--------------------------- DirectRef -------------------------
 

@@ -1,12 +1,8 @@
-use std::cmp::{Ordering, PartialOrd};
 use std::rc::Rc;
 
 use crate::color::RGBA;
-use crate::objects::stream::StreamObject;
 use crate::util::{Dims, Posn};
-use crate::{
-    DictionaryObject, NameObject, NumberObject, PDF, PdfObject,
-};
+use crate::{DictionaryObject, NameObject, NumberObject, PDF, PdfObject, StreamObject, ArrayObject};
 //--------------------------- PDF Function ---------------------------//
 
 /// Type 0: Sampled. Maps input to output via lookup table

@@ -1,6 +1,9 @@
 use std::rc::Rc;
-use crate::NameObject;
-use crate::objects::pdf_object::PdfObject;
+
+use crate::PdfMetadata;
+use crate::PdfObject;
+
+//-------------------ArrayObject ----------------------
 
 /// Spec:
 /// Array Objects:
@@ -9,20 +12,19 @@ use crate::objects::pdf_object::PdfObject;
 ///     array’s elements may be any combination of numbers, strings, dictionaries, or any other
 ///     objects, including other arrays. An array may have zero elements.
 /// Construction:
-///     An array shall be written as a sequence of objects enclosed in SQUARE BRACKETS (using LEFT
-///     SQUARE BRACKET (5Bh) and RIGHT SQUARE BRACKET (5Dh)).
+///     An array shall be written as a sequence of objects enclosed in SQUARE BRACKETS.
 ///     EXAMPLE [ 549 3.14 false ( Ralph ) /SomeName ]
-///     PDF directly supports only one-dimensional arrays. Arrays of higher dimension can be
-///     constructed by using arrays as elements of arrays, nested to any depth
+
 pub struct ArrayObject {
     pub values: Vec<Rc<dyn PdfObject>>,
+    pub metadata: PdfMetadata,
 }
 
 impl ArrayObject {
-
     pub fn new(values: Option<Vec<Rc<dyn PdfObject>>>) -> Self {
         Self {
             values: values.unwrap_or_default(),
+            metadata: PdfMetadata::default(),
         }
     }
 
@@ -35,20 +37,22 @@ impl ArrayObject {
 }
 
 impl PdfObject for ArrayObject {
-
-    fn data(&self) -> Vec<u8> {
-        let mut result = b"[".to_vec();
-        for (i, item) in self.values.iter().enumerate() {
-            if i > 0 {
-                result.push(b' ');
-            }
-            result.extend(item.reference());
-        }
-        result.push(b']');
-        result
+    fn data(&self) -> String {
+        format!(
+            "[ {} ]",
+            self.values
+                .iter()
+                .map(|item| item.reference())
+                .collect::<Vec<_>>()
+                .join(" ")
+        )
     }
 
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self
+    }
+
+    fn metadata(&self) -> &PdfMetadata {
+        &self.metadata
     }
 }

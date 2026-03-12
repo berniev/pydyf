@@ -1,22 +1,30 @@
+use crate::objects::metadata::Generation;
+
 pub trait PdfObject {
-    fn data(&self) -> Vec<u8>;
+    fn data(&self) -> String;
 
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any; // Downcast to Any for type checking
 
-    fn indirect(&self) -> Vec<u8> {
+    fn metadata(&self) -> &crate::objects::metadata::PdfMetadata;
+
+    fn indirect(&self) -> String {
         let meta = self.metadata();
         let number = meta.object_number.unwrap_or(0);
-        let header = format!("{} {} obj\n", number, meta.generation_number);
-        let mut result = header.into_bytes();
-        result.extend(self.data());
-        result.extend(b"\nendobj");
-        result
+        format!(
+            "{} {} obj\n{}\nendobj",
+            number,
+            meta.generation_number,
+            self.data()
+        )
     }
 
-    fn reference(&self) -> Vec<u8> {
+    fn reference(&self) -> String {
         let meta = self.metadata();
-        let number = meta.object_number.unwrap_or(0);
-        format!("{} {} R", number, meta.generation_number).into_bytes()
+        format!(
+            "{} {} R",
+            meta.object_number.unwrap_or(0),
+            meta.generation_number
+        )
     }
 
     /// Whether the object can be included in an object stream (PDF 1.5+).
@@ -26,6 +34,6 @@ pub trait PdfObject {
     ///
     /// Note: Some object types (like Stream) override this to always return false.
     fn is_compressible(&self) -> bool {
-        self.metadata().generation_number == 0
+        self.metadata().generation_number == Generation::Normal
     }
 }

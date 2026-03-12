@@ -1,4 +1,7 @@
 use crate::PdfObject;
+use crate::PdfMetadata;
+
+//---------------- NumberType -----------------
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum NumberType {
@@ -30,6 +33,8 @@ impl From<f32> for NumberType {
     }
 }
 
+//---------------- NumberObject -----------------
+
 /// Spec:
 /// Integer Object:
 ///     mathematical integers with an implementation specified interval centered at 0 and written
@@ -43,15 +48,17 @@ impl From<f32> for NumberType {
 /// Number Tree:
 ///     similar to a dictionary that associates keys and values but the keys in a number tree are
 ///     integers and are ordered
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct NumberObject {
+    metadata: PdfMetadata,
     pub value: NumberType,
 }
 
 impl NumberObject {
-    
     pub fn new(value: NumberType) -> Self {
         Self {
+            metadata: Default::default(),
             value,
         }
     }
@@ -76,10 +83,9 @@ impl NumberObject {
 }
 
 impl PdfObject for NumberObject {
-    
-    fn data(&self) -> Vec<u8> {
+    fn data(&self) -> String {
         match self.value {
-            NumberType::Integer(i) => i.to_string().into_bytes(),
+            NumberType::Integer(i) => i.to_string(),
             NumberType::Real(f) => {
                 // Formatting real numbers for PDF: usually avoid scientific notation
                 // and use a reasonable precision.
@@ -87,7 +93,6 @@ impl PdfObject for NumberObject {
                     .trim_end_matches('0')
                     .trim_end_matches('.')
                     .to_string()
-                    .into_bytes()
             }
         }
     }
@@ -96,6 +101,9 @@ impl PdfObject for NumberObject {
         self
     }
 
+    fn metadata(&self) -> &PdfMetadata {
+        &self.metadata
+    }
 }
 
 impl From<NumberType> for NumberObject {

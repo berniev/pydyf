@@ -1,4 +1,5 @@
 use crate::PdfObject;
+use crate::PdfMetadata;
 
 /// Spec:
 /// name object:
@@ -8,29 +9,31 @@ use crate::PdfObject;
 /// name tree:
 ///     similar to a dictionary that associates keys and values but the keys in a name tree are
 ///     strings and are ordered
+
 pub struct NameObject {
+    metadata: PdfMetadata,
     pub value: String,
 }
 
 impl NameObject {
-    
     pub fn new(value: String) -> Self {
         Self {
+            metadata: Default::default(),
             value,
         }
     }
 }
 
 impl PdfObject for NameObject {
-    
-    fn data(&self) -> Vec<u8> {
-        let mut result = b"/".to_vec();
-        result.extend(self.value.as_bytes());
-        result
+    fn data(&self) -> String {
+        format!("/{}", self.value)
     }
 
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self
     }
 
+    fn metadata(&self) -> &PdfMetadata {
+        &self.metadata
+    }
 }

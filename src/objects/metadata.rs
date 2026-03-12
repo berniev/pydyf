@@ -28,9 +28,28 @@ impl Default for ObjectStatus {
         ObjectStatus::InUse
     }
 }
-enum Generation {
-    Zero,
-    OnePlus,
+
+//---------------- Generation -----------------
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Generation {
+    Root,
+    Normal,
+}
+
+impl Generation {
+    pub fn as_u16(&self) -> u16 {
+        match self {
+            Generation::Root => 65535,
+            Generation::Normal => 0,
+        }
+    }
+}
+
+impl fmt::Display for Generation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_u16())
+    }
 }
 
 //---------------- PdfMetadata -----------------
@@ -53,11 +72,11 @@ enum Generation {
 ///         Table" and 7.5.6, "Incremental Updates."
 ///     Together, the combination of an object number and a generation number shall uniquely
 ///         identify an indirect object.
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct PdfMetadata {
     pub object_number: Option<usize>, // None for unassigned objects
-    pub generation_number: u32,
-    pub offset: usize, // used in xref table
+    pub generation_number: Generation,
     pub status: ObjectStatus,
 }
 
@@ -65,8 +84,7 @@ impl PdfMetadata {
     pub fn new() -> Self {
         PdfMetadata {
             object_number: None,
-            generation_number: 0,
-            offset: 0,
+            generation_number: Generation::Normal,
             status: ObjectStatus::InUse,
         }
     }
@@ -76,15 +94,6 @@ impl PdfMetadata {
         pdf.status = ObjectStatus::Free;
 
         pdf
-    }
-
-    /// Formats the metadata as a 19-character PDF xref entry string.
-    /// Example: "0000000010 00000 n "
-    pub fn format_xref_entry(&self) -> String {
-        format!(
-            "{:010} {:05} {} ",
-            self.offset, self.generation_number, self.status
-        )
     }
 }
 

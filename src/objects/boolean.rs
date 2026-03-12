@@ -1,0 +1,39 @@
+use crate::objects::metadata::Generation;
+use crate::PdfMetadata;
+use crate::PdfObject;
+
+pub struct BooleanObject {
+    pub metadata: PdfMetadata,
+    pub value: bool,
+}
+
+impl BooleanObject {
+    pub fn new(value: bool) -> Self {
+        Self {
+            metadata: PdfMetadata::default(),
+            value,
+        }
+    }
+}
+
+impl PdfObject for BooleanObject {
+    fn data(&self) -> String {
+        if self.value {
+            "true".to_string()
+        } else {
+            "false".to_string()
+        }
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+
+    fn metadata(&self) -> &PdfMetadata {
+        &self.metadata
+    }
+
+    fn is_compressible(&self) -> bool {
+        self.metadata.generation_number == Generation::Normal
+    }
+}

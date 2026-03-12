@@ -1,31 +1,5 @@
 use std::fmt;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ObjectStatus {
-    Free,  // deleted or never used
-    InUse, // normal, active object
-}
-
-impl ObjectStatus {
-    pub fn as_char(&self) -> char {
-        match self {
-            ObjectStatus::Free => 'f',
-            ObjectStatus::InUse => 'n',
-        }
-    }
-}
-
-impl fmt::Display for ObjectStatus {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.as_char())
-    }
-}
-
-impl Default for ObjectStatus {
-    fn default() -> Self {
-        ObjectStatus::InUse
-    }
-}
+use crate::objects::metadata::{Generation, ObjectStatus};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CrossRefError {
@@ -33,20 +7,6 @@ pub enum CrossRefError {
     InvalidRootEntry,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Generation{
-    Root,
-    Normal
-}
-
-impl Generation {
-    pub fn as_u16(&self) -> u16 {
-        match self {
-            Generation::Root => 65535,
-            Generation::Normal => 0
-        }
-    }
-}
 
 /// 7.5.4 Cross-Reference Table
 /// The cross-reference table contains information that permits random access to indirect objects
