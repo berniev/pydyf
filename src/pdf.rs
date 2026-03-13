@@ -1,9 +1,9 @@
+use crate::page::{PageObject, PageTreeItem, PageTreeNode};
 use std::io::Write;
-use crate::page::{PageObject, PageTreeNode};
 
+use crate::cross_ref::CrossRefTable;
 use crate::{DictionaryObject, NameObject, PdfObject};
 use std::rc::Rc;
-use crate::cross_ref::CrossRefTable;
 
 //--------------------------- PDF -------------------------
 
@@ -64,7 +64,7 @@ pub struct PDF {
 
 impl PDF {
     pub fn new() -> Self {
-        let mut pdf = PDF {
+        let pdf = PDF {
             version: PdfVersion::Auto,
             objects: Vec::new(),
             catalog: DictionaryObject::typed("Catalog"),
@@ -111,33 +111,38 @@ impl PDF {
 
         for (name, subtype) in fonts {
             let mut f = DictionaryObject::typed("Font");
-            f.set("Subtype", Rc::new(NameObject::new(subtype.to_string())));
-            f.set("BaseFont", Rc::new(NameObject::new(name.to_string())));
+            f.set(
+                "Subtype",
+                Rc::new(NameObject::new(Option::from(subtype.to_string()))),
+            );
+            f.set(
+                "BaseFont",
+                Rc::new(NameObject::new(Option::from(name.to_string()))),
+            );
             font_dict.set(name, Rc::new(f));
         }
 
         font_dict
     }
 
-    fn get_standard_fonts() -> Vec<u8> {
-        let mut font_dict = String::from("<<");
+    fn get_standard_fonts() -> String {
         let fonts = [
             ("Helvetica", "Type1"),
             ("Helvetica-Bold", "Type1"),
             ("Courier", "Type1"),
         ];
-        for (name, subtype) in fonts {
-            font_dict.push_str(&format!(
-                " /{} << /Type /Font /Subtype /{} /BaseFont /{} >>",
-                name, subtype, name
-            ));
-        }
-        font_dict.push_str(" >>");
-
-        font_dict.into_bytes()
+        format!(
+            "<<{}>>",
+            fonts
+                .into_iter()
+                .map(|(name, subtype)| format!(
+                    " /{name} << /Type /Font /Subtype /{subtype} /BaseFont /{name} >>"))
+                .collect::<Vec<String>>()
+                .join(" ")
+        )
     }
 
-pub fn write<W: Write>(
+    pub fn write<W: Write>(
         &mut self,
         output: &mut W,
         version: Option<&[u8]>,
@@ -149,20 +154,20 @@ pub fn write<W: Write>(
         let font_resources = Self::get_standard_fonts();
         let resources_number = self.objects.len();
         let mut resources = DictionaryObject::new(None);
-        resources.metadata.number = Some(resources_number);
+        resources.metadata.object_identifier = Some(resources_number);
         resources
             .values
-            .insert("Font".to_string(), font_resources.clone());
+            .insert("Font".to_string().parse().unwrap(), font_resources.clone());
         self.objects.push(Box::new(resources));
 
-        if self.page_tree.metadata.number.is_none() {
+        if self.page_tree.metadata.object_identifier.is_none() {
             let pages_number = self.objects.len();
-            self.page_tree.metadata.number = Some(pages_number);
+            self.page_tree.metadata.object_identifier = Some(pages_number);
             let pages_ref = format!("{} 0 R", pages_number).into_bytes();
             let res_ref = format!("{} 0 R", resources_number).into_bytes();
 
             for obj in &mut self.objects {
-                if let Some(page) = obj.as_any_mut().downcast_mut::<Page>() {
+                if let Some(page) = obj.as_any_mut().downcast_mut::<PageTreeItem>() {
                     // Set Parent on Page by injecting into its 'other' map
                     page.other.insert("Parent".to_string(), pages_ref.clone());
                     // Merge or set Resources
@@ -182,16 +187,16 @@ pub fn write<W: Write>(
                     }
                 }
             }
-            let pages_copy = self.page_tree.clone();
+            let pages_copy = self.page_tree;
             self.objects.push(Box::new(pages_copy));
         }
 
-        if self.catalog.metadata.number.is_none() {
+        if self.catalog.metadata.object_identifier.is_none() {
             let catalog_number = self.objects.len();
-            self.catalog.metadata.number = Some(catalog_number);
+            self.catalog.metadata.object_identifier = Some(catalog_number);
             let pages_ref = self.page_tree.reference();
             self.catalog.values.insert("Pages".to_string(), pages_ref);
-            let catalog_copy = self.catalog.clone();
+            let catalog_copy = self.catalog;
             self.objects.push(Box::new(catalog_copy));
         }
 

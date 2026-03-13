@@ -12,21 +12,25 @@ use crate::PdfMetadata;
 
 pub struct NameObject {
     metadata: PdfMetadata,
-    pub value: String,
+    pub value: Option<String>,
 }
 
 impl NameObject {
-    pub fn new(value: String) -> Self {
+    pub fn new(value: Option<String>) -> Self {
         Self {
             metadata: Default::default(),
             value,
         }
     }
+    
+    pub fn set(&mut self, value: String) {
+        self.value = Some(value);
+    }
 }
 
 impl PdfObject for NameObject {
     fn data(&self) -> String {
-        format!("/{}", self.value)
+        format!("/{}", self.value.clone().unwrap_or("".to_string()))
     }
 
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {

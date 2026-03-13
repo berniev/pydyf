@@ -1,9 +1,9 @@
 use std::default::Default;
 use std::rc::Rc;
 
-use crate::NameObject;
 use crate::PdfObject;
 use crate::objects::metadata::PdfMetadata;
+use crate::{IndirectObject, NameObject};
 
 //--------------------------- DictionaryObject----------------------//
 
@@ -23,7 +23,7 @@ use crate::objects::metadata::PdfMetadata;
 ///         name "Type"    Opt
 ///         name "Subtype" Opt (requires Type)
 pub struct DictionaryObject {
-    metadata: PdfMetadata,
+    pub(crate) metadata: PdfMetadata,
     pub values: Vec<(String, Rc<dyn PdfObject>)>,
 }
 
@@ -38,7 +38,7 @@ impl DictionaryObject {
     pub(crate) fn typed(name: &str) -> Self {
         Self::new(Some(vec![(
             "Type".to_string(),
-            Rc::new(NameObject::new(name.to_string())),
+            Rc::new(NameObject::new(Option::from(name.to_string()))),
         )]))
     }
 
@@ -51,10 +51,7 @@ impl DictionaryObject {
     }
 
     pub fn set_indirect(&mut self, key: &str, id: usize) {
-        let ir = IndirectReference {
-            metadata: Default::default(),
-            id,
-        };
+        let ir = IndirectObject::new(Some(id));
         self.set(key, Rc::new(ir));
     }
 
@@ -76,21 +73,21 @@ impl DictionaryObject {
 }
 
 impl PdfObject for DictionaryObject {
-fn data(&self) -> String {
-    format!(
-        "<<{}>>",
-        self.values
-            .iter()
-            .map(|(k, v)| format!("/{} {}", k, v.reference()))
-            .collect::<Vec<_>>()
-            .join(" ")
-    )
-}
+    fn data(&self) -> String {
+        format!(
+            "<<{}>>",
+            self.values
+                .iter()
+                .map(|(k, v)| format!("/{} {}", k, v.reference()))
+                .collect::<Vec<_>>()
+                .join(" ")
+        )
+    }
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self
     }
 
-    fn  metadata(&self) -> &PdfMetadata {
+    fn metadata(&self) -> &PdfMetadata {
         &self.metadata
     }
 }
@@ -106,13 +103,19 @@ mod tests {
         assert!(dict.is_empty());
         assert_eq!(dict.len(), 0);
 
-        dict.set("Key1", Rc::new(NameObject::new("Value1".to_string())));
+        dict.set(
+            "Key1",
+            Rc::new(NameObject::new(Option::from("Value1".to_string()))),
+        );
         assert!(!dict.is_empty());
         assert_eq!(dict.len(), 1);
         assert!(dict.contains_key("Key1"));
         assert!(!dict.contains_key("Key2"));
 
-        dict.set("Key2", Rc::new(NameObject::new("Value2".to_string())));
+        dict.set(
+            "Key2",
+            Rc::new(NameObject::new(Option::from("Value2".to_string()))),
+        );
         assert_eq!(dict.len(), 2);
         assert!(dict.contains_key("Key2"));
     }

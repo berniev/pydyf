@@ -4,21 +4,24 @@ use crate::PdfObject;
 
 pub struct BooleanObject {
     pub metadata: PdfMetadata,
-    pub value: bool,
+    pub value: Option<bool>,
 }
 
 impl BooleanObject {
-    pub fn new(value: bool) -> Self {
+    pub fn new(value: Option<bool>) -> Self {
         Self {
             metadata: PdfMetadata::default(),
             value,
         }
     }
+    pub fn set(&mut self, value: bool) {
+        self.value = Some(value);
+    }
 }
 
 impl PdfObject for BooleanObject {
     fn data(&self) -> String {
-        if self.value {
+        if self.value.unwrap_or(false) {
             "true".to_string()
         } else {
             "false".to_string()

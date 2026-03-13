@@ -1,7 +1,7 @@
 use std::fmt;
 use std::iter::Sum;
 
-use crate::ResourceDictionary;
+use crate::{PdfMetadata, ResourceDictionary};
 use crate::util::Dims;
 
 //--------------------------- Offset ---------------------------//
@@ -183,6 +183,7 @@ pub struct PageTreeNode {
     kids: Vec<PageTreeItem>,
     media_box: Option<PageSize>,           // Shared dimensions
     resources: Option<ResourceDictionary>, // Shared fonts, etc.
+    pub metadata: PdfMetadata
 }
 
 impl PageTreeNode {
@@ -193,6 +194,7 @@ impl PageTreeNode {
             kids: Vec::new(),
             media_box: None,
             resources: None,
+            metadata: PdfMetadata::default(),
         }
     }
 

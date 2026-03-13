@@ -9,7 +9,7 @@ pub trait PdfObject {
 
     fn indirect(&self) -> String {
         let meta = self.metadata();
-        let number = meta.object_number.unwrap_or(0);
+        let number = meta.object_identifier.unwrap_or(0);
         format!(
             "{} {} obj\n{}\nendobj",
             number,
@@ -22,7 +22,7 @@ pub trait PdfObject {
         let meta = self.metadata();
         format!(
             "{} {} R",
-            meta.object_number.unwrap_or(0),
+            meta.object_identifier.unwrap_or(0),
             meta.generation_number
         )
     }

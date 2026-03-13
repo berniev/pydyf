@@ -3,6 +3,7 @@
 
 use std::rc::Rc;
 use pydyf::{PageObject, PDF};
+use pydyf::catalog::CatalogEntryType::IndirectRef;
 use pydyf::page::PageSize;
 
 fn main() {
@@ -13,7 +14,7 @@ fn main() {
     println!("Created new PDF with {} objects", pdf.objects.len());
     
     let contents: &[u8] = b"Hello, World!";
-    let page = PageObject::new(PageSize::A4).with_contents(Some(Rc::new(contents.to_vec())));
+    let page = PageObject::new(IndirectRef::new(0)).set_media_box(PageSize::A4).with_contents(Some(Rc::new(contents.to_vec())));
     pdf.add_page(page);
     println!("Added page to PDF with {} objects", pdf.objects.len());
 }

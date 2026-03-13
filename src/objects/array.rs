@@ -28,12 +28,10 @@ impl ArrayObject {
         }
     }
 
-    pub fn push_indirect(&mut self, id: usize) {
-        self.values.push(Rc::new(IndirectReference {
-            metadata: Default::default(),
-            id,
-        }));
+    pub fn push_object(&mut self, value: Rc<dyn PdfObject>) {
+        self.values.push(value);
     }
+    
 }
 
 impl PdfObject for ArrayObject {

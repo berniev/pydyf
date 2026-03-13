@@ -9,7 +9,7 @@ use crate::encoding::{ascii85_encode, f_to_pdf_num};
 use crate::error::{PdfError, PdfResult};
 use crate::objects::string::encode_pdf_string;
 use crate::util::{Dims, Matrix, Posn, ToPdf};
-use crate::{DictionaryObject, NumberObject, PdfObject};
+use crate::{DictionaryObject, NumberObject, PdfMetadata, PdfObject};
 
 //------------------------ EvenOdd -------------------------------
 
@@ -87,6 +87,7 @@ pub struct StreamObject {
     pub stream: Vec<Vec<u8>>,
     pub extra: Vec<(String, Rc<dyn PdfObject>)>,
     pub compress: CompressionMethod,
+    metadata: PdfMetadata,
 }
 
 impl StreamObject {
@@ -96,6 +97,7 @@ impl StreamObject {
             stream: Vec::new(),
             extra: Vec::new(),
             compress: CompressionMethod::None,
+            metadata: PdfMetadata::default(),
         }
     }
 
@@ -479,8 +481,8 @@ impl StreamObject {
 
     pub fn show_single_text_string(&mut self, text: &str) {
         let mut cmd = encode_pdf_string(text);
-        cmd.extend(b" Tj");
-        self.stream.push(cmd);
+        cmd.push_str(" Tj");
+        self.stream.push(Vec::from(cmd));
     }
 
     pub fn stroke_path(&mut self) {
@@ -574,7 +576,7 @@ impl StreamObject {
         graphics_state_name: Option<&str>,
     ) {
         if let Some(gs) = graphics_state_name {
-            self.set_state(gs); // Apply provided soft mask graphics state
+            self.set_state(gs);
         }
         self.set_color_space("Pattern", stroke);
         self.set_color_special(Some(pattern_name), stroke, &[]);
@@ -583,7 +585,7 @@ impl StreamObject {
 
 impl PdfObject for StreamObject {
     
-    fn data(&self) -> Vec<u8> {
+    fn data(&self) -> String {
         let stream_bytes = match self.compress {
             CompressionMethod::None => self.stream.join(&b'\n'),
             CompressionMethod::Flate => {
@@ -600,16 +602,15 @@ impl PdfObject for StreamObject {
         ));
         let dict = DictionaryObject::new(Some(dict_values));
 
-        let mut result = dict.data();
-        result.extend(b"\nstream\n");
-        result.extend(stream_bytes);
-        result.extend(b"\nendstream");
-
-        result
+        format!("\nstream{}\nendstream", dict.data())
     }
 
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self
+    }
+
+    fn metadata(&self) -> &PdfMetadata {
+        &self.metadata
     }
 
     fn is_compressible(&self) -> bool {

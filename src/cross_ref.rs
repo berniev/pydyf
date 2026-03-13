@@ -1,5 +1,5 @@
 use std::fmt;
-use crate::objects::metadata::{Generation, ObjectStatus};
+pub(crate) use crate::objects::metadata::{Generation, ObjectStatus};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CrossRefError {
@@ -25,7 +25,7 @@ pub enum CrossRefError {
 /// For a file that has never been incrementally updated, the cross-reference section shall contain
 /// only one subsection, whose object numbering begins at 0.
 ///
-/// We are not designing for modifications.
+/// We are not designing for modification.
 
 pub struct Entry {
     object_number: u32,
@@ -46,7 +46,7 @@ impl Entry {
 
     /// number: 10-digit number padded with leading zeros
     /// generation: 5-digit number padded with leading zeros
-    /// keyword: n
+    /// status: n
     /// eol: 2-character end-of-line sequence
     pub fn as_pdf(&self) -> String {
         format!(
@@ -78,7 +78,7 @@ impl CrossRefTable {
         self.entries.push(entry);
     }
 
-    pub fn as_pdf(&self) -> Result<Vec<u8>, CrossRefError> {
+    pub fn as_pdf(&self) -> Result<String, CrossRefError> {
         if self.entries.is_empty() {
             return Err(CrossRefError::EmptyTable);
         }
@@ -95,13 +95,12 @@ impl CrossRefTable {
             self.entries.len()
         );
 
-        Ok((head
+        Ok(head
             + &self
                 .entries
                 .iter()
                 .map(|entry| entry.as_pdf())
                 .collect::<String>())
-            .into_bytes())
     }
 }
 

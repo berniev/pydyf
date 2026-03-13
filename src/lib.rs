@@ -22,6 +22,8 @@ pub use objects::name::NameObject;
 pub use objects::array::ArrayObject;
 pub use objects::metadata::PdfMetadata;
 pub use objects::string::StringObject;
+pub use objects::boolean::BooleanObject;
+pub use objects::indirect::IndirectObject;
 pub use error::{PdfError, PdfResult};
 pub use gradient::{ColorStop};
 pub use graphics_state::GraphicsStateManager;

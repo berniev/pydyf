@@ -1,9 +1,11 @@
-use std::collections::HashMap;
 use once_cell::sync::Lazy;
-use crate::pdf::PdfVersion;
-use crate::{DictionaryObject};
+use std::any::Any;
+use std::collections::HashMap;
+
 use crate::page::{ObjectId, PageTreeNode};
-use crate::ArrayObject;
+use crate::pdf::PdfVersion;
+use crate::{ArrayObject, BooleanObject, IndirectObject, NameObject};
+use crate::{DictionaryObject, PdfMetadata, PdfObject};
 
 //--------------------------- DirectRef -------------------------
 
@@ -116,7 +118,7 @@ impl IndirectRef {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CatalogError {
     UnsupportedEntry(String),
-    UnsupportedVersion { entry: String, required: f32, current: f32 },
+    UnsupportedVersion { entry: String },
 }
 
 //--------------------------- Catalog Entry Metadata -------------------------
@@ -171,77 +173,55 @@ static SUPPORTED_CATALOG_ENTRIES: Lazy<HashMap<&'static str, CatalogEntryInfo>> 
     ])
 });
 
-//--------------------------- Catalog factories -------------------------
-
-/// Validates that the catalog entry is supported and checks PDF version compatibility
-pub fn validate_catalog_entry(name: &str, pdf_version: f32) -> Result<&CatalogEntryInfo, CatalogError> {
-    let info = SUPPORTED_CATALOG_ENTRIES
-        .get(name)
-        .ok_or_else(|| CatalogError::UnsupportedEntry(name.to_string()))?;
-
-    if info.pdf_version > pdf_version {
-        return Err(CatalogError::UnsupportedVersion {
-            entry: name.to_string(),
-            required: info.pdf_version,
-            current: pdf_version,
-        });
-    }
-
-    Ok(info)
-}
-
-/// Creates a catalog dictionary entry with validation
-pub fn make_catalog_dict(name: &str, pdf_version: f32) -> Result<DictionaryObject, CatalogError> {
-    let info = validate_catalog_entry(name, pdf_version)?;
-
-    if info.entry_type != CatalogEntryType::Dictionary {
-        return Err(CatalogError::UnsupportedEntry(
-            format!("{} is not a dictionary type", name)
-        ));
-    }
-
-    Ok(DictionaryObject::typed(name))
-}
-
-/// Creates a catalog array entry with validation
-pub fn make_catalog_array(name: &str, pdf_version: f32) -> Result<ArrayObject, CatalogError> {
-    let info = validate_catalog_entry(name, pdf_version)?;
-
-    if info.entry_type != CatalogEntryType::Array {
-        return Err(CatalogError::UnsupportedEntry(
-            format!("{} is not an array type", name)
-        ));
-    }
-
-    Ok(ArrayObject::new(None))
-}
-
-/// Returns metadata for a catalog entry if it exists
-pub fn get_catalog_entry_info(name: &str) -> Option<&CatalogEntryInfo> {
-    SUPPORTED_CATALOG_ENTRIES.get(name)
-}
-
-/// Returns all required catalog entries
-pub fn get_required_entries() -> Vec<&'static str> {
-    SUPPORTED_CATALOG_ENTRIES
-        .iter()
-        .filter(|(_, info)| info.required)
-        .map(|(name, _)| *name)
-        .collect()
-}
-
 //--------------------------- Catalog -------------------------
 
 struct Catalog {
-    pages: PageTreeNode,
-    version: Option<PdfVersion>,
+    metadata: PdfMetadata,
+    pages: Option<PageTreeNode>,
 }
 
 impl Catalog {
-    pub fn new(pages: PageTreeNode, version: Option<PdfVersion>) -> Self {
+    pub fn new(pages: Option<PageTreeNode>) -> Self {
         Self {
+            metadata: Default::default(),
             pages,
-            version,
         }
+    }
+
+    /// Validate the catalog entry name is supported
+    pub fn lookup_catalog_entry(&self, name: &str) -> Result<&CatalogEntryInfo, CatalogError> {
+        let info = SUPPORTED_CATALOG_ENTRIES
+            .get(name)
+            .ok_or_else(|| CatalogError::UnsupportedEntry(name.to_string()))?;
+
+        Ok(info)
+    }
+
+    pub fn make_catalog_item(&self, name: &str) -> Result<Box<dyn PdfObject>, CatalogError> {
+        let info = self.lookup_catalog_entry(name)?;
+
+        let res: Box<dyn PdfObject> = match info.entry_type {
+            CatalogEntryType::Dictionary => Box::new(DictionaryObject::typed(name)),
+            CatalogEntryType::Array => Box::new(ArrayObject::new(None)),
+            CatalogEntryType::Boolean => Box::new(BooleanObject::new(None)),
+            CatalogEntryType::Name => Box::new(NameObject::new(None)),
+            CatalogEntryType::IndirectRef => Box::new(IndirectObject::new(None)),
+        };
+
+        Ok(res)
+    }
+}
+
+impl PdfObject for Catalog {
+    fn data(&self) -> String {
+        todo!()
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        todo!()
+    }
+
+    fn metadata(&self) -> &PdfMetadata {
+        &self.metadata
     }
 }
