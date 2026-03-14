@@ -1,23 +1,46 @@
 // Main entry point for pydyf
 // This is a simple example/test program
-// TODO: Update this to use the new API
 
-// use std::rc::Rc;
-// use pydyf::{PageObject, PDF};
-// use pydyf::page::PageSize;
+use pydyf::{PageObject, PDF, StreamObject, FileIdentifierMode};
+use pydyf::page::PageSize;
+use pydyf::color::{Color, RGB};
+use pydyf::objects::stream::{StrokeOrFill, EvenOdd};
+use pydyf::util::{Posn, Dims};
+use std::fs::File;
+use std::io::Write;
 
 fn main() {
     println!("PyDyf - PDF library for Rust");
-    println!("Ported from Python pydyf library");
-    println!("TODO: Update main.rs to use the refactored API");
+    println!("Ported from Python pydyf library\n");
 
-    // let mut pdf = PDF::new();
-    // println!("Created new PDF with {} objects", pdf.objects.len());
+    let mut pdf = PDF::new();
+    let mut stream = StreamObject::new();
 
-    // TODO: PageObject API has changed - set_media_box now modifies in place
-    // and with_contents method doesn't exist anymore
-    // let page = PageObject::new(0.into());
-    // page.set_media_box(PageSize::A4);
-    // pdf.add_page(page);
-    // println!("Added page to PDF with {} objects", pdf.objects.len());
+    let color = RGB {
+        red: Color { color: 0.0 },
+        green: Color { color: 0.5 },
+        blue: Color { color: 1.0 },
+    };
+    let _ = stream.set_color_rgb(color, StrokeOrFill::Fill);
+    stream.rectangle(
+        Posn { x: 100.0, y: 100.0 },
+        Dims { height: 200.0, width: 300.0 },
+    );
+    stream.fill(EvenOdd::Odd);
+
+    pdf.add_object(Box::new(stream));
+    let next_num = pdf.objects.len() - 1;
+    let mut page = PageObject::new(next_num.into());
+    page.set_media_box(PageSize::A4);
+    pdf.add_page(page);
+
+    let mut output = Vec::new();
+    pdf.write(&mut output, FileIdentifierMode::None)
+        .expect("Failed to write PDF");
+
+    let path = "example.pdf";
+    let mut file = File::create(path).expect("Failed to create file");
+    file.write_all(&output).expect("Failed to write file");
+
+    println!("Created {} with {} objects", path, pdf.objects.len());
 }
