@@ -80,11 +80,39 @@ pub(crate) trait WriteStrategy {
         id_mode: &FileIdentifierMode,
     ) -> std::io::Result<()>;
 
+    //---------------------------- Helper Functions -----------------
+
     /// Formats two byte arrays into a PDF ID array string.
     fn format_id_array(first_id: &[u8], second_id: &[u8]) -> Vec<u8> {
         let s1 = encode_pdf_string(&String::from_utf8_lossy(first_id));
         let s2 = encode_pdf_string(&String::from_utf8_lossy(second_id));
         format!("/ID [{} {}]", s1, s2).into_bytes()
+    }
+
+    /// Computes MD5 hash of all non-free objects and returns both hex string and bytes.
+    fn compute_data_hash(objects: &[Box<dyn PdfObject>]) -> (String, Vec<u8>) {
+        let mut context = md5::Context::new();
+        for obj in objects {
+            if obj.metadata().status != ObjectStatus::Free {
+                context.consume(obj.data());
+            }
+        }
+        let hash_result = context.finalize().0;
+        let data_hash_hex: String =
+            hash_result.iter().map(|b| format!("{:02x}", b)).collect();
+        let data_hash_bytes = data_hash_hex.as_bytes().to_vec();
+        (data_hash_hex, data_hash_bytes)
+    }
+
+    /// Determines the ID bytes to use based on the identifier mode.
+    fn get_id_bytes<'a>(
+        identifier_mode: &'a FileIdentifierMode,
+        data_hash_bytes: &'a [u8],
+    ) -> &'a [u8] {
+        match identifier_mode {
+            FileIdentifierMode::Custom(bytes) => bytes.as_slice(),
+            _ => data_hash_bytes,
+        }
     }
 
     /// Generates the fully formatted PDF /ID line based on the identifier mode.
@@ -96,24 +124,9 @@ pub(crate) trait WriteStrategy {
         match identifier_mode {
             FileIdentifierMode::None => None,
             FileIdentifierMode::AutoMD5 | FileIdentifierMode::Custom(_) => {
-                // Calculate MD5 hash of all non-free objects
-                let mut context = md5::Context::new();
-                for obj in objects {
-                    if obj.metadata().status != ObjectStatus::Free {
-                        context.consume(obj.data());
-                    }
-                }
-                let hash_result = context.finalize().0;
-                let data_hash_hex: String =
-                    hash_result.iter().map(|b| format!("{:02x}", b)).collect();
-                let data_hash_bytes = data_hash_hex.as_bytes();
-
-                let id_bytes = match identifier_mode {
-                    FileIdentifierMode::Custom(bytes) => bytes.as_slice(),
-                    _ => data_hash_bytes,
-                };
-
-                Some(Self::format_id_array(id_bytes, data_hash_bytes))
+                let (_data_hash_hex, data_hash_bytes) = Self::compute_data_hash(objects);
+                let id_bytes = Self::get_id_bytes(identifier_mode, &data_hash_bytes);
+                Some(Self::format_id_array(id_bytes, &data_hash_bytes))
             }
         }
     }
@@ -125,17 +138,6 @@ pub(crate) trait WriteStrategy {
         stream.write_line(b"%\xf0\x9f\x96\xa4") // Binary marker
     }
 
-    // Writing a single, uncompressed object
-    // Both Legacy and Compressed writers need this for Streams/Images.
-    #[allow(dead_code)]
-    fn write_single_object<W: Write>(
-        &self,
-        obj: &mut dyn PdfObject,
-        stream: &mut PdfStream<W>,
-    ) -> std::io::Result<()> {
-        obj.metadata_mut().offset = stream.pos;
-        stream.write_line_latin1(&obj.indirect())
-    }
 }
 //------------------------------ Legacy Strategy -----------------
 
