@@ -160,6 +160,15 @@ impl CrossRefEntry {
         ((bits + 7) / 8) as usize
     }
 
+    /// Returns the type byte for this cross-reference entry according to PDF spec
+    pub fn type_byte(&self) -> u8 {
+        match self {
+            CrossRefEntry::FreeObject { .. } => 0,
+            CrossRefEntry::Uncompressed { .. } => 1,
+            CrossRefEntry::CompressedInObjstm { .. } => 2,
+        }
+    }
+
     /// Returns minimum (field2_width, field3_width) needed for this entry
     pub fn required_widths(&self) -> (usize, usize) {
         match self {
@@ -207,24 +216,22 @@ impl CrossRefStream {
             })
     }
 
-    pub fn build_binary_data(&self) -> Vec<u8> {
-        let (field2_width, field3_width) = self.calculate_optimal_widths();
-
+    pub fn build_binary_data(&self, field2_width: usize, field3_width: usize) -> Vec<u8> {
         let mut data = Vec::new();
         for entry in &self.entries {
-            let (type_byte, field2, field3) = match entry {
+            data.push(entry.type_byte());
+
+            let (field2, field3) = match entry {
                 CrossRefEntry::FreeObject { next_free_obj, generation } => {
-                    (0u8, *next_free_obj, *generation)
+                    (*next_free_obj, *generation)
                 }
                 CrossRefEntry::Uncompressed { byte_offset, generation } => {
-                    (1u8, *byte_offset, *generation)
+                    (*byte_offset, *generation)
                 }
                 CrossRefEntry::CompressedInObjstm { objstm_number, index_within_objstm } => {
-                    (2u8, *objstm_number, *index_within_objstm)
+                    (*objstm_number, *index_within_objstm)
                 }
             };
-
-            data.push(type_byte);
 
             // Encode field2 in big-endian
             let field2_bytes = field2.to_be_bytes();

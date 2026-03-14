@@ -425,9 +425,9 @@ impl WriteStrategy for CompressedStrategy {
             }
         }
 
-        // Build binary data (field widths are calculated automatically inside)
+        // Build binary data
         let (field2_width, field3_width) = xref_stream.calculate_optimal_widths();
-        let xref_data = xref_stream.build_binary_data();
+        let xref_data = xref_stream.build_binary_data(field2_width, field3_width);
         let xref_stream_num = pdf.allocate_object_id();
 
         // Build xref stream dictionary
