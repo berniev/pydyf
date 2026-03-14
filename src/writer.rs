@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use crate::cross_ref::{ObjectStatus, XStreamType};
+use crate::cross_ref::{ObjectStatus, CrossRefEntry};
 use crate::objects::string::encode_pdf_string;
 use crate::{FileIdentifierMode, PDF, PdfObject};
 
@@ -377,10 +377,10 @@ impl WriteStrategy for CompressedStrategy {
         pdf.xref_position = Some(stream.pos);
 
         let mut xref_stream = CrossRefStream::new();
-        let mut entry_map: HashMap<usize, (XStreamType, usize, u16)> = HashMap::new();
+        let mut entry_map: HashMap<usize, CrossRefEntry> = HashMap::new();
 
         // Object 0 already added by CrossRefStream::new()
-        entry_map.insert(0, (XStreamType::FreeObject, 0, 65535));
+        entry_map.insert(0, CrossRefEntry::FreeObject { next_free_obj: 0, generation: 65535 });
 
         let compression_map = self.compression_map.borrow();
 
@@ -394,17 +394,17 @@ impl WriteStrategy for CompressedStrategy {
             }
 
             if meta.status == ObjectStatus::Free {
-                entry_map.insert(obj_id, (XStreamType::FreeObject, 0, 65535));
+                entry_map.insert(obj_id, CrossRefEntry::FreeObject { next_free_obj: 0, generation: 65535 });
             } else if let Some((objstm_num, index)) = compression_map.get(&obj_id) {
-                entry_map.insert(obj_id, (XStreamType::CompressedInObjstm, *objstm_num, *index as u16));
+                entry_map.insert(obj_id, CrossRefEntry::CompressedInObjstm { objstm_number: *objstm_num, index_within_objstm: *index as u16 });
             } else {
-                entry_map.insert(obj_id, (XStreamType::Uncompressed, meta.offset, meta.generation_number.as_u16()));
+                entry_map.insert(obj_id, CrossRefEntry::Uncompressed { byte_offset: meta.offset, generation: meta.generation_number.as_u16() });
             }
         }
 
         // Entry for object stream (if present)
         let objstm_num = if let Some((num, offset)) = *self.objstm_info.borrow() {
-            entry_map.insert(num, (XStreamType::Uncompressed, offset, 0));
+            entry_map.insert(num, CrossRefEntry::Uncompressed { byte_offset: offset, generation: 0 });
             Some(num)
         } else {
             None
@@ -413,15 +413,15 @@ impl WriteStrategy for CompressedStrategy {
         // Entry for the xref stream itself
         let xref_stream_offset = stream.pos;
         let xref_stream_num = objstm_num.map(|n| n + 1).unwrap_or(pdf.objects.len());
-        entry_map.insert(xref_stream_num, (XStreamType::Uncompressed, xref_stream_offset, 0));
+        entry_map.insert(xref_stream_num, CrossRefEntry::Uncompressed { byte_offset: xref_stream_offset, generation: 0 });
 
         // Build xref_entries array in order: xref_entries[N] = entry for object N
         let max_obj_num = entry_map.keys().max().copied().unwrap_or(0);
         for obj_num in 1..=max_obj_num {
-            if let Some((entry_type, field2, field3)) = entry_map.get(&obj_num) {
-                xref_stream.add_entry(entry_type.clone(), *field2, *field3);
+            if let Some(entry) = entry_map.get(&obj_num) {
+                xref_stream.add_entry(entry.clone());
             } else {
-                xref_stream.add_entry(XStreamType::FreeObject, 0, 65535);
+                xref_stream.add_entry(CrossRefEntry::FreeObject { next_free_obj: 0, generation: 65535 });
             }
         }
 
@@ -430,7 +430,8 @@ impl WriteStrategy for CompressedStrategy {
         let field2_width = ((max_offset as f64).log2() / 8.0).ceil() as usize;
         let field3_width = 2;
 
-        let xref_data = xref_stream.build_binary_data(field2_width, field3_width);
+        xref_stream.set_field_widths(field2_width, field3_width);
+        let xref_data = xref_stream.build_binary_data();
         let xref_stream_num = pdf.allocate_object_id();
 
         // Build xref stream dictionary

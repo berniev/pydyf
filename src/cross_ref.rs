@@ -124,7 +124,7 @@ impl CrossRefTable {
 ///
 
 #[derive(Clone)]
-pub(crate) enum CrossRefEntry {
+pub enum CrossRefEntry {
     FreeObject {
         next_free_obj: usize,
         generation: u16,
@@ -141,11 +141,15 @@ pub(crate) enum CrossRefEntry {
 
 pub(crate) struct CrossRefStream {
     entries: Vec<CrossRefEntry>,
+    field2_width: usize,
+    field3_width: usize,
 }
 impl CrossRefStream {
     pub fn new() -> Self {
         let mut stream = CrossRefStream {
             entries: Vec::new(),
+            field2_width: 8,  // Default: 8 bytes for offsets/object numbers
+            field3_width: 2,  // Default: 2 bytes for generation/index
         };
         stream.entries.push(CrossRefEntry::FreeObject {
             next_free_obj: 0,
@@ -154,28 +158,17 @@ impl CrossRefStream {
         stream
     }
 
-    pub fn add_free_object(&mut self, next_free_obj: usize, generation: u16) {
-        self.entries.push(CrossRefEntry::FreeObject {
-            next_free_obj,
-            generation,
-        });
+
+    pub fn add_entry(&mut self, entry: CrossRefEntry) {
+        self.entries.push(entry);
     }
 
-    pub fn add_uncompressed(&mut self, byte_offset: usize, generation: u16) {
-        self.entries.push(CrossRefEntry::Uncompressed {
-            byte_offset,
-            generation,
-        });
+    pub fn set_field_widths(&mut self, field2_width: usize, field3_width: usize) {
+        self.field2_width = field2_width;
+        self.field3_width = field3_width;
     }
 
-    pub fn add_compressed(&mut self, objstm_number: usize, index_within_objstm: u16) {
-        self.entries.push(CrossRefEntry::CompressedInObjstm {
-            objstm_number,
-            index_within_objstm,
-        });
-    }
-
-    pub fn build_binary_data(&self, field2_width: usize, field3_width: usize) -> Vec<u8> {
+    pub fn build_binary_data(&self) -> Vec<u8> {
         let mut data = Vec::new();
         for entry in &self.entries {
             let (type_byte, field2, field3) = match entry {
@@ -194,11 +187,11 @@ impl CrossRefStream {
 
             // Encode field2 in big-endian
             let field2_bytes = field2.to_be_bytes();
-            data.extend_from_slice(&field2_bytes[8 - field2_width..]);
+            data.extend_from_slice(&field2_bytes[8 - self.field2_width..]);
 
             // Encode field3 in big-endian
             let field3_bytes = field3.to_be_bytes();
-            data.extend_from_slice(&field3_bytes[2 - field3_width..]);
+            data.extend_from_slice(&field3_bytes[2 - self.field3_width..]);
         }
         data
     }
