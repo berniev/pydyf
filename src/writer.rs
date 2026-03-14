@@ -400,16 +400,13 @@ impl WriteStrategy for CompressedStrategy {
         }
 
         // Entry for object stream (if present)
-        let objstm_num = if let Some((num, offset)) = *self.objstm_info.borrow() {
+        if let Some((num, offset)) = *self.objstm_info.borrow() {
             entry_map.insert(num, CrossRefEntry::Uncompressed { byte_offset: offset, generation: 0 });
-            Some(num)
-        } else {
-            None
-        };
+        }
 
-        // Entry for the xref stream itself
+        // Allocate object number for the xref stream and add its entry
+        let xref_stream_num = pdf.allocate_object_id();
         let xref_stream_offset = stream.pos;
-        let xref_stream_num = objstm_num.map(|n| n + 1).unwrap_or(pdf.objects.len());
         entry_map.insert(xref_stream_num, CrossRefEntry::Uncompressed { byte_offset: xref_stream_offset, generation: 0 });
 
         // Build xref_entries array in order: xref_entries[N] = entry for object N
@@ -421,8 +418,6 @@ impl WriteStrategy for CompressedStrategy {
                 xref_stream.add_entry(CrossRefEntry::FreeObject { next_free_obj: 0, generation: 65535 });
             }
         }
-
-        let xref_stream_num = pdf.allocate_object_id();
         let info_obj_id = if !pdf.info.values.is_empty() {
             pdf.info.metadata.object_identifier
         } else {
