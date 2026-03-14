@@ -102,23 +102,72 @@ impl CrossRefTable {
     }
 }
 
-/*
-/// 7.5.8 Cross-Reference Streams
-/// 7.5.8.1 General
+/// Cross-Reference Streams
 /// Beginning with PDF 1.5, cross-reference information may be stored in a cross-reference stream
 /// instead of in a cross-reference table. Cross-reference streams provide the following advantages:
-/// • A more compact representation of cross-reference information
-/// • The ability to access compressed objects that are stored in object streams (see 7.5.7,
-///   "Object Streams") and to allow new cross-reference entry types to be added in the future
+/// • More compact representation of cross-reference information
+/// • Ability to access compressed objects that are stored in object streams (see 7.5.7,
+///   "Object Streams") and to allow new cross-reference entry types to be added in the future.
+/// 
 /// Cross-reference streams are stream objects (see 7.3.8, "Stream Objects"), and contain a
-/// dictionary and a data stream. Each cross-reference stream contains the information equivalent
+/// dictionary and a data stream. 
+/// 
+/// Each cross-reference stream contains the information equivalent
 /// to the cross-reference table (see 7.5.4, "Cross-Reference Table") and trailer (see 7.5.5, "File
 /// Trailer") for one cross-reference section.
-/*enum EntryType {
-    Zero { 0, next_free: u32, generation: u16 },
-    One { 1, offset: u32, generation: u16 },
-    Two { 2, number: u32, index: u64 },
+///
+/// Entry types:
+///  Type                Num  Field2         Field3
+///  Free object           0  next free obj  generation (65535 for object 0)
+///  Uncompressed          1  byte offset    generation
+///  Compressed in objstm  2  objstm number  index within objstm
+///
+
+#[derive(Clone)]
+pub enum XStreamType{
+    FreeObject,
+    Uncompressed,
+    CompressedInObjstm,
 }
-*/
-pub struct CrossRefStream {}
-*/
+
+pub(crate) struct CrossRefStream {
+    entries: Vec<(XStreamType, usize, u16)>, // (type, field2, field3)
+}
+
+impl CrossRefStream {
+    pub fn new() -> Self {
+        let mut stream = CrossRefStream {
+            entries: Vec::new(),
+        };
+        stream.entries.push((XStreamType::FreeObject, 0, 65535));
+        stream
+    }
+
+    pub fn add_entry(&mut self, entry_type: XStreamType, field2: usize, field3: u16) {
+        self.entries.push((entry_type, field2, field3));
+    }
+
+    pub fn build_binary_data(&self, field2_width: usize, field3_width: usize) -> Vec<u8> {
+        let mut data = Vec::new();
+        for (type_byte, field2, field3) in &self.entries {
+            data.push(match type_byte {
+                XStreamType::FreeObject => 0u8,
+                XStreamType::Uncompressed => 1u8,
+                XStreamType::CompressedInObjstm => 2u8,
+            });
+
+            // Encode field2 in big-endian
+            let field2_bytes = field2.to_be_bytes();
+            data.extend_from_slice(&field2_bytes[8 - field2_width..]);
+
+            // Encode field3 in big-endian
+            let field3_bytes = field3.to_be_bytes();
+            data.extend_from_slice(&field3_bytes[2 - field3_width..]);
+        }
+        data
+    }
+
+    pub fn entry_count(&self) -> usize {
+        self.entries.len()
+    }
+}

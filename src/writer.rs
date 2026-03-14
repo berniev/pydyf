@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use crate::cross_ref::ObjectStatus;
+use crate::cross_ref::{ObjectStatus, XStreamType};
 use crate::objects::string::encode_pdf_string;
 use crate::{FileIdentifierMode, PDF, PdfObject};
 
@@ -227,15 +227,7 @@ impl CompressedStrategy {
             objstm_info: RefCell::new(None),
         }
     }
-}
 
-impl Default for CompressedStrategy {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl CompressedStrategy {
     /// Write objects using object streams (PDF 1.5+)
     /// Compressible objects are grouped into an object stream
     /// Returns a map of (object_id -> (objstm_number, index_in_stream))
@@ -243,7 +235,7 @@ impl CompressedStrategy {
         &self,
         pdf: &mut PDF,
         stream: &mut PdfStream<W>,
-    ) -> std::io::Result<std::collections::HashMap<usize, (usize, usize)>> {
+    ) -> std::io::Result<HashMap<usize, (usize, usize)>> {
         use std::collections::HashMap;
         use std::rc::Rc;
 
@@ -315,19 +307,19 @@ impl CompressedStrategy {
             (
                 "Type".to_string(),
                 Rc::new(crate::NameObject::new(Some("ObjStm".to_string())))
-                    as Rc<dyn crate::PdfObject>,
+                    as Rc<dyn PdfObject>,
             ),
             (
                 "N".to_string(),
                 Rc::new(crate::NumberObject::new(crate::NumberType::Integer(
                     compressed_objects.len() as i64,
-                ))) as Rc<dyn crate::PdfObject>,
+                ))) as Rc<dyn PdfObject>,
             ),
             (
                 "First".to_string(),
                 Rc::new(crate::NumberObject::new(crate::NumberType::Integer(
                     first_offset as i64,
-                ))) as Rc<dyn crate::PdfObject>,
+                ))) as Rc<dyn PdfObject>,
             ),
         ];
 
@@ -345,6 +337,12 @@ impl CompressedStrategy {
         *self.objstm_info.borrow_mut() = Some((obj_stream_num, objstm_offset));
 
         Ok(compression_map)
+    }
+}
+
+impl Default for CompressedStrategy {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -373,26 +371,17 @@ impl WriteStrategy for CompressedStrategy {
         stream: &mut PdfStream<W>,
         _id_mode: &FileIdentifierMode,
     ) -> std::io::Result<()> {
-        
+        use crate::cross_ref::CrossRefStream;
+        use std::collections::HashMap;
 
         pdf.xref_position = Some(stream.pos);
 
-        // Build xref entries for all objects
-        // Format: each entry is (type, field2, field3)
-        // Type 0: free object - field2=next free obj, field3=generation
-        // Type 1: uncompressed - field2=byte offset, field3=generation
-        // Type 2: compressed in objstm - field2=objstm number, field3=index within objstm
-        //
-        // IMPORTANT: xref_entries[N] must describe object N
+        let mut xref_stream = CrossRefStream::new();
+        let mut entry_map: HashMap<usize, (XStreamType, usize, u16)> = HashMap::new();
 
-        use std::collections::HashMap;
-        let mut entry_map: HashMap<usize, (u8, usize, u16)> = HashMap::new();
+        // Object 0 already added by CrossRefStream::new()
+        entry_map.insert(0, (XStreamType::FreeObject, 0, 65535));
 
-        // PDF Reference 1.7, Section 3.4.3:
-        // "Object number 0 shall always be free and shall have a generation number of 65,535"
-        entry_map.insert(0, (0, 0, 65535));
-
-        // Get the compression map
         let compression_map = self.compression_map.borrow();
 
         // Process all objects in pdf.objects
@@ -400,26 +389,22 @@ impl WriteStrategy for CompressedStrategy {
             let meta = obj.metadata();
             let obj_id = meta.object_identifier.unwrap_or(0);
 
-            // Skip object 0 - already handled above
             if obj_id == 0 {
                 continue;
             }
 
             if meta.status == ObjectStatus::Free {
-                // Type 0: free object
-                entry_map.insert(obj_id, (0, 0, 65535));
+                entry_map.insert(obj_id, (XStreamType::FreeObject, 0, 65535));
             } else if let Some((objstm_num, index)) = compression_map.get(&obj_id) {
-                // Type 2: object in object stream
-                entry_map.insert(obj_id, (2, *objstm_num, *index as u16));
+                entry_map.insert(obj_id, (XStreamType::CompressedInObjstm, *objstm_num, *index as u16));
             } else {
-                // Type 1: normal uncompressed object
-                entry_map.insert(obj_id, (1, meta.offset, meta.generation_number.as_u16()));
+                entry_map.insert(obj_id, (XStreamType::Uncompressed, meta.offset, meta.generation_number.as_u16()));
             }
         }
 
         // Entry for object stream (if present)
         let objstm_num = if let Some((num, offset)) = *self.objstm_info.borrow() {
-            entry_map.insert(num, (1, offset, 0));
+            entry_map.insert(num, (XStreamType::Uncompressed, offset, 0));
             Some(num)
         } else {
             None
@@ -428,56 +413,30 @@ impl WriteStrategy for CompressedStrategy {
         // Entry for the xref stream itself
         let xref_stream_offset = stream.pos;
         let xref_stream_num = objstm_num.map(|n| n + 1).unwrap_or(pdf.objects.len());
-        entry_map.insert(xref_stream_num, (1, xref_stream_offset, 0));
+        entry_map.insert(xref_stream_num, (XStreamType::Uncompressed, xref_stream_offset, 0));
 
         // Build xref_entries array in order: xref_entries[N] = entry for object N
         let max_obj_num = entry_map.keys().max().copied().unwrap_or(0);
-        let mut xref_entries: Vec<(u8, usize, u16)> = Vec::new();
-        for obj_num in 0..=max_obj_num {
-            if let Some(entry) = entry_map.get(&obj_num) {
-                xref_entries.push(*entry);
+        for obj_num in 1..=max_obj_num {
+            if let Some((entry_type, field2, field3)) = entry_map.get(&obj_num) {
+                xref_stream.add_entry(entry_type.clone(), *field2, *field3);
             } else {
-                // Missing object - mark as free
-                xref_entries.push((0, 0, 65535));
+                xref_stream.add_entry(XStreamType::FreeObject, 0, 65535);
             }
         }
 
         // Calculate field widths
-        let max_offset = stream.pos + 500; // Estimate for xref stream size
+        let max_offset = stream.pos + 500;
         let field2_width = ((max_offset as f64).log2() / 8.0).ceil() as usize;
-        let field3_width = 2; // Max generation is 65535
+        let field3_width = 2;
 
-        // Build binary xref data
-        let mut xref_data = Vec::new();
-        for (type_byte, field2, field3) in &xref_entries {
-            xref_data.push(*type_byte);
-
-            // Encode field2 in big-endian
-            let field2_bytes = field2.to_be_bytes();
-            xref_data.extend_from_slice(&field2_bytes[8 - field2_width..]);
-
-            // Encode field3 in big-endian
-            let field3_bytes = field3.to_be_bytes();
-            xref_data.extend_from_slice(&field3_bytes[2 - field3_width..]);
-        }
-
-        // TODO: CompressedStrategy still has PDF spec compliance issues with object numbering
-        // The implementation creates object streams and xref streams but needs more work
-        // to pass qpdf validation. Known issues:
-        // - Object stream format/indices may be incorrect
-        // - Object numbering between object stream and xref stream
-        //
-        // Create xref stream object - write it manually to avoid UTF-8 conversion issues
-        // Allocate object ID for the XRef stream
+        let xref_data = xref_stream.build_binary_data(field2_width, field3_width);
         let xref_stream_num = pdf.allocate_object_id();
 
-        // W array: [type_width field2_width field3_width]
+        // Build xref stream dictionary
         let w_array_str = format!("[ 1 {} {} ]", field2_width, field3_width);
+        let total_entries = xref_stream.entry_count();
 
-        // Size is the total number of entries (including object 0 and xref stream itself)
-        let total_entries = xref_entries.len();
-
-        // Build xref stream dictionary manually
         let mut dict_entries = vec![
             "/Type /XRef".to_string(),
             format!("/Size {}", total_entries),
@@ -491,7 +450,6 @@ impl WriteStrategy for CompressedStrategy {
 
         dict_entries.push(format!("/Length {}", xref_data.len()));
 
-        // Write xref stream object manually with binary data
         let dict_str = format!("<< {} >>", dict_entries.join(" "));
         let mut xref_stream_bytes = Vec::new();
         xref_stream_bytes.extend_from_slice(
