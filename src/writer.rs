@@ -1,6 +1,10 @@
 use std::io::Write;
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
-use crate::cross_ref::{ObjectStatus, CrossRefEntry};
+use crate::cross_ref::CrossRefStream;
+use crate::cross_ref::{CrossRefEntry, ObjectStatus};
 use crate::objects::string::encode_pdf_string;
 use crate::{FileIdentifierMode, PDF, PdfObject};
 
@@ -89,7 +93,6 @@ pub(crate) trait WriteStrategy {
         stream: &mut PdfStream<W>,
         id_mode: &FileIdentifierMode,
     ) -> std::io::Result<()> {
-        // Default: Write legacy xref table
         pdf.xref_position = Some(stream.pos);
         stream.write_line(b"xref")?;
         stream.write_line(format!("0 {}", pdf.object_count()).as_bytes())?;
@@ -108,6 +111,7 @@ pub(crate) trait WriteStrategy {
             stream.write_line(entry.as_bytes())?;
         }
 
+        // Write trailer
         stream.write_line(b"trailer")?;
         stream.write_line(b"<<")?;
         stream.write_line(format!("/Size {}", pdf.object_count()).as_bytes())?;
@@ -204,14 +208,9 @@ impl WriteStrategy for LegacyStrategy {
     fn get_version(&self) -> &[u8] {
         Self::VERSION
     }
-
-    // Uses default trait implementations for write_body and write_index
 }
 
 //------------------------ Compressed Strategy -----------------
-
-use std::cell::RefCell;
-use std::collections::HashMap;
 
 pub(crate) struct CompressedStrategy {
     // Track which objects are in object streams: object_id -> (objstm_num, index)
@@ -236,9 +235,6 @@ impl CompressedStrategy {
         pdf: &mut PDF,
         stream: &mut PdfStream<W>,
     ) -> std::io::Result<HashMap<usize, (usize, usize)>> {
-        use std::collections::HashMap;
-        use std::rc::Rc;
-
         // Track which objects are compressed: object_id -> (objstm_num, index)
         let mut compression_map: HashMap<usize, (usize, usize)> = HashMap::new();
 
@@ -306,8 +302,7 @@ impl CompressedStrategy {
         let extra_entries = vec![
             (
                 "Type".to_string(),
-                Rc::new(crate::NameObject::new(Some("ObjStm".to_string())))
-                    as Rc<dyn PdfObject>,
+                Rc::new(crate::NameObject::new(Some("ObjStm".to_string()))) as Rc<dyn PdfObject>,
             ),
             (
                 "N".to_string(),
@@ -371,9 +366,6 @@ impl WriteStrategy for CompressedStrategy {
         stream: &mut PdfStream<W>,
         _id_mode: &FileIdentifierMode,
     ) -> std::io::Result<()> {
-        use crate::cross_ref::CrossRefStream;
-        use std::collections::HashMap;
-
         pdf.xref_position = Some(stream.pos);
 
         let mut xref_stream = CrossRefStream::new();
@@ -403,13 +395,25 @@ impl WriteStrategy for CompressedStrategy {
 
         // Entry for object stream (if present)
         if let Some((num, offset)) = *self.objstm_info.borrow() {
-            entry_map.insert(num, CrossRefEntry::Uncompressed { byte_offset: offset, generation: 0 });
+            entry_map.insert(
+                num,
+                CrossRefEntry::Uncompressed {
+                    byte_offset: offset,
+                    generation: 0,
+                },
+            );
         }
 
         // Allocate object number for the xref stream and add its entry
         let xref_stream_num = pdf.allocate_object_id();
         let xref_stream_offset = stream.pos;
-        entry_map.insert(xref_stream_num, CrossRefEntry::Uncompressed { byte_offset: xref_stream_offset, generation: 0 });
+        entry_map.insert(
+            xref_stream_num,
+            CrossRefEntry::Uncompressed {
+                byte_offset: xref_stream_offset,
+                generation: 0,
+            },
+        );
 
         // Build xref_entries array in order: xref_entries[N] = entry for object N
         let max_obj_num = entry_map.keys().max().copied().unwrap_or(0);
@@ -417,7 +421,10 @@ impl WriteStrategy for CompressedStrategy {
             if let Some(entry) = entry_map.get(&obj_num) {
                 xref_stream.add_entry(entry.clone());
             } else {
-                xref_stream.add_entry(CrossRefEntry::FreeObject { next_free_obj: 0, generation: 65535 });
+                xref_stream.add_entry(CrossRefEntry::FreeObject {
+                    next_free_obj: 0,
+                    generation: 65535,
+                });
             }
         }
         let info_obj_id = if !pdf.info.values.is_empty() {
