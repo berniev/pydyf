@@ -139,17 +139,50 @@ pub enum CrossRefEntry {
     },
 }
 
+impl CrossRefEntry {
+    /// Calculate minimum bytes needed to represent a usize value
+    fn bytes_needed_usize(value: usize) -> usize {
+        if value == 0 {
+            return 1;
+        }
+        // Calculate ceil(log256(val)) = number of bytes needed
+        let bits = usize::BITS - value.leading_zeros();
+        ((bits + 7) / 8) as usize
+    }
+
+    /// Calculate minimum bytes needed to represent a u16 value
+    fn bytes_needed_u16(value: u16) -> usize {
+        if value == 0 {
+            return 1;
+        }
+        // Calculate ceil(log256(val)) = number of bytes needed
+        let bits = 16 - value.leading_zeros();
+        ((bits + 7) / 8) as usize
+    }
+
+    /// Returns minimum (field2_width, field3_width) needed for this entry
+    pub fn required_widths(&self) -> (usize, usize) {
+        match self {
+            CrossRefEntry::FreeObject { next_free_obj, generation } => {
+                (Self::bytes_needed_usize(*next_free_obj), Self::bytes_needed_u16(*generation))
+            }
+            CrossRefEntry::Uncompressed { byte_offset, generation } => {
+                (Self::bytes_needed_usize(*byte_offset), Self::bytes_needed_u16(*generation))
+            }
+            CrossRefEntry::CompressedInObjstm { objstm_number, index_within_objstm } => {
+                (Self::bytes_needed_usize(*objstm_number), Self::bytes_needed_u16(*index_within_objstm))
+            }
+        }
+    }
+}
+
 pub(crate) struct CrossRefStream {
     entries: Vec<CrossRefEntry>,
-    field2_width: usize,
-    field3_width: usize,
 }
 impl CrossRefStream {
     pub fn new() -> Self {
         let mut stream = CrossRefStream {
             entries: Vec::new(),
-            field2_width: 8,  // Default: 8 bytes for offsets/object numbers
-            field3_width: 2,  // Default: 2 bytes for generation/index
         };
         stream.entries.push(CrossRefEntry::FreeObject {
             next_free_obj: 0,
@@ -163,12 +196,20 @@ impl CrossRefStream {
         self.entries.push(entry);
     }
 
-    pub fn set_field_widths(&mut self, field2_width: usize, field3_width: usize) {
-        self.field2_width = field2_width;
-        self.field3_width = field3_width;
+    /// Calculate optimal field widths based on actual entry data
+    /// Returns (field2_width, field3_width)
+    pub fn calculate_optimal_widths(&self) -> (usize, usize) {
+        self.entries
+            .iter()
+            .map(|entry| entry.required_widths())
+            .fold((1, 1), |(max2, max3), (w2, w3)| {
+                (max2.max(w2), max3.max(w3))
+            })
     }
 
     pub fn build_binary_data(&self) -> Vec<u8> {
+        let (field2_width, field3_width) = self.calculate_optimal_widths();
+
         let mut data = Vec::new();
         for entry in &self.entries {
             let (type_byte, field2, field3) = match entry {
@@ -187,11 +228,11 @@ impl CrossRefStream {
 
             // Encode field2 in big-endian
             let field2_bytes = field2.to_be_bytes();
-            data.extend_from_slice(&field2_bytes[8 - self.field2_width..]);
+            data.extend_from_slice(&field2_bytes[8 - field2_width..]);
 
             // Encode field3 in big-endian
             let field3_bytes = field3.to_be_bytes();
-            data.extend_from_slice(&field3_bytes[2 - self.field3_width..]);
+            data.extend_from_slice(&field3_bytes[2 - field3_width..]);
         }
         data
     }

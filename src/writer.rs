@@ -425,12 +425,8 @@ impl WriteStrategy for CompressedStrategy {
             }
         }
 
-        // Calculate field widths
-        let max_offset = stream.pos + 500;
-        let field2_width = ((max_offset as f64).log2() / 8.0).ceil() as usize;
-        let field3_width = 2;
-
-        xref_stream.set_field_widths(field2_width, field3_width);
+        // Build binary data (field widths are calculated automatically inside)
+        let (field2_width, field3_width) = xref_stream.calculate_optimal_widths();
         let xref_data = xref_stream.build_binary_data();
         let xref_stream_num = pdf.allocate_object_id();
 
