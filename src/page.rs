@@ -179,28 +179,22 @@ impl crate::PdfObject for PageObject {
         // Parent reference (required) - reference to the page tree
         entries.push(format!("/Parent {} 0 R", u64::from(self.parent.clone())));
 
-        // Contents (required unless page is empty)
         if !self.contents.is_empty() {
-            if self.contents.len() == 1 {
-                // Single content stream
-                entries.push(format!("/Contents {} 0 R", self.contents[0]));
-            } else {
-                // Multiple content streams - use array
-                let refs: Vec<String> = self.contents
-                    .iter()
-                    .map(|id| format!("{} 0 R", id))
-                    .collect();
-                entries.push(format!("/Contents [{}]", refs.join(" ")));
-            }
+            let refs: Vec<String> = self
+                .contents
+                .iter()
+                .map(|id| format!("{} 0 R", id))
+                .collect();
+            entries.push(format!("/Contents [{}]", refs.join(" ")));
         }
 
-        // MediaBox (optional if inherited from parent)
+        // MediaBox (optional if parent provides - inheritance)
         if let Some(size) = &self.media_box {
             let dims = size.dimensions();
             entries.push(format!("/MediaBox [0 0 {} {}]", dims.width, dims.height));
         }
 
-        // Resources (optional if inherited from parent)
+        // Resources (optional if parent provides - inheritance)
         if let Some(resources_id) = self.resources_id {
             entries.push(format!("/Resources {} 0 R", resources_id));
         }
@@ -259,10 +253,10 @@ pub struct PageTreeNode {
 }
 
 impl PageTreeNode {
-    pub fn new(parent: Option<ObjectId>) -> Self {
+    pub fn new(parent_id: Option<ObjectId>) -> Self {
         Self {
             id: ObjectId(0),
-            parent_id: parent,
+            parent_id,
             kids: Vec::new(),
             media_box: None,
             resources: None,
@@ -292,12 +286,15 @@ impl PageTreeNode {
         self.kids.push(PageTreeItem::Node(page_tree_node));
     }
 
-    pub fn kids_array(&self) -> Vec<u8> {
-        let mut items: Vec<String> = Vec::new();
-        for kid in &self.kids {
-            items.push(format!("{} 0 R", kid.id()));
-        }
-        format!("[{}]", items.join(" ")).into_bytes()
+    pub fn kids_array(&self) -> String {
+        format!(
+            "[{}]",
+            self.kids
+                .iter()
+                .map(|kid| format!("{} 0 R", kid.id()))
+                .collect::<Vec<_>>()
+                .join(" ")
+        )
     }
 
     pub fn set_media_box(&mut self, size: PageSize) {
@@ -317,13 +314,8 @@ impl crate::PdfObject for PageTreeNode {
     fn data(&self) -> String {
         let mut entries = vec!["/Type /Pages".to_string()];
 
-        // Kids array (required)
-        entries.push(format!(
-            "/Kids {}",
-            String::from_utf8_lossy(&self.kids_array())
-        ));
+        entries.push(format!("/Kids {}", &self.kids_array()));
 
-        // Count (required)
         entries.push(format!("/Count {}", self.count()));
 
         // MediaBox (optional, inherited)
