@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 use crate::cross_ref::CrossRefStream;
 use crate::cross_ref::{CrossRefEntry, ObjectStatus};
+use crate::objects::metadata::Generation;
 use crate::objects::string::encode_pdf_string;
 use crate::{FileIdentifierMode, PDF, PdfObject};
 
@@ -177,7 +178,7 @@ impl WriteStrategy for LegacyStrategy {
         stream.write_line(format!("0 {}", pdf.object_count()).as_bytes())?;
 
         // Per PDF spec, object 0 is always free (head of free list)
-        stream.write_line(b"0000000000 65535 f ")?;
+        stream.write_line(format!("0000000000 {:05} f ", Generation::ROOT_GENERATION).as_bytes())?;
 
         // Write entries for actual objects (1 through N-1)
         let xref_entries: Vec<String> = pdf
@@ -430,7 +431,7 @@ impl WriteStrategy for CompressedStrategy {
             } else {
                 xref_stream.add_entry(CrossRefEntry::FreeObject {
                     next_free_obj: 0,
-                    generation: 65535,
+                    generation: Generation::ROOT_GENERATION,
                 });
             }
         }

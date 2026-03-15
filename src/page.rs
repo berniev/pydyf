@@ -6,7 +6,6 @@ use crate::{PdfMetadata, ResourceDictionary};
 
 //--------------------------- Offset ---------------------------//
 
-///// Usage: let object_num: ObjectNum = 100u64.into();
 #[derive(Clone, Debug, Default)]
 pub struct ObjectId(u64);
 
@@ -151,22 +150,18 @@ impl PageObject {
         self.id = id;
     }
 
-    /// If None, the page will later try to inherit from its parent.
     pub fn set_media_box(&mut self, size: PageSize) {
         self.media_box = Some(size);
     }
 
-    /// If None, the page will later try to inherit from its parent.
     pub fn set_resources(&mut self, resources: ResourceDictionary) {
         self.resources = Some(resources);
     }
 
-    /// Add a content stream to this page.
     pub fn add_content(&mut self, content_id: usize) {
         self.contents.push(content_id);
     }
 
-    /// Set the content streams for this page (replaces existing).
     pub fn set_contents(&mut self, content_ids: Vec<usize>) {
         self.contents = content_ids;
     }
@@ -176,7 +171,6 @@ impl crate::PdfObject for PageObject {
     fn data(&self) -> String {
         let mut entries = vec!["/Type /Page".to_string()];
 
-        // Parent reference (required) - reference to the page tree
         entries.push(format!("/Parent {} 0 R", u64::from(self.parent.clone())));
 
         if !self.contents.is_empty() {

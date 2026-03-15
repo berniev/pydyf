@@ -150,7 +150,7 @@ impl CrossRefEntry {
         if status == ObjectStatus::Free {
             CrossRefEntry::FreeObject {
                 next_free_obj: 0,
-                generation: 65535,
+                generation: Generation::ROOT_GENERATION,
             }
         } else if let Some((objstm_num, index)) = compression_info {
             CrossRefEntry::CompressedInObjstm {
@@ -220,7 +220,7 @@ impl CrossRefStream {
         };
         stream.entries.push(CrossRefEntry::FreeObject {
             next_free_obj: 0,
-            generation: 65535,
+            generation: Generation::ROOT_GENERATION,
         });
         stream
     }
