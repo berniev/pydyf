@@ -494,7 +494,7 @@ impl StreamObject {
     ///
     /// Convenience method equivalent to calling `set_text_matrix` with an identity matrix.
     pub fn set_text_position(&mut self, posn: Posn<f64>) {
-        self.set_text_matrix(Matrix::new(1.0, 0.0, 0.0, 1.0, posn.x, posn.y));
+        self.set_text_matrix(Matrix { a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: posn.x, f: posn.y });
     }
 
     pub fn show_text_strings(&mut self, text: &str) {

@@ -7,45 +7,27 @@ use crate::{DictionaryObject, NameObject, NumberObject, NumberType, PdfObject, R
 use std::any::Any;
 use std::rc::Rc;
 
-/// Blend mode for transparency groups.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BlendMode {
-    /// Default: source over destination (normal painting).
     Normal,
-    /// Multiply source and destination.
     Multiply,
-    /// Screen (inverse multiply).
     Screen,
-    /// Overlay.
     Overlay,
-    /// Darken.
     Darken,
-    /// Lighten.
     Lighten,
-    /// Color dodge.
     ColorDodge,
-    /// Color burn.
     ColorBurn,
-    /// Hard light.
     HardLight,
-    /// Soft light.
     SoftLight,
-    /// Difference.
     Difference,
-    /// Exclusion.
     Exclusion,
-    /// Hue.
     Hue,
-    /// Saturation.
     Saturation,
-    /// Color.
     Color,
-    /// Luminosity.
     Luminosity,
 }
 
 impl BlendMode {
-    /// Get the PDF name for this blend mode.
     pub fn as_str(&self) -> &'static str {
         match self {
             BlendMode::Normal => "Normal",
@@ -68,16 +50,11 @@ impl BlendMode {
     }
 }
 
-/// Rendering intent for color management.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RenderingIntent {
-    /// Absolute colorimetric.
     AbsoluteColorimetric,
-    /// Relative colorimetric.
     RelativeColorimetric,
-    /// Saturation.
     Saturation,
-    /// Perceptual.
     Perceptual,
 }
 
@@ -98,57 +75,25 @@ impl RenderingIntent {
 /// line caps, and overprint settings.
 #[derive(Clone)]
 pub struct ExtGState {
-    /// Line width.
     pub line_width: Option<f64>,
-
-    /// Line cap style (0=butt, 1=round, 2=projecting square).
     pub line_cap: Option<u8>,
-
-    /// Line join style (0=miter, 1=round, 2=bevel).
     pub line_join: Option<u8>,
-
-    /// Miter limit.
     pub miter_limit: Option<f64>,
-
-    /// Stroke alpha (opacity, 0.0-1.0).
     pub stroke_alpha: Option<f64>,
-
-    /// Fill alpha (opacity, 0.0-1.0).
     pub fill_alpha: Option<f64>,
-
-    /// Blend mode.
     pub blend_mode: Option<BlendMode>,
-
-    /// Rendering intent.
     pub rendering_intent: Option<RenderingIntent>,
-
-    /// Overprint for stroking.
     pub overprint_stroke: Option<bool>,
-
-    /// Overprint for filling.
     pub overprint_fill: Option<bool>,
-
-    /// Overprint mode.
     pub overprint_mode: Option<u8>,
-
-    /// Flatness tolerance.
     pub flatness: Option<f64>,
-
-    /// Smoothness tolerance.
     pub smoothness: Option<f64>,
-
-    /// Stroke adjustment.
     pub stroke_adjust: Option<bool>,
-
-    /// Alpha is shape (not opacity).
     pub alpha_is_shape: Option<bool>,
-
-    /// Text knockout.
     pub text_knockout: Option<bool>,
 }
 
 impl ExtGState {
-    /// Create a new empty ExtGState.
     pub fn new() -> Self {
         Self {
             line_width: None,
@@ -170,7 +115,6 @@ impl ExtGState {
         }
     }
 
-    /// Create an ExtGState with transparency.
     pub fn with_alpha(stroke_alpha: f64, fill_alpha: f64) -> Self {
         Self {
             stroke_alpha: Some(stroke_alpha),
@@ -179,7 +123,6 @@ impl ExtGState {
         }
     }
 
-    /// Create an ExtGState with a blend mode.
     pub fn with_blend_mode(blend_mode: BlendMode) -> Self {
         Self {
             blend_mode: Some(blend_mode),
@@ -187,31 +130,25 @@ impl ExtGState {
         }
     }
 
-    /// Set stroke alpha.
     pub fn set_stroke_alpha(mut self, alpha: f64) -> Self {
         self.stroke_alpha = Some(alpha.clamp(0.0, 1.0));
         self
     }
 
-    /// Set fill alpha.
     pub fn set_fill_alpha(mut self, alpha: f64) -> Self {
         self.fill_alpha = Some(alpha.clamp(0.0, 1.0));
         self
     }
-
-    /// Set blend mode.
     pub fn set_blend_mode(mut self, mode: BlendMode) -> Self {
         self.blend_mode = Some(mode);
         self
     }
 
-    /// Set line width.
     pub fn set_line_width(mut self, width: f64) -> Self {
         self.line_width = Some(width);
         self
     }
 
-    /// Convert to PDF dictionary.
     pub fn to_dict(&self) -> DictionaryObject {
         let mut dict = DictionaryObject::new(None);
         dict.set("Type", Rc::new(NameObject::new(Some("ExtGState".to_string()))));
@@ -283,8 +220,7 @@ impl ExtGState {
         dict
     }
 
-    /// Generate a unique identifier for resource deduplication.
-    fn generate_id(&self) -> String {
+    fn generate_unique_id(&self) -> String {
         format!(
             "extgs:lw={:?}:lc={:?}:lj={:?}:ml={:?}:ca={:?}:CA={:?}:bm={:?}",
             self.line_width,
@@ -310,7 +246,7 @@ impl Resource for ExtGState {
     }
 
     fn resource_unique_id(&self) -> String {
-        self.generate_id()
+        self.generate_unique_id()
     }
 
     fn to_pdf_object(&self) -> Rc<dyn PdfObject> {

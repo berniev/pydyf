@@ -11,16 +11,9 @@ use std::rc::Rc;
 /// OCGs control the visibility of content in the PDF.
 #[derive(Clone)]
 pub struct OptionalContentGroup {
-    /// Human-readable name for the layer.
     pub name: String,
-
-    /// Intent (View, Design, or custom).
     pub intent: Option<Vec<String>>,
-
-    /// Initial visibility state.
     pub initial_state: VisibilityState,
-
-    /// Usage dictionary (Print, View, Export settings).
     pub usage: Option<UsageDict>,
 }
 
@@ -33,30 +26,20 @@ pub enum VisibilityState {
     Off,
 }
 
-/// Usage dictionary for optional content.
-///
 /// Specifies how the layer should behave in different contexts.
 #[derive(Clone, Default)]
 pub struct UsageDict {
-    /// Print settings.
     pub print: Option<UsageEntry>,
-
-    /// View settings.
     pub view: Option<UsageEntry>,
-
-    /// Export settings.
     pub export: Option<UsageEntry>,
 }
 
-/// Usage entry for a specific context.
 #[derive(Clone)]
 pub struct UsageEntry {
-    /// Visibility state in this context.
     pub state: VisibilityState,
 }
 
 impl OptionalContentGroup {
-    /// Create a new optional content group (layer).
     pub fn new(name: String) -> Self {
         Self {
             name,
@@ -66,19 +49,16 @@ impl OptionalContentGroup {
         }
     }
 
-    /// Set the initial visibility state.
     pub fn with_state(mut self, state: VisibilityState) -> Self {
         self.initial_state = state;
         self
     }
 
-    /// Set the intent.
     pub fn with_intent(mut self, intent: Vec<String>) -> Self {
         self.intent = Some(intent);
         self
     }
 
-    /// Set print visibility.
     pub fn with_print_state(mut self, state: VisibilityState) -> Self {
         let mut usage = self.usage.unwrap_or_default();
         usage.print = Some(UsageEntry { state });
@@ -86,7 +66,6 @@ impl OptionalContentGroup {
         self
     }
 
-    /// Set view visibility.
     pub fn with_view_state(mut self, state: VisibilityState) -> Self {
         let mut usage = self.usage.unwrap_or_default();
         usage.view = Some(UsageEntry { state });
@@ -94,7 +73,6 @@ impl OptionalContentGroup {
         self
     }
 
-    /// Convert to PDF dictionary.
     pub fn to_dict(&self) -> DictionaryObject {
         let mut dict = DictionaryObject::new(None);
 
@@ -162,32 +140,17 @@ impl OptionalContentGroup {
 ///
 /// Defines the default layer visibility and ordering.
 pub struct OptionalContentConfig {
-    /// Name of this configuration.
     pub name: String,
-
-    /// Creator of the configuration.
     pub creator: Option<String>,
-
-    /// Base state (ON or OFF).
     pub base_state: VisibilityState,
-
-    /// OCGs that are on by default (if base_state is OFF).
     pub on_list: Vec<usize>,
-
-    /// OCGs that are off by default (if base_state is ON).
     pub off_list: Vec<usize>,
-
-    /// Display order for layer panel.
     pub order: Vec<LayerOrder>,
 }
 
-/// Layer ordering for display.
 #[derive(Clone)]
 pub enum LayerOrder {
-    /// Single OCG (object ID).
     Single(usize),
-
-    /// Group of OCGs with label.
     Group {
         label: String,
         children: Vec<LayerOrder>,
@@ -195,7 +158,6 @@ pub enum LayerOrder {
 }
 
 impl OptionalContentConfig {
-    /// Create a new optional content configuration.
     pub fn new(name: String) -> Self {
         Self {
             name,
@@ -207,31 +169,26 @@ impl OptionalContentConfig {
         }
     }
 
-    /// Set base state.
     pub fn with_base_state(mut self, state: VisibilityState) -> Self {
         self.base_state = state;
         self
     }
 
-    /// Add OCG to ON list.
     pub fn add_on(mut self, ocg_id: usize) -> Self {
         self.on_list.push(ocg_id);
         self
     }
 
-    /// Add OCG to OFF list.
     pub fn add_off(mut self, ocg_id: usize) -> Self {
         self.off_list.push(ocg_id);
         self
     }
 
-    /// Add layer to display order.
     pub fn add_to_order(mut self, layer: LayerOrder) -> Self {
         self.order.push(layer);
         self
     }
 
-    /// Convert to PDF dictionary.
     pub fn to_dict(&self) -> DictionaryObject {
         let mut dict = DictionaryObject::new(None);
 

@@ -7,7 +7,7 @@ use std::any::Any;
 use std::rc::Rc;
 
 use crate::color::RGB;
-use crate::util::{Matrix, Posn, Rect};
+use crate::util::{Matrix, Posn, Rect, ToPdf};
 use crate::{
     ArrayObject, DictionaryObject, NameObject, NumberObject, NumberType, PdfObject, Resource,
     ResourceCategory,
@@ -209,25 +209,17 @@ impl AxialShading {
             ))),
         );
 
-        // ColorSpace
         dict.set(
             "ColorSpace",
             Rc::new(NameObject::new(Some("DeviceRGB".to_string()))),
         );
 
-        // Coords [x0 y0 x1 y1]
-        let mut coords = ArrayObject::new(None);
-        coords.push_object(Rc::new(NumberObject::new(NumberType::Real(self.start.x))));
-        coords.push_object(Rc::new(NumberObject::new(NumberType::Real(self.start.y))));
-        coords.push_object(Rc::new(NumberObject::new(NumberType::Real(self.end.x))));
-        coords.push_object(Rc::new(NumberObject::new(NumberType::Real(self.end.y))));
-        dict.set("Coords", Rc::new(coords));
+        dict.set("Coords", Rc::new(crate::util::points_to_array(self.start, self.end)));
 
         // Function (simplified: direct color interpolation)
         // In a full implementation, this would be a proper PDF function object
         // For now, we use a simplified representation
 
-        // Extend
         let mut extend = ArrayObject::new(None);
         extend.push_object(Rc::new(crate::BooleanObject::new(Some(self.extend_start))));
         extend.push_object(Rc::new(crate::BooleanObject::new(Some(self.extend_end))));
@@ -238,17 +230,11 @@ impl AxialShading {
 
     fn generate_id(&self) -> String {
         format!(
-            "axial:{},{}->{},{}:rgb({},{},{})->rgb({},{},{})",
-            self.start.x,
-            self.start.y,
-            self.end.x,
-            self.end.y,
-            self.start_color.red.color,
-            self.start_color.green.color,
-            self.start_color.blue.color,
-            self.end_color.red.color,
-            self.end_color.green.color,
-            self.end_color.blue.color
+            "axial:{}->{}: {}->{} ",
+            self.start.as_string(),
+            self.end.as_string(),
+            self.start_color.as_string(),
+            self.end_color.as_string()
         )
     }
 }

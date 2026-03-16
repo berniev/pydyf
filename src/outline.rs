@@ -3,7 +3,10 @@
 //! The outline provides a hierarchical table of contents that allows users
 //! to navigate through the document.
 
-use crate::{action::Destination, DictionaryObject, NameObject, PdfResult, StringObject, NumberObject, NumberType};
+use crate::{
+    DictionaryObject, NameObject, NumberObject, NumberType, PdfResult, StringObject,
+    action::Destination,
+};
 use std::rc::Rc;
 
 /// A bookmark item in the document outline.
@@ -11,57 +14,34 @@ use std::rc::Rc;
 /// Bookmarks form a tree structure where each item can have children.
 #[derive(Clone)]
 pub struct OutlineItem {
-    /// Display title for the bookmark.
     pub title: String,
-
-    /// Destination to jump to when clicked.
     pub destination: Option<Destination>,
-
-    /// Child bookmarks under this item.
     pub children: Vec<OutlineItem>,
-
-    /// Whether this item is initially open (showing children).
     pub is_open: bool,
-
-    /// Text color (RGB), if specified.
     pub color: Option<(f64, f64, f64)>,
-
-    /// Text style flags.
     pub flags: OutlineItemFlags,
 }
 
-/// Text style flags for outline items.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OutlineItemFlags(u32);
 
 impl OutlineItemFlags {
-    /// Normal text.
     pub const NORMAL: Self = Self(0);
-
-    /// Italic text.
     pub const ITALIC: Self = Self(1 << 0);
-
-    /// Bold text.
     pub const BOLD: Self = Self(1 << 1);
 
-    /// Create flags from raw value.
     pub const fn from_bits(bits: u32) -> Self {
         Self(bits)
     }
-
-    /// Get raw flag value.
     pub const fn bits(&self) -> u32 {
         self.0
     }
-
-    /// Combine flags.
     pub const fn or(self, other: Self) -> Self {
         Self(self.0 | other.0)
     }
 }
 
 impl OutlineItem {
-    /// Create a new outline item.
     pub fn new(title: String, destination: Option<Destination>) -> Self {
         Self {
             title,
@@ -73,30 +53,25 @@ impl OutlineItem {
         }
     }
 
-    /// Add a child bookmark.
     pub fn add_child(&mut self, child: OutlineItem) {
         self.children.push(child);
     }
 
-    /// Set whether the item is initially open.
     pub fn with_open(mut self, is_open: bool) -> Self {
         self.is_open = is_open;
         self
     }
 
-    /// Set the text color.
     pub fn with_color(mut self, r: f64, g: f64, b: f64) -> Self {
         self.color = Some((r, g, b));
         self
     }
 
-    /// Set text style flags.
     pub fn with_flags(mut self, flags: OutlineItemFlags) -> Self {
         self.flags = flags;
         self
     }
 
-    /// Count total descendants (children + all nested children).
     pub fn count_descendants(&self) -> i32 {
         let mut count = self.children.len() as i32;
         for child in &self.children {
@@ -115,24 +90,18 @@ pub struct DocumentOutline {
 }
 
 impl DocumentOutline {
-    /// Create a new empty outline.
     pub fn new() -> Self {
-        Self {
-            items: Vec::new(),
-        }
+        Self { items: Vec::new() }
     }
 
-    /// Add a root-level bookmark.
     pub fn add_item(&mut self, item: OutlineItem) {
         self.items.push(item);
     }
 
-    /// Check if the outline is empty.
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
 
-    /// Get total number of bookmarks at all levels.
     pub fn total_count(&self) -> usize {
         let mut count = self.items.len();
         for item in &self.items {
@@ -144,7 +113,10 @@ impl DocumentOutline {
     /// Convert the outline to PDF dictionary objects.
     ///
     /// Returns a tuple of (outline_dict, all_item_dicts) where object IDs need to be assigned.
-    pub fn to_dicts(&self, allocate_id: &mut dyn FnMut() -> usize) -> PdfResult<OutlineDictionaries> {
+    pub fn to_dicts(
+        &self,
+        allocate_id: &mut dyn FnMut() -> usize,
+    ) -> PdfResult<OutlineDictionaries> {
         if self.items.is_empty() {
             return Ok(OutlineDictionaries {
                 outline_dict: None,
@@ -169,20 +141,30 @@ impl DocumentOutline {
                 &mut idx,
                 outline_id,
                 if i > 0 { Some(item_ids[i - 1]) } else { None },
-                if i < self.items.len() - 1 { Some(item_ids[i + 1]) } else { None },
+                if i < self.items.len() - 1 {
+                    Some(item_ids[i + 1])
+                } else {
+                    None
+                },
             )?;
         }
 
         // Build outline dictionary
         let mut outline_dict = DictionaryObject::new(None);
-        outline_dict.set("Type", Rc::new(NameObject::new(Some("Outlines".to_string()))));
+        outline_dict.set(
+            "Type",
+            Rc::new(NameObject::new(Some("Outlines".to_string()))),
+        );
 
         if !self.items.is_empty() {
             outline_dict.set_indirect("First", item_ids[0]);
             outline_dict.set_indirect("Last", item_ids[self.items.len() - 1]);
 
             let count = self.total_count() as i64;
-            outline_dict.set("Count", Rc::new(NumberObject::new(NumberType::Integer(count))));
+            outline_dict.set(
+                "Count",
+                Rc::new(NumberObject::new(NumberType::Integer(count))),
+            );
         }
 
         Ok(OutlineDictionaries {
@@ -221,7 +203,10 @@ impl DocumentOutline {
         let mut dict = DictionaryObject::new(None);
 
         // Title
-        dict.set("Title", Rc::new(StringObject::new(Some(item.title.clone()))));
+        dict.set(
+            "Title",
+            Rc::new(StringObject::new(Some(item.title.clone()))),
+        );
 
         // Parent
         dict.set_indirect("Parent", parent_id);
@@ -234,19 +219,20 @@ impl DocumentOutline {
             dict.set_indirect("Next", next);
         }
 
-        // Destination
         if let Some(ref dest) = item.destination {
             dict.set("Dest", Rc::new(dest.to_array()));
         }
 
-        // Children
         if !item.children.is_empty() {
             let first_child_idx = *idx;
             let first_child_id = all_ids[first_child_idx];
 
-            // Build all children
             for (i, child) in item.children.iter().enumerate() {
-                let child_prev = if i > 0 { Some(all_ids[first_child_idx + i - 1]) } else { None };
+                let child_prev = if i > 0 {
+                    Some(all_ids[first_child_idx + i - 1])
+                } else {
+                    None
+                };
                 let child_next = if i < item.children.len() - 1 {
                     Some(all_ids[first_child_idx + i + 1])
                 } else {
@@ -254,13 +240,7 @@ impl DocumentOutline {
                 };
 
                 self.build_item_dict(
-                    child,
-                    dicts,
-                    all_ids,
-                    idx,
-                    current_id,
-                    child_prev,
-                    child_next,
+                    child, dicts, all_ids, idx, current_id, child_prev, child_next,
                 )?;
             }
 
@@ -270,10 +250,12 @@ impl DocumentOutline {
             // Count: positive if open, negative if closed
             let count = item.count_descendants();
             let count_val = if item.is_open { count } else { -count };
-            dict.set("Count", Rc::new(NumberObject::new(NumberType::Integer(count_val as i64))));
+            dict.set(
+                "Count",
+                Rc::new(NumberObject::new(NumberType::Integer(count_val as i64))),
+            );
         }
 
-        // Color
         if let Some((r, g, b)) = item.color {
             let mut color_arr = crate::ArrayObject::new(None);
             color_arr.push_object(Rc::new(NumberObject::new(NumberType::Real(r))));
@@ -282,9 +264,13 @@ impl DocumentOutline {
             dict.set("C", Rc::new(color_arr));
         }
 
-        // Flags
         if item.flags.bits() != 0 {
-            dict.set("F", Rc::new(NumberObject::new(NumberType::Integer(item.flags.bits() as i64))));
+            dict.set(
+                "F",
+                Rc::new(NumberObject::new(NumberType::Integer(
+                    item.flags.bits() as i64
+                ))),
+            );
         }
 
         dicts.push((current_id, dict));
@@ -314,10 +300,7 @@ mod tests {
 
     #[test]
     fn test_outline_item_creation() {
-        let item = OutlineItem::new(
-            "Chapter 1".to_string(),
-            Some(Destination::fit(0)),
-        );
+        let item = OutlineItem::new("Chapter 1".to_string(), Some(Destination::fit(0)));
 
         assert_eq!(item.title, "Chapter 1");
         assert!(item.destination.is_some());
@@ -326,10 +309,7 @@ mod tests {
 
     #[test]
     fn test_outline_item_with_children() {
-        let mut parent = OutlineItem::new(
-            "Part 1".to_string(),
-            Some(Destination::fit(0)),
-        );
+        let mut parent = OutlineItem::new("Part 1".to_string(), Some(Destination::fit(0)));
 
         parent.add_child(OutlineItem::new(
             "Chapter 1".to_string(),
@@ -378,15 +358,9 @@ mod tests {
 
     #[test]
     fn test_nested_bookmarks() {
-        let mut root = OutlineItem::new(
-            "Part 1".to_string(),
-            Some(Destination::fit(0)),
-        );
+        let mut root = OutlineItem::new("Part 1".to_string(), Some(Destination::fit(0)));
 
-        let mut chapter = OutlineItem::new(
-            "Chapter 1".to_string(),
-            Some(Destination::fit(1)),
-        );
+        let mut chapter = OutlineItem::new("Chapter 1".to_string(), Some(Destination::fit(1)));
 
         chapter.add_child(OutlineItem::new(
             "Section 1.1".to_string(),
