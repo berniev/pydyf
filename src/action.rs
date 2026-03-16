@@ -6,8 +6,6 @@
 use crate::{DictionaryObject, NameObject, NumberObject, NumberType, PdfResult, ArrayObject};
 use std::rc::Rc;
 
-/// Base trait for PDF actions.
-///
 /// Actions specify responses to various events in PDF documents, such as
 /// user interactions with annotations or form fields.
 pub trait Action {
@@ -18,14 +16,12 @@ pub trait Action {
     fn to_dict(&self) -> PdfResult<DictionaryObject>;
 }
 
-/// Navigate to a URI (web link or file link).
 pub struct UriAction {
     pub uri: String,
     pub is_map: bool,
 }
 
 impl UriAction {
-    /// Create a new URI action.
     pub fn new(uri: String) -> Self {
         Self {
             uri,
@@ -33,7 +29,6 @@ impl UriAction {
         }
     }
 
-    /// Set whether this is an image map click.
     pub fn with_is_map(mut self, is_map: bool) -> Self {
         self.is_map = is_map;
         self
@@ -58,13 +53,11 @@ impl Action for UriAction {
     }
 }
 
-/// Navigate to a destination within the PDF.
 pub struct GoToAction {
     pub destination: Destination,
 }
 
 impl GoToAction {
-    /// Create a new GoTo action.
     pub fn new(destination: Destination) -> Self {
         Self { destination }
     }
@@ -83,13 +76,11 @@ impl Action for GoToAction {
     }
 }
 
-/// Execute JavaScript code.
 pub struct JavaScriptAction {
     pub script: String,
 }
 
 impl JavaScriptAction {
-    /// Create a new JavaScript action.
     pub fn new(script: String) -> Self {
         Self { script }
     }
@@ -108,14 +99,12 @@ impl Action for JavaScriptAction {
     }
 }
 
-/// Launch an external application or open a file.
 pub struct LaunchAction {
     pub file: String,
     pub new_window: Option<bool>,
 }
 
 impl LaunchAction {
-    /// Create a new Launch action.
     pub fn new(file: String) -> Self {
         Self {
             file,
@@ -123,7 +112,6 @@ impl LaunchAction {
         }
     }
 
-    /// Set whether to open in a new window.
     pub fn with_new_window(mut self, new_window: bool) -> Self {
         self.new_window = Some(new_window);
         self
@@ -139,7 +127,6 @@ impl Action for LaunchAction {
         let mut dict = DictionaryObject::new(None);
         dict.set("S", Rc::new(NameObject::new(Some(self.action_type().to_string()))));
 
-        // File specification
         let mut file_dict = DictionaryObject::new(None);
         file_dict.set("Type", Rc::new(NameObject::new(Some("Filespec".to_string()))));
         file_dict.set("F", Rc::new(crate::StringObject::new(Some(self.file.clone()))));
@@ -153,21 +140,15 @@ impl Action for LaunchAction {
     }
 }
 
-/// Execute a named action (built-in viewer operation).
 pub struct NamedAction {
     pub name: NamedActionType,
 }
 
-/// Standard named actions defined in PDF specification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NamedActionType {
-    /// Go to next page.
     NextPage,
-    /// Go to previous page.
     PrevPage,
-    /// Go to first page.
     FirstPage,
-    /// Go to last page.
     LastPage,
 }
 
@@ -183,7 +164,6 @@ impl NamedActionType {
 }
 
 impl NamedAction {
-    /// Create a new named action.
     pub fn new(name: NamedActionType) -> Self {
         Self { name }
     }
@@ -202,13 +182,10 @@ impl Action for NamedAction {
     }
 }
 
-/// Destination within a PDF document.
-///
 /// Destinations specify a particular view of a PDF page.
 #[derive(Debug, Clone)]
 pub enum Destination {
     /// [page /XYZ left top zoom] - Display page at (left, top) with zoom factor.
-    /// null values maintain current position/zoom.
     XYZ {
         page: usize,
         left: Option<f64>,
@@ -244,17 +221,14 @@ pub enum Destination {
 }
 
 impl Destination {
-    /// Create an XYZ destination (most common type).
     pub fn xyz(page: usize, left: Option<f64>, top: Option<f64>, zoom: Option<f64>) -> Self {
         Self::XYZ { page, left, top, zoom }
     }
 
-    /// Create a Fit destination.
     pub fn fit(page: usize) -> Self {
         Self::Fit { page }
     }
 
-    /// Convert destination to PDF array format.
     pub fn to_array(&self) -> ArrayObject {
         let mut arr = ArrayObject::new(None);
 

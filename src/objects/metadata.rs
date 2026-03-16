@@ -82,7 +82,6 @@ impl PdfMetadata {
         pdf
     }
 
-    /// Formats the cross-reference entry for this object
     /// Format: nnnnnnnnnn ggggg n/f \r\n
     /// where n = offset (10 digits), g = generation (5 digits), n/f = in-use/free
     pub fn format_xref_entry(&self) -> String {

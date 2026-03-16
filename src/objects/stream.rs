@@ -332,17 +332,14 @@ impl StreamObject {
         self.push_op(&[&posn], "l");
     }
 
-    /// Begin new subpath by moving current point to `posn`.
     pub fn move_to_x_y(&mut self, posn: Posn<f64>) {
         self.push_op(&[&posn], "m");
     }
 
-    /// Move text to next line at `posn` distance from previous line.
-    pub fn move_text_to_x_y(&mut self, posn: Posn<f64>) {
+    pub fn move_text_to_next_line_at(&mut self, posn: Posn<f64>) {
         self.push_op(&[&posn], "T*");
     }
 
-    /// Paint shape and color shading using shading dictionary `name`.
     pub fn paint_shading(&mut self, name: &str) {
         let mut cmd = b"/".to_vec();
         cmd.extend(name.as_bytes());
@@ -365,10 +362,7 @@ impl StreamObject {
         self.push_op(&[&posn, &size], "re");
     }
 
-    /// Set RGB color for non-stroking operations.
-    ///
-    /// Set RGB color for stroking operations instead if `stroke` is set to `true`.
-    /// Returns an error if color values are not in range 0.0-1.0.
+    /// Set RGB color
     pub fn set_color_rgb(&mut self, rgb: RGB, stroke: StrokeOrFill) -> PdfResult<()> {
         rgb.validate()?;
         let operator = match stroke {
@@ -379,10 +373,7 @@ impl StreamObject {
         Ok(())
     }
 
-    /// Set CMYK color for non-stroking operations.
-    ///
-    /// Set CMYK color for stroking operations instead if `stroke` is set to `true`.
-    /// Returns an error if color values are not in range 0.0-1.0.
+    /// Set CMYK color
     pub fn set_color_cmyk(&mut self, cmyk: CMYK, stroke: StrokeOrFill) -> PdfResult<()> {
         cmyk.validate()?;
         let operator = match stroke {
@@ -393,10 +384,7 @@ impl StreamObject {
         Ok(())
     }
 
-    /// Set grayscale color for non-stroking operations.
-    ///
-    /// Set grayscale color for stroking operations instead if `stroke` is set to `true`.
-    /// Returns an error if gray value is not in range 0.0-1.0.
+    /// Set grayscale color
     pub fn set_color_grayscale(&mut self, grayscale: Color, stroke: StrokeOrFill) -> PdfResult<()> {
         grayscale.validate()?;
         let operator = match stroke {
@@ -494,7 +482,14 @@ impl StreamObject {
     ///
     /// Convenience method equivalent to calling `set_text_matrix` with an identity matrix.
     pub fn set_text_position(&mut self, posn: Posn<f64>) {
-        self.set_text_matrix(Matrix { a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: posn.x, f: posn.y });
+        self.set_text_matrix(Matrix {
+            a: 1.0,
+            b: 0.0,
+            c: 0.0,
+            d: 1.0,
+            e: posn.x,
+            f: posn.y,
+        });
     }
 
     pub fn show_text_strings(&mut self, text: &str) {
@@ -639,11 +634,7 @@ impl PdfObject for StreamObject {
             // PDF spec allows binary data in streams. We use Latin-1 encoding (ISO-8859-1)
             // which provides 1-to-1 mapping for all byte values 0-255.
             let stream_str: String = stream_bytes.iter().map(|&b| b as char).collect();
-            format!(
-                "{}\nstream\n{}\nendstream",
-                dict.data(),
-                stream_str
-            )
+            format!("{}\nstream\n{}\nendstream", dict.data(), stream_str)
         }
     }
 
