@@ -14,9 +14,9 @@ use crate::{DictionaryObject, NumberObject, PdfMetadata, PdfObject};
 //------------------------ EvenOdd -------------------------------
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum EvenOdd {
-    Even,
-    Odd,
+pub enum WindingRule {
+    NonZero,
+    EvenOdd,
 }
 
 //------------------- CompressionMethod ----------------------------
@@ -147,11 +147,11 @@ impl StreamObject {
         self.stream.push(vec![cmd as u8]);
     }
 
-    fn windable_cmd(&mut self, cmd: char, even_odd: EvenOdd) {
+    fn windable_cmd(&mut self, cmd: char, even_odd: WindingRule) {
         let mut op_bytes = vec![cmd as u8];
         match even_odd {
-            EvenOdd::Odd => op_bytes.push(b'*'),
-            EvenOdd::Even => op_bytes.push(b' '),
+            WindingRule::EvenOdd => op_bytes.push(b'*'),
+            WindingRule::NonZero => op_bytes.push(b' '),
         }
         self.stream.push(op_bytes);
     }
@@ -188,7 +188,7 @@ impl StreamObject {
     ///
     /// Use the nonzero winding number rule to determine which regions lie inside the clipping path by default.
     /// Use the even-odd rule if `even_odd` set to `true`.
-    pub fn clip(&mut self, even_odd: EvenOdd) {
+    pub fn clip(&mut self, even_odd: WindingRule) {
         self.windable_cmd('W', even_odd);
     }
 
@@ -237,15 +237,15 @@ impl StreamObject {
         self.stream.push(b"ET".to_vec());
     }
 
-    pub fn fill(&mut self, even_odd: EvenOdd) {
+    pub fn fill(&mut self, even_odd: WindingRule) {
         self.windable_cmd('f', even_odd);
     }
 
-    pub fn fill_and_stroke(&mut self, even_odd: EvenOdd) {
+    pub fn fill_and_stroke(&mut self, even_odd: WindingRule) {
         self.windable_cmd('B', even_odd);
     }
 
-    pub fn fill_stroke_and_close(&mut self, even_odd: EvenOdd) {
+    pub fn fill_stroke_and_close(&mut self, even_odd: WindingRule) {
         self.windable_cmd('b', even_odd);
     }
 
@@ -488,6 +488,13 @@ impl StreamObject {
     /// Set current text and text line transformation matrix.
     pub fn set_text_matrix(&mut self, matrix: Matrix) {
         self.push_op(&[&matrix], "Tm");
+    }
+
+    /// Set text position without scaling, rotation, or skewing.
+    ///
+    /// Convenience method equivalent to calling `set_text_matrix` with an identity matrix.
+    pub fn set_text_position(&mut self, posn: Posn<f64>) {
+        self.set_text_matrix(Matrix::new(1.0, 0.0, 0.0, 1.0, posn.x, posn.y));
     }
 
     pub fn show_text_strings(&mut self, text: &str) {

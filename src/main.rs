@@ -4,7 +4,7 @@
 use pydyf::{PageObject, PDF, StreamObject, FileIdentifierMode};
 use pydyf::page::PageSize;
 use pydyf::color::{Color, RGB};
-use pydyf::objects::stream::{StrokeOrFill, EvenOdd};
+use pydyf::objects::stream::{StrokeOrFill, WindingRule};
 use pydyf::util::{Posn, Dims};
 use std::fs::File;
 use std::io::Write;
@@ -26,7 +26,7 @@ fn main() {
         Posn { x: 100.0, y: 100.0 },
         Dims { height: 200.0, width: 300.0 },
     );
-    stream.fill(EvenOdd::Odd);
+    stream.fill(WindingRule::EvenOdd);
 
     let content_id = pdf.add_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());

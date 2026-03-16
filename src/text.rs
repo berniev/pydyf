@@ -4,36 +4,21 @@
 /// to be available in any PDF viewer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StandardFont {
-    /// Helvetica (sans-serif)
-    Helvetica,
-    /// Helvetica Bold
+    Helvetica, // sans-serif
     HelveticaBold,
-    /// Helvetica Oblique (italic)
     HelveticaOblique,
-    /// Helvetica Bold Oblique
     HelveticaBoldOblique,
-    /// Times Roman (serif)
-    TimesRoman,
-    /// Times Bold
+    TimesRoman, // serif
     TimesBold,
-    /// Times Italic
     TimesItalic,
-    /// Times Bold Italic
     TimesBoldItalic,
-    /// Courier (monospace)
-    Courier,
-    /// Courier Bold
+    Courier, // monospace
     CourierBold,
-    /// Courier Oblique
     CourierOblique,
-    /// Courier Bold Oblique
     CourierBoldOblique,
 }
 
 impl StandardFont {
-    /// Get the PDF name for this font.
-    ///
-    /// Returns the name as used in PDF font dictionaries.
     pub fn pdf_name(&self) -> &'static str {
         match self {
             StandardFont::Helvetica => "Helvetica",
@@ -131,14 +116,10 @@ impl StandardFont {
     }
 }
 
-/// Text wrapping mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WrapMode {
-    /// No wrapping - text continues on one line
     NoWrap,
-    /// Wrap at word boundaries
     WordWrap,
-    /// Wrap at character boundaries
     CharWrap,
 }
 
@@ -231,9 +212,8 @@ fn wrap_by_units(
         lines.push(current_line);
     }
 
-    // Ensure at least one line
     if lines.is_empty() {
-        lines.push(String::new());
+        lines.push(String::new()); // Ensure at least one line
     }
 
     lines
