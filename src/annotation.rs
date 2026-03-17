@@ -3,13 +3,13 @@
 //! Annotations are interactive elements that can be added to PDF pages, including
 //! text notes, links, highlights, and form widgets.
 
-use crate::util::Rect;
-use crate::{DictionaryObject, NumberType, PdfResult, ArrayObject};
+use crate::color::Color;
 use crate::color::RGB;
+use crate::util::{Rect, Posn};
+use crate::{ArrayObject, DictionaryObject, NumberType, PdfResult};
 
-/// Rectangle defining the annotation's location on the page.
-///
-/// Coordinates are in PDF default user space (points, from bottom-left).
+//-------------------AnnotationFlags ----------------------
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AnnotationFlags(u32);
 
@@ -23,7 +23,7 @@ impl AnnotationFlags {
     pub const NO_VIEW: Self = Self(1 << 5);
     pub const READ_ONLY: Self = Self(1 << 6);
     pub const LOCKED: Self = Self(1 << 7);
-    
+
     pub const fn from_bits(bits: u32) -> Self {
         Self(bits)
     }
@@ -34,6 +34,8 @@ impl AnnotationFlags {
         Self(self.0 | other.0)
     }
 }
+
+//-------------------Annotation Types ----------------------
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BorderStyle {
@@ -55,6 +57,8 @@ impl BorderStyle {
         }
     }
 }
+
+//-------------------Annotation Types ----------------------
 
 /// Base trait for all PDF annotations.
 ///
@@ -116,13 +120,7 @@ pub trait Annotation {
     }
 }
 
-pub struct TextAnnotation {
-    pub rect: Rect,
-    pub contents: String,
-    pub flags: AnnotationFlags,
-    pub color: Option<RGB>,
-    pub icon: TextIcon,
-}
+//-------------------TextIcon ----------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TextIcon {
@@ -149,19 +147,44 @@ impl TextIcon {
     }
 }
 
-impl TextAnnotation {
-    pub fn new(rect: Rect, contents: String) -> Self {
-        use crate::color::Color;
+//-------------------TextAnnotation ----------------------
+
+pub struct TextAnnotation {
+    pub rect: Rect,
+    pub contents: String,
+    pub flags: AnnotationFlags,
+    pub color: Option<RGB>,
+    pub icon: TextIcon,
+}
+
+impl Default for TextAnnotation {
+    fn default() -> Self {
         Self {
-            rect,
-            contents,
+            rect: Rect {
+                x1: 0.0,
+                y1: 0.0,
+                x2: 0.0,
+                y2: 0.0,
+            },
+            contents: String::new(),
             flags: AnnotationFlags::PRINT,
             color: Some(RGB {
+                // Default: yellow
                 red: Color { color: 1.0 },
                 green: Color { color: 1.0 },
                 blue: Color { color: 0.0 },
-            }), // Default: yellow
+            }),
             icon: TextIcon::Note,
+        }
+    }
+}
+
+impl TextAnnotation {
+    pub fn new(rect: Rect, contents: String) -> Self {
+        Self {
+            rect,
+            contents,
+            ..Default::default()
         }
     }
 
@@ -203,39 +226,43 @@ impl Annotation for TextAnnotation {
         // Required
         dict.set_name("Type", "Annot");
         dict.set_name("Subtype", self.subtype());
-        dict.set_array("Rect", ArrayObject::from_rect(self.rect()));
+        dict.set_array("Rect", ArrayObject::from_rect(self.rect));
 
-        // Optional
-        let flags = self.flags();
-        if flags.bits() != 0 {
-            dict.set_number("F", NumberType::Integer(flags.bits() as i64));
+        if self.flags.bits() != 0 {
+            dict.set_number("F", NumberType::Integer(self.flags.bits() as i64));
         }
 
-        if let Some(rgb) = self.color() {
+        if let Some(rgb) = self.color {
             dict.set_array("C", ArrayObject::from_rgb(rgb));
         }
 
-        if let Some(contents) = self.contents() {
-            dict.set_string("Contents", contents.to_string());
-        }
+        dict.set_string("Contents", self.contents.clone());
 
-        // Text annotation specific
         dict.set_name("Name", self.icon.as_str());
+
         Ok(dict)
     }
 }
+
+//-------------------LinkAction ----------------------
+
+#[derive(Debug, Clone)]
+pub enum LinkAction {
+    Uri(String),
+    GoTo {
+        page: usize,
+        position: Posn<f64>,
+        zoom: Option<f64>,
+    },
+}
+
+//-------------------LinkAnnotation ----------------------
 
 pub struct LinkAnnotation {
     pub rect: Rect,
     pub flags: AnnotationFlags,
     pub border_style: Option<BorderStyle>,
     pub action: LinkAction,
-}
-
-#[derive(Debug, Clone)]
-pub enum LinkAction {
-    Uri(String),
-    GoTo { page: usize, x: f64, y: f64, zoom: Option<f64> },
 }
 
 impl LinkAnnotation {
@@ -248,12 +275,16 @@ impl LinkAnnotation {
         }
     }
 
-    pub fn goto(rect: Rect, page: usize, x: f64, y: f64, zoom: Option<f64>) -> Self {
+    pub fn goto(rect: Rect, page: usize, position: Posn<f64>, zoom: Option<f64>) -> Self {
         Self {
             rect,
             flags: AnnotationFlags::PRINT,
             border_style: None,
-            action: LinkAction::GoTo { page, x, y, zoom },
+            action: LinkAction::GoTo {
+                page,
+                position,
+                zoom
+            },
         }
     }
 
@@ -304,13 +335,13 @@ impl Annotation for LinkAnnotation {
                 action_dict.set_string("URI", uri.clone());
                 dict.set_dict("A", action_dict);
             }
-            LinkAction::GoTo { page, x, y, zoom } => {
+            LinkAction::GoTo { page, position, zoom } => {
                 // Create explicit destination array [page /XYZ x y zoom]
                 let mut dest = ArrayObject::new(None);
                 dest.push_number(NumberType::Integer(*page as i64));
                 dest.push_name("XYZ");
-                dest.push_number(NumberType::Real(*x));
-                dest.push_number(NumberType::Real(*y));
+                dest.push_number(NumberType::Real(position.x));
+                dest.push_number(NumberType::Real(position.y));
                 if let Some(z) = zoom {
                     dest.push_number(NumberType::Real(*z));
                 } else {
@@ -324,13 +355,20 @@ impl Annotation for LinkAnnotation {
     }
 }
 
+//-------------------test ----------------------
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_rect_to_array() {
-        let rect = Rect { x1: 10.0, y1: 20.0, x2: 100.0, y2: 200.0 };
+        let rect = Rect {
+            x1: 10.0,
+            y1: 20.0,
+            x2: 100.0,
+            y2: 200.0,
+        };
         let arr = ArrayObject::from_rect(rect);
         assert_eq!(arr.values.len(), 4);
     }
@@ -344,7 +382,12 @@ mod tests {
     #[test]
     fn test_text_annotation() {
         let annot = TextAnnotation::new(
-            Rect { x1: 100.0, y1: 100.0, x2: 120.0, y2: 120.0 },
+            Rect {
+                x1: 100.0,
+                y1: 100.0,
+                x2: 120.0,
+                y2: 120.0,
+            },
             "This is a note".to_string(),
         );
 
@@ -358,7 +401,12 @@ mod tests {
     #[test]
     fn test_link_annotation_uri() {
         let annot = LinkAnnotation::uri(
-            Rect { x1: 10.0, y1: 10.0, x2: 100.0, y2: 30.0 },
+            Rect {
+                x1: 10.0,
+                y1: 10.0,
+                x2: 100.0,
+                y2: 30.0,
+            },
             "https://example.com".to_string(),
         );
 
@@ -368,7 +416,17 @@ mod tests {
 
     #[test]
     fn test_link_annotation_goto() {
-        let annot = LinkAnnotation::goto(Rect { x1: 10.0, y1: 10.0, x2: 100.0, y2: 30.0 }, 5, 0.0, 0.0, Some(1.0));
+        let annot = LinkAnnotation::goto(
+            Rect {
+                x1: 10.0,
+                y1: 10.0,
+                x2: 100.0,
+                y2: 30.0,
+            },
+            5,
+            Posn { x: 0.0, y: 0.0 },
+            Some(1.0),
+        );
 
         let dict = annot.to_dict().unwrap();
         assert!(dict.contains_key("Dest")); // Destination array
