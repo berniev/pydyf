@@ -4,10 +4,9 @@
 //! to navigate through the document.
 
 use crate::{
-    ArrayObject, DictionaryObject, NameObject, NumberType, PdfResult, StringObject,
+    ArrayObject, DictionaryObject, NumberType, PdfResult,
     action::Destination, color::RGB,
 };
-use std::rc::Rc;
 
 //------------------ OutlineItemFlags -----------------------
 
@@ -151,10 +150,7 @@ impl DocumentOutline {
         }
 
         let mut outline_dict = DictionaryObject::new(None);
-        outline_dict.set(
-            "Type",
-            Rc::new(NameObject::new(Some("Outlines".to_string()))),
-        );
+        outline_dict.set_name("Type", "Outlines");
 
         if !self.items.is_empty() {
             outline_dict.set_indirect("First", item_ids[0]);
@@ -198,10 +194,7 @@ impl DocumentOutline {
 
         let mut dict = DictionaryObject::new(None);
 
-        dict.set(
-            "Title",
-            Rc::new(StringObject::new(Some(item.title.clone()))),
-        );
+        dict.set_string("Title", item.title.clone());
 
         dict.set_indirect("Parent", parent_id);
 
