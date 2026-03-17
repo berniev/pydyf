@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::color::RGBA;
 use crate::util::{Dims, Posn};
 use crate::{
-    ArrayObject, DictionaryObject, NameObject, NumberObject, NumberType, PDF, PdfObject,
+    ArrayObject, DictionaryObject, NumberObject, NumberType, PDF, PdfObject,
     StreamObject,
 };
 //--------------------------- PDF Function ---------------------------//
@@ -273,10 +273,7 @@ fn create_soft_mask_for_shading(pdf: &mut PDF, alpha_shading_num: usize, width: 
 
     // 2. Create Mask Dictionary
     let mut smask_dict = DictionaryObject::typed("Mask");
-    smask_dict.set(
-        "S",
-        Rc::new(NameObject::new(Option::from("Luminosity".to_string()))),
-    );
+    smask_dict.set_name("S", "Luminosity");
     smask_dict.set_indirect("G", form_number);
 
     let smask_number = pdf.add_object(Box::new(smask_dict));
