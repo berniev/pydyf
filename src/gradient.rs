@@ -189,7 +189,7 @@ impl Gradient {
 
         // 5. Create Pattern Dictionary
         let mut pattern_dict = DictionaryObject::typed("Pattern");
-        pattern_dict.set("PatternType", Rc::new(NumberObject::from(2)));
+        pattern_dict.set_number("PatternType", 2);
         pattern_dict.set_indirect("Shading", shading_num);
 
         pdf.add_object(Box::new(pattern_dict));
@@ -239,11 +239,11 @@ fn create_interpolation_function_type_2(
     exponent: f64,
 ) -> DictionaryObject {
     let mut dict = DictionaryObject::new(None);
-    dict.set("FunctionType", Rc::new(NumberObject::from(2)));
+    dict.set_number("FunctionType", 2);
     dict.set("Domain", to_array(vec![0.0, 1.0]));
     dict.set("C0", to_array(c0));
     dict.set("C1", to_array(c1));
-    dict.set("N", Rc::new(NumberObject::from(exponent))); // Linear interpolation
+    dict.set_number("N", exponent); // Linear interpolation
     dict
 }
 

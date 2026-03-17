@@ -68,6 +68,30 @@ impl DictionaryObject {
         self.values.iter().any(|(k, _)| k == key)
     }
 
+    pub fn set_name(&mut self, key: &str, name: &str) {
+        self.set(key, Rc::new(crate::NameObject::new(Some(name.to_string()))));
+    }
+
+    pub fn set_string(&mut self, key: &str, value: String) {
+        self.set(key, Rc::new(crate::StringObject::new(Some(value))));
+    }
+
+    pub fn set_number(&mut self, key: &str, value: impl Into<crate::NumberType>) {
+        self.set(key, Rc::new(crate::NumberObject::new(value.into())));
+    }
+
+    pub fn set_array(&mut self, key: &str, array: crate::ArrayObject) {
+        self.set(key, Rc::new(array));
+    }
+
+    pub fn set_dict(&mut self, key: &str, dict: DictionaryObject) {
+        self.set(key, Rc::new(dict));
+    }
+
+    pub fn set_bool(&mut self, key: &str, value: bool) {
+        self.set(key, Rc::new(crate::BooleanObject::new(Some(value))));
+    }
+
     pub fn get(&self, key: &str) -> Option<&Rc<dyn PdfObject>> {
         self.values.iter().find(|(k, _)| k == key).map(|(_, v)| v)
     }

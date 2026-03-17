@@ -3,7 +3,7 @@
 //! Provides structures for embedding metadata in PDF documents, including
 //! both the legacy Info dictionary and modern XMP metadata streams.
 
-use crate::{DictionaryObject, NameObject, PdfResult, StreamObject, StringObject};
+use crate::{DictionaryObject, NameObject, PdfResult, StreamObject};
 use std::rc::Rc;
 
 /// Document information dictionary (legacy PDF metadata).
@@ -139,39 +139,39 @@ impl DocumentInfo {
         let mut dict = DictionaryObject::new(None);
 
         if let Some(ref title) = self.title {
-            dict.set("Title", Rc::new(StringObject::new(Some(title.clone()))));
+            dict.set_string("Title", title.clone());
         }
 
         if let Some(ref author) = self.author {
-            dict.set("Author", Rc::new(StringObject::new(Some(author.clone()))));
+            dict.set_string("Author", author.clone());
         }
 
         if let Some(ref subject) = self.subject {
-            dict.set("Subject", Rc::new(StringObject::new(Some(subject.clone()))));
+            dict.set_string("Subject", subject.clone());
         }
 
         if let Some(ref keywords) = self.keywords {
-            dict.set("Keywords", Rc::new(StringObject::new(Some(keywords.clone()))));
+            dict.set_string("Keywords", keywords.clone());
         }
 
         if let Some(ref creator) = self.creator {
-            dict.set("Creator", Rc::new(StringObject::new(Some(creator.clone()))));
+            dict.set_string("Creator", creator.clone());
         }
 
         if let Some(ref producer) = self.producer {
-            dict.set("Producer", Rc::new(StringObject::new(Some(producer.clone()))));
+            dict.set_string("Producer", producer.clone());
         }
 
         if let Some(ref creation_date) = self.creation_date {
-            dict.set("CreationDate", Rc::new(StringObject::new(Some(creation_date.clone()))));
+            dict.set_string("CreationDate", creation_date.clone());
         }
 
         if let Some(ref mod_date) = self.mod_date {
-            dict.set("ModDate", Rc::new(StringObject::new(Some(mod_date.clone()))));
+            dict.set_string("ModDate", mod_date.clone());
         }
 
         if let Some(trapped) = self.trapped {
-            dict.set("Trapped", Rc::new(NameObject::new(Some(trapped.as_name().to_string()))));
+            dict.set_name("Trapped", trapped.as_name());
         }
 
         dict

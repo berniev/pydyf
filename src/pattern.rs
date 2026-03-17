@@ -202,19 +202,9 @@ impl AxialShading {
     pub fn to_dict(&self) -> DictionaryObject {
         let mut dict = DictionaryObject::new(None);
 
-        dict.set(
-            "ShadingType",
-            Rc::new(NumberObject::new(NumberType::Integer(
-                ShadingType::Axial as i64,
-            ))),
-        );
-
-        dict.set(
-            "ColorSpace",
-            Rc::new(NameObject::new(Some("DeviceRGB".to_string()))),
-        );
-
-        dict.set("Coords", Rc::new(ArrayObject::from_points(self.start, self.end)));
+        dict.set_number("ShadingType", NumberType::Integer(ShadingType::Axial as i64));
+        dict.set_name("ColorSpace", "DeviceRGB");
+        dict.set_array("Coords", ArrayObject::from_points(self.start, self.end));
 
         // Function (simplified: direct color interpolation)
         // In a full implementation, this would be a proper PDF function object
@@ -223,7 +213,7 @@ impl AxialShading {
         let mut extend = ArrayObject::new(None);
         extend.push_object(Rc::new(crate::BooleanObject::new(Some(self.extend_start))));
         extend.push_object(Rc::new(crate::BooleanObject::new(Some(self.extend_end))));
-        dict.set("Extend", Rc::new(extend));
+        dict.set_array("Extend", extend);
 
         dict
     }

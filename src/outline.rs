@@ -220,7 +220,7 @@ impl DocumentOutline {
         }
 
         if let Some(ref dest) = item.destination {
-            dict.set("Dest", Rc::new(ArrayObject::from_destination_ref(dest)));
+            dict.set_array("Dest", ArrayObject::from_destination_ref(dest));
         }
 
         if !item.children.is_empty() {
@@ -250,27 +250,15 @@ impl DocumentOutline {
             // Count: positive if open, negative if closed
             let count = item.count_descendants();
             let count_val = if item.is_open { count } else { -count };
-            dict.set(
-                "Count",
-                Rc::new(NumberObject::new(NumberType::Integer(count_val as i64))),
-            );
+            dict.set_number("Count", NumberType::Integer(count_val as i64));
         }
 
         if let Some((r, g, b)) = item.color {
-            let mut color_arr = ArrayObject::new(None);
-            color_arr.push_object(Rc::new(NumberObject::new(NumberType::Real(r))));
-            color_arr.push_object(Rc::new(NumberObject::new(NumberType::Real(g))));
-            color_arr.push_object(Rc::new(NumberObject::new(NumberType::Real(b))));
-            dict.set("C", Rc::new(color_arr));
+            dict.set_array("C", ArrayObject::from_rgb_tuple(r, g, b));
         }
 
         if item.flags.bits() != 0 {
-            dict.set(
-                "F",
-                Rc::new(NumberObject::new(NumberType::Integer(
-                    item.flags.bits() as i64
-                ))),
-            );
+            dict.set_number("F", NumberType::Integer(item.flags.bits() as i64));
         }
 
         dicts.push((current_id, dict));

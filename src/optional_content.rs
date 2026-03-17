@@ -76,19 +76,19 @@ impl OptionalContentGroup {
     pub fn to_dict(&self) -> DictionaryObject {
         let mut dict = DictionaryObject::new(None);
 
-        dict.set("Type", Rc::new(NameObject::new(Some("OCG".to_string()))));
-        dict.set("Name", Rc::new(StringObject::new(Some(self.name.clone()))));
+        dict.set_name("Type", "OCG");
+        dict.set_string("Name", self.name.clone());
 
         // Intent
         if let Some(ref intent) = self.intent {
             if intent.len() == 1 {
-                dict.set("Intent", Rc::new(NameObject::new(Some(intent[0].clone()))));
+                dict.set_name("Intent", &intent[0]);
             } else {
                 let mut arr = ArrayObject::new(None);
                 for i in intent {
                     arr.push_object(Rc::new(NameObject::new(Some(i.clone()))));
                 }
-                dict.set("Intent", Rc::new(arr));
+                dict.set_array("Intent", arr);
             }
         }
 
@@ -98,38 +98,32 @@ impl OptionalContentGroup {
 
             if let Some(ref print) = usage.print {
                 let mut print_dict = DictionaryObject::new(None);
-                print_dict.set("PrintState", Rc::new(NameObject::new(Some(
-                    match print.state {
-                        VisibilityState::On => "ON",
-                        VisibilityState::Off => "OFF",
-                    }.to_string()
-                ))));
-                usage_dict.set("Print", Rc::new(print_dict));
+                print_dict.set_name("PrintState", match print.state {
+                    VisibilityState::On => "ON",
+                    VisibilityState::Off => "OFF",
+                });
+                usage_dict.set_dict("Print", print_dict);
             }
 
             if let Some(ref view) = usage.view {
                 let mut view_dict = DictionaryObject::new(None);
-                view_dict.set("ViewState", Rc::new(NameObject::new(Some(
-                    match view.state {
-                        VisibilityState::On => "ON",
-                        VisibilityState::Off => "OFF",
-                    }.to_string()
-                ))));
-                usage_dict.set("View", Rc::new(view_dict));
+                view_dict.set_name("ViewState", match view.state {
+                    VisibilityState::On => "ON",
+                    VisibilityState::Off => "OFF",
+                });
+                usage_dict.set_dict("View", view_dict);
             }
 
             if let Some(ref export) = usage.export {
                 let mut export_dict = DictionaryObject::new(None);
-                export_dict.set("ExportState", Rc::new(NameObject::new(Some(
-                    match export.state {
-                        VisibilityState::On => "ON",
-                        VisibilityState::Off => "OFF",
-                    }.to_string()
-                ))));
-                usage_dict.set("Export", Rc::new(export_dict));
+                export_dict.set_name("ExportState", match export.state {
+                    VisibilityState::On => "ON",
+                    VisibilityState::Off => "OFF",
+                });
+                usage_dict.set_dict("Export", export_dict);
             }
 
-            dict.set("Usage", Rc::new(usage_dict));
+            dict.set_dict("Usage", usage_dict);
         }
 
         dict
@@ -192,25 +186,23 @@ impl OptionalContentConfig {
     pub fn to_dict(&self) -> DictionaryObject {
         let mut dict = DictionaryObject::new(None);
 
-        dict.set("Name", Rc::new(StringObject::new(Some(self.name.clone()))));
+        dict.set_string("Name", self.name.clone());
 
         if let Some(ref creator) = self.creator {
-            dict.set("Creator", Rc::new(StringObject::new(Some(creator.clone()))));
+            dict.set_string("Creator", creator.clone());
         }
 
-        dict.set("BaseState", Rc::new(NameObject::new(Some(
-            match self.base_state {
-                VisibilityState::On => "ON",
-                VisibilityState::Off => "OFF",
-            }.to_string()
-        ))));
+        dict.set_name("BaseState", match self.base_state {
+            VisibilityState::On => "ON",
+            VisibilityState::Off => "OFF",
+        });
 
         if !self.on_list.is_empty() {
             let mut arr = ArrayObject::new(None);
             for &id in &self.on_list {
                 arr.push_object(Rc::new(crate::IndirectObject::new(Some(id))));
             }
-            dict.set("ON", Rc::new(arr));
+            dict.set_array("ON", arr);
         }
 
         if !self.off_list.is_empty() {
@@ -218,13 +210,13 @@ impl OptionalContentConfig {
             for &id in &self.off_list {
                 arr.push_object(Rc::new(crate::IndirectObject::new(Some(id))));
             }
-            dict.set("OFF", Rc::new(arr));
+            dict.set_array("OFF", arr);
         }
 
         // Order array (simplified - full implementation would handle nested groups)
         if !self.order.is_empty() {
             let order_arr = self.build_order_array(&self.order);
-            dict.set("Order", Rc::new(order_arr));
+            dict.set_array("Order", order_arr);
         }
 
         dict

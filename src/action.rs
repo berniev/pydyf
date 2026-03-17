@@ -3,7 +3,7 @@
 //! Actions define behaviors that can be triggered by user interactions, such as
 //! clicking links, opening documents, or interacting with form fields.
 
-use crate::{DictionaryObject, NameObject, NumberObject, NumberType, PdfResult, ArrayObject};
+use crate::{DictionaryObject, NameObject, NumberObject, NumberType, PdfResult, ArrayObject, util::Rect};
 use std::rc::Rc;
 
 /// Actions specify responses to various events in PDF documents, such as
@@ -42,11 +42,11 @@ impl Action for UriAction {
 
     fn to_dict(&self) -> PdfResult<DictionaryObject> {
         let mut dict = DictionaryObject::new(None);
-        dict.set("S", Rc::new(NameObject::new(Some(self.action_type().to_string()))));
-        dict.set("URI", Rc::new(crate::StringObject::new(Some(self.uri.clone()))));
+        dict.set_name("S", self.action_type());
+        dict.set_string("URI", self.uri.clone());
 
         if self.is_map {
-            dict.set("IsMap", Rc::new(crate::BooleanObject::new(Some(true))));
+            dict.set_bool("IsMap", true);
         }
 
         Ok(dict)
@@ -70,8 +70,8 @@ impl Action for GoToAction {
 
     fn to_dict(&self) -> PdfResult<DictionaryObject> {
         let mut dict = DictionaryObject::new(None);
-        dict.set("S", Rc::new(NameObject::new(Some(self.action_type().to_string()))));
-        dict.set("D", Rc::new(ArrayObject::from_destination_ref(&self.destination)));
+        dict.set_name("S", self.action_type());
+        dict.set_array("D", ArrayObject::from_destination_ref(&self.destination));
         Ok(dict)
     }
 }
@@ -93,8 +93,8 @@ impl Action for JavaScriptAction {
 
     fn to_dict(&self) -> PdfResult<DictionaryObject> {
         let mut dict = DictionaryObject::new(None);
-        dict.set("S", Rc::new(NameObject::new(Some(self.action_type().to_string()))));
-        dict.set("JS", Rc::new(crate::StringObject::new(Some(self.script.clone()))));
+        dict.set_name("S", self.action_type());
+        dict.set_string("JS", self.script.clone());
         Ok(dict)
     }
 }
@@ -125,15 +125,15 @@ impl Action for LaunchAction {
 
     fn to_dict(&self) -> PdfResult<DictionaryObject> {
         let mut dict = DictionaryObject::new(None);
-        dict.set("S", Rc::new(NameObject::new(Some(self.action_type().to_string()))));
+        dict.set_name("S", self.action_type());
 
         let mut file_dict = DictionaryObject::new(None);
-        file_dict.set("Type", Rc::new(NameObject::new(Some("Filespec".to_string()))));
-        file_dict.set("F", Rc::new(crate::StringObject::new(Some(self.file.clone()))));
-        dict.set("F", Rc::new(file_dict));
+        file_dict.set_name("Type", "Filespec");
+        file_dict.set_string("F", self.file.clone());
+        dict.set_dict("F", file_dict);
 
         if let Some(new_win) = self.new_window {
-            dict.set("NewWindow", Rc::new(crate::BooleanObject::new(Some(new_win))));
+            dict.set_bool("NewWindow", new_win);
         }
 
         Ok(dict)
@@ -176,8 +176,8 @@ impl Action for NamedAction {
 
     fn to_dict(&self) -> PdfResult<DictionaryObject> {
         let mut dict = DictionaryObject::new(None);
-        dict.set("S", Rc::new(NameObject::new(Some(self.action_type().to_string()))));
-        dict.set("N", Rc::new(NameObject::new(Some(self.name.as_str().to_string()))));
+        dict.set_name("S", self.action_type());
+        dict.set_name("N", self.name.as_str());
         Ok(dict)
     }
 }
@@ -213,10 +213,7 @@ pub enum Destination {
     /// [page /FitR left bottom right top] - Fit rectangle in window.
     FitR {
         page: usize,
-        left: f64,
-        bottom: f64,
-        right: f64,
-        top: f64,
+        rect: Rect,
     },
 }
 
@@ -255,13 +252,13 @@ impl Destination {
                 arr.push_object(Rc::new(NameObject::new(Some("FitV".to_string()))));
                 arr.push_optional_real(*left);
             }
-            Destination::FitR { page, left, bottom, right, top } => {
+            Destination::FitR { page, rect } => {
                 arr.push_object(Rc::new(NumberObject::new(NumberType::Integer(*page as i64))));
                 arr.push_object(Rc::new(NameObject::new(Some("FitR".to_string()))));
-                arr.push_object(Rc::new(NumberObject::new(NumberType::Real(*left))));
-                arr.push_object(Rc::new(NumberObject::new(NumberType::Real(*bottom))));
-                arr.push_object(Rc::new(NumberObject::new(NumberType::Real(*right))));
-                arr.push_object(Rc::new(NumberObject::new(NumberType::Real(*top))));
+                arr.push_real(rect.x1);
+                arr.push_real(rect.y1);
+                arr.push_real(rect.x2);
+                arr.push_real(rect.y2);
             }
         }
 

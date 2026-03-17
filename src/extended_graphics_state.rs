@@ -3,7 +3,7 @@
 //! ExtGState objects control advanced graphics rendering features like
 //! transparency, blend modes, and rendering intent.
 
-use crate::{DictionaryObject, NameObject, NumberObject, NumberType, PdfObject, Resource, ResourceCategory};
+use crate::{DictionaryObject, NumberType, PdfObject, Resource, ResourceCategory};
 use std::any::Any;
 use std::rc::Rc;
 
@@ -151,70 +151,70 @@ impl ExtGState {
 
     pub fn to_dict(&self) -> DictionaryObject {
         let mut dict = DictionaryObject::new(None);
-        dict.set("Type", Rc::new(NameObject::new(Some("ExtGState".to_string()))));
+        dict.set_name("Type", "ExtGState");
 
         if let Some(lw) = self.line_width {
-            dict.set("LW", Rc::new(NumberObject::new(NumberType::Real(lw))));
+            dict.set_number("LW", NumberType::Real(lw));
         }
 
         if let Some(lc) = self.line_cap {
-            dict.set("LC", Rc::new(NumberObject::new(NumberType::Integer(lc as i64))));
+            dict.set_number("LC", NumberType::Integer(lc as i64));
         }
 
         if let Some(lj) = self.line_join {
-            dict.set("LJ", Rc::new(NumberObject::new(NumberType::Integer(lj as i64))));
+            dict.set_number("LJ", NumberType::Integer(lj as i64));
         }
 
         if let Some(ml) = self.miter_limit {
-            dict.set("ML", Rc::new(NumberObject::new(NumberType::Real(ml))));
+            dict.set_number("ML", NumberType::Real(ml));
         }
 
         if let Some(ca) = self.stroke_alpha {
-            dict.set("CA", Rc::new(NumberObject::new(NumberType::Real(ca))));
+            dict.set_number("CA", NumberType::Real(ca));
         }
 
         if let Some(ca) = self.fill_alpha {
-            dict.set("ca", Rc::new(NumberObject::new(NumberType::Real(ca))));
+            dict.set_number("ca", NumberType::Real(ca));
         }
 
         if let Some(bm) = self.blend_mode {
-            dict.set("BM", Rc::new(NameObject::new(Some(bm.as_str().to_string()))));
+            dict.set_name("BM", bm.as_str());
         }
 
         if let Some(ri) = self.rendering_intent {
-            dict.set("RI", Rc::new(NameObject::new(Some(ri.as_str().to_string()))));
+            dict.set_name("RI", ri.as_str());
         }
 
         if let Some(op) = self.overprint_stroke {
-            dict.set("OP", Rc::new(crate::BooleanObject::new(Some(op))));
+            dict.set_bool("OP", op);
         }
 
         if let Some(op) = self.overprint_fill {
-            dict.set("op", Rc::new(crate::BooleanObject::new(Some(op))));
+            dict.set_bool("op", op);
         }
 
         if let Some(opm) = self.overprint_mode {
-            dict.set("OPM", Rc::new(NumberObject::new(NumberType::Integer(opm as i64))));
+            dict.set_number("OPM", NumberType::Integer(opm as i64));
         }
 
         if let Some(fl) = self.flatness {
-            dict.set("FL", Rc::new(NumberObject::new(NumberType::Real(fl))));
+            dict.set_number("FL", NumberType::Real(fl));
         }
 
         if let Some(sm) = self.smoothness {
-            dict.set("SM", Rc::new(NumberObject::new(NumberType::Real(sm))));
+            dict.set_number("SM", NumberType::Real(sm));
         }
 
         if let Some(sa) = self.stroke_adjust {
-            dict.set("SA", Rc::new(crate::BooleanObject::new(Some(sa))));
+            dict.set_bool("SA", sa);
         }
 
         if let Some(ais) = self.alpha_is_shape {
-            dict.set("AIS", Rc::new(crate::BooleanObject::new(Some(ais))));
+            dict.set_bool("AIS", ais);
         }
 
         if let Some(tk) = self.text_knockout {
-            dict.set("TK", Rc::new(crate::BooleanObject::new(Some(tk))));
+            dict.set_bool("TK", tk);
         }
 
         dict

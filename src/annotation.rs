@@ -84,8 +84,8 @@ pub trait Annotation {
     fn add_border_style_to_dict(&self, dict: &mut DictionaryObject) {
         if let Some(style) = self.border_style() {
             let mut bs = DictionaryObject::new(None);
-            bs.set("S", Rc::new(NameObject::new(Some(style.as_str().to_string()))));
-            dict.set("BS", Rc::new(bs));
+            bs.set_name("S", style.as_str());
+            dict.set_dict("BS", bs);
         }
     }
 
@@ -93,24 +93,24 @@ pub trait Annotation {
         let mut dict = DictionaryObject::new(None);
 
         // Required entries
-        dict.set("Type", Rc::new(NameObject::new(Some("Annot".to_string()))));
-        dict.set("Subtype", Rc::new(NameObject::new(Some(self.subtype().to_string()))));
-        dict.set("Rect", Rc::new(ArrayObject::from_rect(self.rect())));
+        dict.set_name("Type", "Annot");
+        dict.set_name("Subtype", self.subtype());
+        dict.set_array("Rect", ArrayObject::from_rect(self.rect()));
 
         // Optional common entries
         let flags = self.flags();
         if flags.bits() != 0 {
-            dict.set("F", Rc::new(NumberObject::new(NumberType::Integer(flags.bits() as i64))));
+            dict.set_number("F", NumberType::Integer(flags.bits() as i64));
         }
 
         self.add_border_style_to_dict(&mut dict);
 
         if let Some((r, g, b)) = self.color() {
-            dict.set("C", Rc::new(ArrayObject::from_rgb_tuple(r, g, b)));
+            dict.set_array("C", ArrayObject::from_rgb_tuple(r, g, b));
         }
 
         if let Some(contents) = self.contents() {
-            dict.set("Contents", Rc::new(crate::StringObject::new(Some(contents.to_string()))));
+            dict.set_string("Contents", contents.to_string());
         }
 
         Ok(dict)
@@ -197,26 +197,26 @@ impl Annotation for TextAnnotation {
         let mut dict = DictionaryObject::new(None);
 
         // Required
-        dict.set("Type", Rc::new(NameObject::new(Some("Annot".to_string()))));
-        dict.set("Subtype", Rc::new(NameObject::new(Some(self.subtype().to_string()))));
-        dict.set("Rect", Rc::new(ArrayObject::from_rect(self.rect())));
+        dict.set_name("Type", "Annot");
+        dict.set_name("Subtype", self.subtype());
+        dict.set_array("Rect", ArrayObject::from_rect(self.rect()));
 
         // Optional
         let flags = self.flags();
         if flags.bits() != 0 {
-            dict.set("F", Rc::new(NumberObject::new(NumberType::Integer(flags.bits() as i64))));
+            dict.set_number("F", NumberType::Integer(flags.bits() as i64));
         }
 
         if let Some((r, g, b)) = self.color() {
-            dict.set("C", Rc::new(ArrayObject::from_rgb_tuple(r, g, b)));
+            dict.set_array("C", ArrayObject::from_rgb_tuple(r, g, b));
         }
 
         if let Some(contents) = self.contents() {
-            dict.set("Contents", Rc::new(crate::StringObject::new(Some(contents.to_string()))));
+            dict.set_string("Contents", contents.to_string());
         }
 
         // Text annotation specific
-        dict.set("Name", Rc::new(NameObject::new(Some(self.icon.as_str().to_string()))));
+        dict.set_name("Name", self.icon.as_str());
         Ok(dict)
     }
 }
@@ -280,14 +280,14 @@ impl Annotation for LinkAnnotation {
         let mut dict = DictionaryObject::new(None);
 
         // Required
-        dict.set("Type", Rc::new(NameObject::new(Some("Annot".to_string()))));
-        dict.set("Subtype", Rc::new(NameObject::new(Some(self.subtype().to_string()))));
-        dict.set("Rect", Rc::new(ArrayObject::from_rect(self.rect())));
+        dict.set_name("Type", "Annot");
+        dict.set_name("Subtype", self.subtype());
+        dict.set_array("Rect", ArrayObject::from_rect(self.rect()));
 
         // Optional
         let flags = self.flags();
         if flags.bits() != 0 {
-            dict.set("F", Rc::new(NumberObject::new(NumberType::Integer(flags.bits() as i64))));
+            dict.set_number("F", NumberType::Integer(flags.bits() as i64));
         }
 
         self.add_border_style_to_dict(&mut dict);
@@ -296,9 +296,9 @@ impl Annotation for LinkAnnotation {
         match &self.action {
             LinkAction::Uri(uri) => {
                 let mut action_dict = DictionaryObject::new(None);
-                action_dict.set("S", Rc::new(NameObject::new(Some("URI".to_string()))));
-                action_dict.set("URI", Rc::new(crate::StringObject::new(Some(uri.clone()))));
-                dict.set("A", Rc::new(action_dict));
+                action_dict.set_name("S", "URI");
+                action_dict.set_string("URI", uri.clone());
+                dict.set_dict("A", action_dict);
             }
             LinkAction::GoTo { page, x, y, zoom } => {
                 // Create explicit destination array [page /XYZ x y zoom]
@@ -312,7 +312,7 @@ impl Annotation for LinkAnnotation {
                 } else {
                     dest.push_object(Rc::new(NameObject::new(Some("null".to_string()))));
                 }
-                dict.set("Dest", Rc::new(dest));
+                dict.set_array("Dest", dest);
             }
         }
 
