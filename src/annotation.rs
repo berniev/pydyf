@@ -3,10 +3,8 @@
 //! Annotations are interactive elements that can be added to PDF pages, including
 //! text notes, links, highlights, and form widgets.
 
-use std::rc::Rc;
-
 use crate::util::Rect;
-use crate::{DictionaryObject, NameObject, NumberObject, NumberType, PdfResult, ArrayObject};
+use crate::{DictionaryObject, NumberType, PdfResult, ArrayObject};
 
 /// Rectangle defining the annotation's location on the page.
 ///
@@ -303,14 +301,14 @@ impl Annotation for LinkAnnotation {
             LinkAction::GoTo { page, x, y, zoom } => {
                 // Create explicit destination array [page /XYZ x y zoom]
                 let mut dest = ArrayObject::new(None);
-                dest.push_object(Rc::new(NumberObject::new(NumberType::Integer(*page as i64))));
-                dest.push_object(Rc::new(NameObject::new(Some("XYZ".to_string()))));
-                dest.push_object(Rc::new(NumberObject::new(NumberType::Real(*x))));
-                dest.push_object(Rc::new(NumberObject::new(NumberType::Real(*y))));
+                dest.push_number(NumberType::Integer(*page as i64));
+                dest.push_name("XYZ");
+                dest.push_number(NumberType::Real(*x));
+                dest.push_number(NumberType::Real(*y));
                 if let Some(z) = zoom {
-                    dest.push_object(Rc::new(NumberObject::new(NumberType::Real(*z))));
+                    dest.push_number(NumberType::Real(*z));
                 } else {
-                    dest.push_object(Rc::new(NameObject::new(Some("null".to_string()))));
+                    dest.push_name("null");
                 }
                 dict.set_array("Dest", dest);
             }

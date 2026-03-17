@@ -9,15 +9,7 @@ use crate::{
 };
 use std::rc::Rc;
 
-#[derive(Clone)]
-pub struct OutlineItem {
-    pub title: String,
-    pub destination: Option<Destination>,
-    pub children: Vec<OutlineItem>,
-    pub is_open: bool,
-    pub color: Option<(f64, f64, f64)>,
-    pub flags: OutlineItemFlags,
-}
+//------------------ OutlineItemFlags -----------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OutlineItemFlags(u32);
@@ -36,6 +28,18 @@ impl OutlineItemFlags {
     pub const fn or(self, other: Self) -> Self {
         Self(self.0 | other.0)
     }
+}
+
+//------------------ OutlineItem -----------------------
+
+#[derive(Clone)]
+pub struct OutlineItem {
+    pub title: String,
+    pub destination: Option<Destination>,
+    pub children: Vec<OutlineItem>,
+    pub is_open: bool,
+    pub color: Option<(f64, f64, f64)>,
+    pub flags: OutlineItemFlags,
 }
 
 impl OutlineItem {
@@ -77,6 +81,8 @@ impl OutlineItem {
         count
     }
 }
+
+//------------------ DocumentOutline -----------------------
 
 pub struct DocumentOutline {
     pub items: Vec<OutlineItem>, // Root-level outline items.
@@ -270,6 +276,8 @@ pub struct OutlineDictionaries {
     /// All outline item dictionaries with their object IDs.
     pub item_dicts: Vec<(usize, DictionaryObject)>,
 }
+
+//------------------ test -----------------------
 
 #[cfg(test)]
 mod tests {

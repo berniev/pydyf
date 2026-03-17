@@ -1,7 +1,6 @@
+//---------------------- StandardFont -----------------------
+
 /// Standard PDF fonts (built into all PDF readers).
-///
-/// These fonts don't need to be embedded in the PDF and are guaranteed
-/// to be available in any PDF viewer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StandardFont {
     Helvetica, // sans-serif
@@ -116,6 +115,8 @@ impl StandardFont {
     }
 }
 
+//------------------ WrapMode -----------------------
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WrapMode {
     NoWrap,
@@ -123,6 +124,7 @@ pub enum WrapMode {
     CharWrap,
 }
 
+//------------------ funcs -----------------------
 /// Wrap text to fit within a maximum width.
 ///
 /// Breaks text into multiple lines based on the specified wrap mode.
@@ -218,6 +220,8 @@ fn wrap_by_units(
 
     lines
 }
+
+//------------------ test -----------------------
 
 #[cfg(test)]
 mod tests {

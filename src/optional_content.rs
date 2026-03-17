@@ -3,28 +3,18 @@
 //! Optional Content Groups (OCGs) allow parts of a PDF to be selectively
 //! visible or hidden, commonly used for layers in technical drawings.
 
-use crate::{DictionaryObject, NameObject, StringObject, ArrayObject};
-use std::rc::Rc;
+use crate::{DictionaryObject, ArrayObject};
 
-/// An Optional Content Group (layer).
-///
-/// OCGs control the visibility of content in the PDF.
-#[derive(Clone)]
-pub struct OptionalContentGroup {
-    pub name: String,
-    pub intent: Option<Vec<String>>,
-    pub initial_state: VisibilityInitialState,
-    pub usage: Option<UsageDict>,
-}
+//------------------ VisibilityInitialState -----------------------
 
-/// Visibility state for layers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VisibilityInitialState {
     On,
     Off,
 }
 
-/// Specifies how the layer should behave in different contexts.
+//------------------ UsageDict ---------------------
+
 #[derive(Clone, Default)]
 pub struct UsageDict {
     pub print: Option<UsageEntry>,
@@ -32,9 +22,21 @@ pub struct UsageDict {
     pub export: Option<UsageEntry>,
 }
 
+//------------------ UsageEntry ---------------------
+
 #[derive(Clone)]
 pub struct UsageEntry {
     pub state: VisibilityInitialState,
+}
+
+//------------------ OptionalContentGroup -----------------------
+
+#[derive(Clone)]
+pub struct OptionalContentGroup {
+    pub name: String,
+    pub intent: Option<Vec<String>>,
+    pub initial_state: VisibilityInitialState,
+    pub usage: Option<UsageDict>,
 }
 
 impl OptionalContentGroup {
@@ -83,7 +85,7 @@ impl OptionalContentGroup {
             } else {
                 let mut arr = ArrayObject::new(None);
                 for i in intent {
-                    arr.push_object(Rc::new(NameObject::new(Some(i.clone()))));
+                    arr.push_name(i);
                 }
                 dict.set_array("Intent", arr);
             }
@@ -126,15 +128,7 @@ impl OptionalContentGroup {
     }
 }
 
-/// Defines the default layer visibility and ordering.
-pub struct OptionalContentConfig {
-    pub name: String,
-    pub creator: Option<String>,
-    pub base_state: VisibilityInitialState,
-    pub on_list: Vec<usize>,
-    pub off_list: Vec<usize>,
-    pub order: Vec<LayerOrder>,
-}
+//------------------ LayerOrder -----------------------
 
 #[derive(Clone)]
 pub enum LayerOrder {
@@ -143,6 +137,18 @@ pub enum LayerOrder {
         label: String,
         children: Vec<LayerOrder>,
     },
+}
+
+//------------------ OptionalContentConfig -----------------------
+
+/// Defines the default layer visibility and ordering.
+pub struct OptionalContentConfig {
+    pub name: String,
+    pub creator: Option<String>,
+    pub base_state: VisibilityInitialState,
+    pub on_list: Vec<usize>,
+    pub off_list: Vec<usize>,
+    pub order: Vec<LayerOrder>,
 }
 
 impl OptionalContentConfig {
@@ -194,7 +200,7 @@ impl OptionalContentConfig {
         if !self.on_list.is_empty() {
             let mut arr = ArrayObject::new(None);
             for &id in &self.on_list {
-                arr.push_object(Rc::new(crate::IndirectObject::new(Some(id))));
+                arr.push_indirect(id);
             }
             dict.set_array("ON", arr);
         }
@@ -202,7 +208,7 @@ impl OptionalContentConfig {
         if !self.off_list.is_empty() {
             let mut arr = ArrayObject::new(None);
             for &id in &self.off_list {
-                arr.push_object(Rc::new(crate::IndirectObject::new(Some(id))));
+                arr.push_indirect(id);
             }
             dict.set_array("OFF", arr);
         }
@@ -222,12 +228,12 @@ impl OptionalContentConfig {
         for order in orders {
             match order {
                 LayerOrder::Single(id) => {
-                    arr.push_object(Rc::new(crate::IndirectObject::new(Some(*id))));
+                    arr.push_indirect(*id);
                 }
                 LayerOrder::Group { label, children } => {
-                    arr.push_object(Rc::new(StringObject::new(Some(label.clone()))));
+                    arr.push_string(label.clone());
                     let child_arr = self.build_order_array(children);
-                    arr.push_object(Rc::new(child_arr));
+                    arr.push_array(child_arr);
                 }
             }
         }
@@ -236,6 +242,7 @@ impl OptionalContentConfig {
     }
 }
 
+//------------------ test -----------------------
 #[cfg(test)]
 mod tests {
     use super::*;

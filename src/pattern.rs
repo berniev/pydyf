@@ -211,8 +211,8 @@ impl AxialShading {
         // For now, we use a simplified representation
 
         let mut extend = ArrayObject::new(None);
-        extend.push_object(Rc::new(crate::BooleanObject::new(Some(self.extend_start))));
-        extend.push_object(Rc::new(crate::BooleanObject::new(Some(self.extend_end))));
+        extend.push_bool(self.extend_start);
+        extend.push_bool(self.extend_end);
         dict.set_array("Extend", extend);
 
         dict

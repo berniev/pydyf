@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{NameObject, NumberObject, NumberType, PdfMetadata, PdfObject, util::{Posn, Rect, Matrix}, action::Destination, color::{RGB, RGBA, CMYK}};
+use crate::{BooleanObject, DictionaryObject, IndirectObject, NameObject, NumberObject, NumberType, PdfMetadata, PdfObject, StringObject, util::{Posn, Rect, Matrix}, action::Destination, color::{RGB, RGBA, CMYK}};
 
 //-------------------ArrayObject ----------------------
 
@@ -31,7 +31,7 @@ impl ArrayObject {
     }
 
     pub fn push_real(&mut self, value: f64) {
-        self.values.push(Rc::new(NumberObject::new(NumberType::Real(value))));
+        self.push_number(NumberType::Real(value));
     }
 
     pub fn push_reals(&mut self, values: &[f64]) {
@@ -44,8 +44,36 @@ impl ArrayObject {
         if let Some(v) = value {
             self.push_real(v);
         } else {
-            self.push_object(Rc::new(NameObject::new(Some("null".to_string()))));
+            self.push_name("null");
         }
+    }
+
+    pub fn push_name(&mut self, name: &str) {
+        self.push_object(Rc::new(NameObject::new(Some(name.to_string()))));
+    }
+
+    pub fn push_string(&mut self, value: String) {
+        self.push_object(Rc::new(StringObject::new(Some(value))));
+    }
+
+    pub fn push_number(&mut self, value: impl Into<NumberType>) {
+        self.push_object(Rc::new(NumberObject::new(value.into())));
+    }
+
+    pub fn push_bool(&mut self, value: bool) {
+        self.push_object(Rc::new(BooleanObject::new(Some(value))));
+    }
+
+    pub fn push_indirect(&mut self, id: usize) {
+        self.push_object(Rc::new(IndirectObject::new(Some(id))));
+    }
+
+    pub fn push_array(&mut self, array: ArrayObject) {
+        self.push_object(Rc::new(array));
+    }
+
+    pub fn push_dict(&mut self, dict: DictionaryObject) {
+        self.push_object(Rc::new(dict));
     }
 
     pub fn from_points(start: Posn<f64>, end: Posn<f64>) -> Self {

@@ -3,8 +3,7 @@
 //! Actions define behaviors that can be triggered by user interactions, such as
 //! clicking links, opening documents, or interacting with form fields.
 
-use crate::{DictionaryObject, NameObject, NumberObject, NumberType, PdfResult, ArrayObject, util::Rect};
-use std::rc::Rc;
+use crate::{DictionaryObject, NumberType, PdfResult, ArrayObject, util::Rect};
 
 /// Actions specify responses to various events in PDF documents, such as
 /// user interactions with annotations or form fields.
@@ -231,30 +230,29 @@ impl Destination {
 
         match self {
             Destination::XYZ { page, left, top, zoom } => {
-                arr.push_object(Rc::new(NumberObject::new(NumberType::Integer(*page as i64))));
-                arr.push_object(Rc::new(NameObject::new(Some("XYZ".to_string()))));
-
+                arr.push_number(NumberType::Integer(*page as i64));
+                arr.push_name("XYZ");
                 arr.push_optional_real(*left);
                 arr.push_optional_real(*top);
                 arr.push_optional_real(*zoom);
             }
             Destination::Fit { page } => {
-                arr.push_object(Rc::new(NumberObject::new(NumberType::Integer(*page as i64))));
-                arr.push_object(Rc::new(NameObject::new(Some("Fit".to_string()))));
+                arr.push_number(NumberType::Integer(*page as i64));
+                arr.push_name("Fit");
             }
             Destination::FitH { page, top } => {
-                arr.push_object(Rc::new(NumberObject::new(NumberType::Integer(*page as i64))));
-                arr.push_object(Rc::new(NameObject::new(Some("FitH".to_string()))));
+                arr.push_number(NumberType::Integer(*page as i64));
+                arr.push_name("FitH");
                 arr.push_optional_real(*top);
             }
             Destination::FitV { page, left } => {
-                arr.push_object(Rc::new(NumberObject::new(NumberType::Integer(*page as i64))));
-                arr.push_object(Rc::new(NameObject::new(Some("FitV".to_string()))));
+                arr.push_number(NumberType::Integer(*page as i64));
+                arr.push_name("FitV");
                 arr.push_optional_real(*left);
             }
             Destination::FitR { page, rect } => {
-                arr.push_object(Rc::new(NumberObject::new(NumberType::Integer(*page as i64))));
-                arr.push_object(Rc::new(NameObject::new(Some("FitR".to_string()))));
+                arr.push_number(NumberType::Integer(*page as i64));
+                arr.push_name("FitR");
                 arr.push_real(rect.x1);
                 arr.push_real(rect.y1);
                 arr.push_real(rect.x2);
