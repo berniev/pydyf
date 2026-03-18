@@ -4,7 +4,7 @@
 //! to navigate through the document.
 
 use crate::{
-    ArrayObject, DictionaryObject, NumberType, PdfResult, action::Destination, color::RGB,
+    ArrayObject, DictionaryObject, NameObject, NumberObject, PdfResult, action::Destination, color::RGB,
 };
 
 //------------------ OutlineItemFlags -----------------------
@@ -149,13 +149,13 @@ impl DocumentOutline {
         }
 
         let mut outline_dict = DictionaryObject::new(None);
-        outline_dict.set_name("Type", "Outlines");
+        outline_dict.set("Type", NameObject::build("Outlines"));
 
         if !self.items.is_empty() {
             outline_dict.set_indirect("First", item_ids[0]);
             outline_dict.set_indirect("Last", item_ids[self.items.len() - 1]);
 
-            outline_dict.set_number("Count", NumberType::Integer(self.total_count() as i64));
+            outline_dict.set("Count", NumberObject::build(self.total_count() as i64));
         }
 
         Ok(OutlineDictionaries {
@@ -235,7 +235,7 @@ impl DocumentOutline {
             // Count: positive if open, negative if closed
             let count = item.count_descendants();
             let count_val = if item.is_open { count } else { -count };
-            dict.set_number("Count", NumberType::Integer(count_val as i64));
+            dict.set("Count", NumberObject::build(count_val as i64));
         }
 
         if let Some(rgb) = item.color {
@@ -243,7 +243,7 @@ impl DocumentOutline {
         }
 
         if item.flags.bits() != 0 {
-            dict.set_number("F", NumberType::Integer(item.flags.bits() as i64));
+            dict.set("F", NumberObject::build(item.flags.bits() as i64));
         }
 
         dicts.push((current_id, dict));

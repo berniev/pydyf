@@ -2,7 +2,7 @@ use crate::page::{ObjectId, PageObject, PageTreeItem, PageTreeNode};
 use std::io::Write;
 
 use crate::cross_ref::CrossRefTable;
-use crate::{DictionaryObject, PdfObject};
+use crate::{DictionaryObject, NameObject, PdfObject};
 
 //--------------------------- PDF -------------------------
 
@@ -132,8 +132,8 @@ impl PDF {
 
         for (name, subtype) in fonts {
             let mut f = DictionaryObject::typed("Font");
-            f.set_name("Subtype", subtype);
-            f.set_name("BaseFont", name);
+            f.set("Subtype", NameObject::build(subtype));
+            f.set("BaseFont", NameObject::build(name));
             font_dict.set_dict(name, f);
         }
 

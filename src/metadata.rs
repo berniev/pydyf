@@ -3,8 +3,6 @@
 //! Provides structures for embedding metadata in PDF documents, including
 //! both the legacy Info dictionary and modern XMP metadata streams.
 
-use std::rc::Rc;
-
 use crate::{DictionaryObject, NameObject, PdfObject, PdfResult, StreamObject};
 
 /// Document information dictionary (legacy PDF metadata).
@@ -172,7 +170,7 @@ impl DocumentInfo {
         }
 
         if let Some(trapped) = self.trapped {
-            dict.set_name("Trapped", trapped.as_name());
+            dict.set("Trapped", NameObject::build(trapped.as_name()));
         }
 
         dict
@@ -258,11 +256,11 @@ impl XmpMetadata {
         let dict_entries = vec![
             (
                 "Type".to_string(),
-                Rc::new(NameObject::new(Some("Metadata".to_string()))) as Rc<dyn PdfObject>,
+                NameObject::build("Metadata"),
             ),
             (
                 "Subtype".to_string(),
-                Rc::new(NameObject::new(Some("XML".to_string()))) as Rc<dyn PdfObject>,
+                NameObject::build("XML"),
             ),
         ];
 

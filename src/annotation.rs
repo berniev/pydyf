@@ -6,7 +6,7 @@
 use crate::color::Color;
 use crate::color::RGB;
 use crate::util::{Posn, Rect};
-use crate::{ArrayObject, DictionaryObject, NumberType, PdfResult};
+use crate::{ArrayObject, DictionaryObject, NameObject, NumberObject, PdfResult};
 
 //-------------------AnnotationFlags ----------------------
 
@@ -87,7 +87,7 @@ pub trait Annotation {
     fn add_border_style_to_dict(&self, dict: &mut DictionaryObject) {
         if let Some(style) = self.border_style() {
             let mut bs = DictionaryObject::new(None);
-            bs.set_name("S", style.as_str());
+            bs.set("S", NameObject::build(style.as_str()));
             dict.set_dict("BS", bs);
         }
     }
@@ -96,14 +96,14 @@ pub trait Annotation {
         let mut dict = DictionaryObject::new(None);
 
         // Required entries
-        dict.set_name("Type", "Annot");
-        dict.set_name("Subtype", self.subtype());
+        dict.set("Type", NameObject::build("Annot"));
+        dict.set("Subtype", NameObject::build(self.subtype()));
         dict.set_array("Rect", ArrayObject::from_rect(self.rect()));
 
         // Optional common entries
         let flags = self.flags();
         if flags.bits() != 0 {
-            dict.set_number("F", NumberType::Integer(flags.bits() as i64));
+            dict.set("F", NumberObject::build(flags.bits() as i64));
         }
 
         self.add_border_style_to_dict(&mut dict);
@@ -224,12 +224,12 @@ impl Annotation for TextAnnotation {
         let mut dict = DictionaryObject::new(None);
 
         // Required
-        dict.set_name("Type", "Annot");
-        dict.set_name("Subtype", self.subtype());
+        dict.set("Type", NameObject::build("Annot"));
+        dict.set("Subtype", NameObject::build(self.subtype()));
         dict.set_array("Rect", ArrayObject::from_rect(self.rect));
 
         if self.flags.bits() != 0 {
-            dict.set_number("F", NumberType::Integer(self.flags.bits() as i64));
+            dict.set("F", NumberObject::build(self.flags.bits() as i64));
         }
 
         if let Some(rgb) = self.color {
@@ -238,7 +238,7 @@ impl Annotation for TextAnnotation {
 
         dict.set_string("Contents", self.contents.clone());
 
-        dict.set_name("Name", self.icon.as_str());
+        dict.set("Name", NameObject::build(self.icon.as_str()));
 
         Ok(dict)
     }
@@ -315,14 +315,14 @@ impl Annotation for LinkAnnotation {
         let mut dict = DictionaryObject::new(None);
 
         // Required
-        dict.set_name("Type", "Annot");
-        dict.set_name("Subtype", self.subtype());
+        dict.set("Type", NameObject::build("Annot"));
+        dict.set("Subtype", NameObject::build(self.subtype()));
         dict.set_array("Rect", ArrayObject::from_rect(self.rect()));
 
         // Optional
         let flags = self.flags();
         if flags.bits() != 0 {
-            dict.set_number("F", NumberType::Integer(flags.bits() as i64));
+            dict.set("F", NumberObject::build(flags.bits() as i64));
         }
 
         self.add_border_style_to_dict(&mut dict);
@@ -331,7 +331,7 @@ impl Annotation for LinkAnnotation {
         match &self.action {
             LinkAction::Uri(uri) => {
                 let mut action_dict = DictionaryObject::new(None);
-                action_dict.set_name("S", "URI");
+                action_dict.set("S", NameObject::build("URI"));
                 action_dict.set_string("URI", uri.clone());
                 dict.set_dict("A", action_dict);
             }
@@ -342,12 +342,12 @@ impl Annotation for LinkAnnotation {
             } => {
                 // Create explicit destination array [page /XYZ x y zoom]
                 let mut dest = ArrayObject::new(None);
-                dest.push_number(NumberType::Integer(*page as i64));
+                dest.push_number(*page as i64);
                 dest.push_name("XYZ");
-                dest.push_number(NumberType::Real(position.x));
-                dest.push_number(NumberType::Real(position.y));
+                dest.push_number(position.x);
+                dest.push_number(position.y);
                 if let Some(z) = zoom {
-                    dest.push_number(NumberType::Real(*z));
+                    dest.push_number(*z);
                 } else {
                     dest.push_name("null");
                 }

@@ -3,7 +3,7 @@
 //! ExtGState objects control advanced graphics rendering features like
 //! transparency, blend modes, and rendering intent.
 
-use crate::{DictionaryObject, NumberType, PdfObject, Resource, ResourceCategory};
+use crate::{DictionaryObject, NameObject, NumberObject, PdfObject, Resource, ResourceCategory};
 use std::any::Any;
 use std::rc::Rc;
 
@@ -151,38 +151,38 @@ impl ExtGState {
 
     pub fn to_dict(&self) -> DictionaryObject {
         let mut dict = DictionaryObject::new(None);
-        dict.set_name("Type", "ExtGState");
+        dict.set("Type", NameObject::build("ExtGState"));
 
         if let Some(lw) = self.line_width {
-            dict.set_number("LW", NumberType::Real(lw));
+            dict.set("LW", NumberObject::build(lw));
         }
 
         if let Some(lc) = self.line_cap {
-            dict.set_number("LC", NumberType::Integer(lc as i64));
+            dict.set("LC", NumberObject::build(lc as i64));
         }
 
         if let Some(lj) = self.line_join {
-            dict.set_number("LJ", NumberType::Integer(lj as i64));
+            dict.set("LJ", NumberObject::build(lj as i64));
         }
 
         if let Some(ml) = self.miter_limit {
-            dict.set_number("ML", NumberType::Real(ml));
+            dict.set("ML", NumberObject::build(ml));
         }
 
         if let Some(ca) = self.stroke_alpha {
-            dict.set_number("CA", NumberType::Real(ca));
+            dict.set("CA", NumberObject::build(ca));
         }
 
         if let Some(ca) = self.fill_alpha {
-            dict.set_number("ca", NumberType::Real(ca));
+            dict.set("ca", NumberObject::build(ca));
         }
 
         if let Some(bm) = self.blend_mode {
-            dict.set_name("BM", bm.as_str());
+            dict.set("BM", NameObject::build(bm.as_str()));
         }
 
         if let Some(ri) = self.rendering_intent {
-            dict.set_name("RI", ri.as_str());
+            dict.set("RI", NameObject::build(ri.as_str()));
         }
 
         if let Some(op) = self.overprint_stroke {
@@ -194,15 +194,15 @@ impl ExtGState {
         }
 
         if let Some(opm) = self.overprint_mode {
-            dict.set_number("OPM", NumberType::Integer(opm as i64));
+            dict.set("OPM", NumberObject::build(opm as i64));
         }
 
         if let Some(fl) = self.flatness {
-            dict.set_number("FL", NumberType::Real(fl));
+            dict.set("FL", NumberObject::build(fl));
         }
 
         if let Some(sm) = self.smoothness {
-            dict.set_number("SM", NumberType::Real(sm));
+            dict.set("SM", NumberObject::build(sm));
         }
 
         if let Some(sa) = self.stroke_adjust {

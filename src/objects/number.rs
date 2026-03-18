@@ -63,6 +63,10 @@ impl NumberObject {
         }
     }
 
+    pub fn build(value: impl Into<NumberType>) -> std::rc::Rc<dyn PdfObject> {
+        std::rc::Rc::new(Self::new(value.into()))
+    }
+
     pub fn as_int(&self) -> i64 {
         match self.value {
             NumberType::Integer(i) => i,

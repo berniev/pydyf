@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::DictionaryObject;
+use crate::{DictionaryObject, NumberObject};
 use crate::objects::stream::StreamObject;
 use crate::pdf::PDF;
 
@@ -41,8 +41,8 @@ impl GraphicsStateManager {
         self.resource_counter += 1;
 
         let mut gs_dict = DictionaryObject::typed("/ExtGState");
-        gs_dict.set_number("CA", alpha); // Stroke alpha
-        gs_dict.set_number("ca", alpha); // Fill alpha
+        gs_dict.set("CA", NumberObject::build(alpha)); // Stroke alpha
+        gs_dict.set("ca", NumberObject::build(alpha)); // Fill alpha
         let obj_num = pdf.objects.len();
         pdf.add_object(Box::new(gs_dict));
 

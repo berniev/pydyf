@@ -3,7 +3,7 @@
 //! Actions define behaviors that can be triggered by user interactions, such as
 //! clicking links, opening documents, or interacting with form fields.
 
-use crate::{ArrayObject, DictionaryObject, NumberType, PdfResult, util::Rect};
+use crate::{ArrayObject, DictionaryObject, NameObject, PdfResult, util::Rect};
 
 /// Actions specify responses to various events in PDF documents, such as
 /// user interactions with annotations or form fields.
@@ -38,7 +38,7 @@ impl Action for UriAction {
 
     fn to_dict(&self) -> PdfResult<DictionaryObject> {
         let mut dict = DictionaryObject::new(None);
-        dict.set_name("S", self.action_type());
+        dict.set("S", NameObject::build(self.action_type()));
         dict.set_string("URI", self.uri.clone());
 
         if self.is_map {
@@ -66,7 +66,7 @@ impl Action for GoToAction {
 
     fn to_dict(&self) -> PdfResult<DictionaryObject> {
         let mut dict = DictionaryObject::new(None);
-        dict.set_name("S", self.action_type());
+        dict.set("S", NameObject::build(self.action_type()));
         dict.set_array("D", ArrayObject::from_destination_ref(&self.destination));
         Ok(dict)
     }
@@ -89,7 +89,7 @@ impl Action for JavaScriptAction {
 
     fn to_dict(&self) -> PdfResult<DictionaryObject> {
         let mut dict = DictionaryObject::new(None);
-        dict.set_name("S", self.action_type());
+        dict.set("S", NameObject::build(self.action_type()));
         dict.set_string("JS", self.script.clone());
         Ok(dict)
     }
@@ -121,10 +121,10 @@ impl Action for LaunchAction {
 
     fn to_dict(&self) -> PdfResult<DictionaryObject> {
         let mut dict = DictionaryObject::new(None);
-        dict.set_name("S", self.action_type());
+        dict.set("S", NameObject::build(self.action_type()));
 
         let mut file_dict = DictionaryObject::new(None);
-        file_dict.set_name("Type", "Filespec");
+        file_dict.set("Type", NameObject::build("Filespec"));
         file_dict.set_string("F", self.file.clone());
         dict.set_dict("F", file_dict);
 
@@ -172,8 +172,8 @@ impl Action for NamedAction {
 
     fn to_dict(&self) -> PdfResult<DictionaryObject> {
         let mut dict = DictionaryObject::new(None);
-        dict.set_name("S", self.action_type());
-        dict.set_name("N", self.name.as_str());
+        dict.set("S", NameObject::build(self.action_type()));
+        dict.set("N", NameObject::build(self.name.as_str()));
         Ok(dict)
     }
 }
@@ -226,28 +226,28 @@ impl Destination {
                 top,
                 zoom,
             } => {
-                arr.push_number(NumberType::Integer(*page as i64));
+                arr.push_number(*page as i64);
                 arr.push_name("XYZ");
                 arr.push_optional_real(*left);
                 arr.push_optional_real(*top);
                 arr.push_optional_real(*zoom);
             }
             Destination::Fit { page } => {
-                arr.push_number(NumberType::Integer(*page as i64));
+                arr.push_number(*page as i64);
                 arr.push_name("Fit");
             }
             Destination::FitH { page, top } => {
-                arr.push_number(NumberType::Integer(*page as i64));
+                arr.push_number(*page as i64);
                 arr.push_name("FitH");
                 arr.push_optional_real(*top);
             }
             Destination::FitV { page, left } => {
-                arr.push_number(NumberType::Integer(*page as i64));
+                arr.push_number(*page as i64);
                 arr.push_name("FitV");
                 arr.push_optional_real(*left);
             }
             Destination::FitR { page, rect } => {
-                arr.push_number(NumberType::Integer(*page as i64));
+                arr.push_number(*page as i64);
                 arr.push_name("FitR");
                 arr.push_real(rect.x1);
                 arr.push_real(rect.y1);

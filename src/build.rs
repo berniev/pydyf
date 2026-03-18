@@ -10,11 +10,11 @@ use crate::PdfObject;
 /// # Examples
 ///
 /// ```
-/// use pydyf::Build;
+/// use pydyf::NumberObject;
 ///
-/// let name_obj = "Page".build();
-/// let num_obj = 42.build();
-/// let bool_obj = true.build();
+/// // Build a number object
+/// let num_obj = NumberObject::build(42);
+/// let real_obj = NumberObject::build(3.14);
 /// ```
 pub trait Build {
     /// Build a PDF object representation of this value.

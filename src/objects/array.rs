@@ -55,7 +55,7 @@ impl ArrayObject {
     }
 
     pub fn push_name(&mut self, name: &str) {
-        self.push_object(Rc::new(NameObject::new(Some(name.to_string()))));
+        self.push_object(NameObject::build(name));
     }
 
     pub fn push_string(&mut self, value: String) {
@@ -63,7 +63,7 @@ impl ArrayObject {
     }
 
     pub fn push_number(&mut self, value: impl Into<NumberType>) {
-        self.push_object(Rc::new(NumberObject::new(value.into())));
+        self.push_object(NumberObject::build(value));
     }
 
     pub fn push_bool(&mut self, value: bool) {

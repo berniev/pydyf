@@ -3,7 +3,7 @@
 //! Optional Content Groups (OCGs) allow parts of a PDF to be selectively
 //! visible or hidden, commonly used for layers in technical drawings.
 
-use crate::{ArrayObject, DictionaryObject};
+use crate::{ArrayObject, DictionaryObject, NameObject};
 
 //------------------ VisibilityInitialState -----------------------
 
@@ -76,12 +76,12 @@ impl OptionalContentGroup {
     pub fn to_dict(&self) -> DictionaryObject {
         let mut dict = DictionaryObject::new(None);
 
-        dict.set_name("Type", "OCG");
+        dict.set("Type", NameObject::build("OCG"));
         dict.set_string("Name", self.name.clone());
 
         if let Some(ref intent) = self.intent {
             if intent.len() == 1 {
-                dict.set_name("Intent", &intent[0]);
+                dict.set("Intent", NameObject::build(&intent[0]));
             } else {
                 let mut arr = ArrayObject::new(None);
                 for i in intent {
@@ -96,36 +96,36 @@ impl OptionalContentGroup {
 
             if let Some(ref print) = usage.print {
                 let mut print_dict = DictionaryObject::new(None);
-                print_dict.set_name(
+                print_dict.set(
                     "PrintState",
-                    match print.state {
+                    NameObject::build(match print.state {
                         VisibilityInitialState::On => "ON",
                         VisibilityInitialState::Off => "OFF",
-                    },
+                    }),
                 );
                 usage_dict.set_dict("Print", print_dict);
             }
 
             if let Some(ref view) = usage.view {
                 let mut view_dict = DictionaryObject::new(None);
-                view_dict.set_name(
+                view_dict.set(
                     "ViewState",
-                    match view.state {
+                    NameObject::build(match view.state {
                         VisibilityInitialState::On => "ON",
                         VisibilityInitialState::Off => "OFF",
-                    },
+                    }),
                 );
                 usage_dict.set_dict("View", view_dict);
             }
 
             if let Some(ref export) = usage.export {
                 let mut export_dict = DictionaryObject::new(None);
-                export_dict.set_name(
+                export_dict.set(
                     "ExportState",
-                    match export.state {
+                    NameObject::build(match export.state {
                         VisibilityInitialState::On => "ON",
                         VisibilityInitialState::Off => "OFF",
-                    },
+                    }),
                 );
                 usage_dict.set_dict("Export", export_dict);
             }
@@ -201,12 +201,12 @@ impl OptionalContentConfig {
             dict.set_string("Creator", creator.clone());
         }
 
-        dict.set_name(
+        dict.set(
             "BaseState",
-            match self.base_state {
+            NameObject::build(match self.base_state {
                 VisibilityInitialState::On => "ON",
                 VisibilityInitialState::Off => "OFF",
-            },
+            }),
         );
 
         if !self.on_list.is_empty() {

@@ -9,7 +9,7 @@ use std::rc::Rc;
 use crate::color::RGB;
 use crate::util::{Matrix, Posn, Rect, ToPdf};
 use crate::{
-    ArrayObject, DictionaryObject, NameObject, NumberObject, NumberType, PdfObject, Resource,
+    ArrayObject, DictionaryObject, NameObject, NumberObject, PdfObject, Resource,
     ResourceCategory,
 };
 
@@ -76,28 +76,22 @@ impl TilingPattern {
 
         extra_entries.push((
             "Type".to_string(),
-            Rc::new(NameObject::new(Some("Pattern".to_string()))) as Rc<dyn PdfObject>,
+            NameObject::build("Pattern"),
         ));
 
         extra_entries.push((
             "PatternType".to_string(),
-            Rc::new(NumberObject::new(NumberType::Integer(
-                PatternType::Tiling as i64,
-            ))) as Rc<dyn PdfObject>,
+            NumberObject::build(PatternType::Tiling as i64),
         ));
 
         extra_entries.push((
             "PaintType".to_string(),
-            Rc::new(NumberObject::new(NumberType::Integer(
-                self.paint_type as i64,
-            ))) as Rc<dyn PdfObject>,
+            NumberObject::build(self.paint_type as i64),
         ));
 
         extra_entries.push((
             "TilingType".to_string(),
-            Rc::new(NumberObject::new(NumberType::Integer(
-                self.tiling_type as i64,
-            ))) as Rc<dyn PdfObject>,
+            NumberObject::build(self.tiling_type as i64),
         ));
 
         extra_entries.push((
@@ -107,12 +101,12 @@ impl TilingPattern {
 
         extra_entries.push((
             "XStep".to_string(),
-            Rc::new(NumberObject::new(NumberType::Real(self.x_step))) as Rc<dyn PdfObject>,
+            NumberObject::build(self.x_step),
         ));
 
         extra_entries.push((
             "YStep".to_string(),
-            Rc::new(NumberObject::new(NumberType::Real(self.y_step))) as Rc<dyn PdfObject>,
+            NumberObject::build(self.y_step),
         ));
 
         if let Some(matrix) = self.matrix {
@@ -202,11 +196,11 @@ impl AxialShading {
     pub fn to_dict(&self) -> DictionaryObject {
         let mut dict = DictionaryObject::new(None);
 
-        dict.set_number(
+        dict.set(
             "ShadingType",
-            NumberType::Integer(ShadingType::Axial as i64),
+            NumberObject::build(ShadingType::Axial as i64),
         );
-        dict.set_name("ColorSpace", "DeviceRGB");
+        dict.set("ColorSpace", NameObject::build("DeviceRGB"));
         dict.set_array("Coords", ArrayObject::from_points(self.start, self.end));
 
         // Function (simplified: direct color interpolation)

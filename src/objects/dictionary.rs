@@ -38,7 +38,7 @@ impl DictionaryObject {
     pub(crate) fn typed(name: &str) -> Self {
         Self::new(Some(vec![(
             "Type".to_string(),
-            Rc::new(NameObject::new(Option::from(name.to_string()))),
+            NameObject::build(name),
         )]))
     }
 
@@ -140,7 +140,7 @@ mod tests {
 
         dict.set(
             "Key1",
-            Rc::new(NameObject::new(Option::from("Value1".to_string()))),
+            NameObject::build("Value1"),
         );
         assert!(!dict.is_empty());
         assert_eq!(dict.len(), 1);
@@ -149,7 +149,7 @@ mod tests {
 
         dict.set(
             "Key2",
-            Rc::new(NameObject::new(Option::from("Value2".to_string()))),
+            NameObject::build("Value2"),
         );
         assert_eq!(dict.len(), 2);
         assert!(dict.contains_key("Key2"));
