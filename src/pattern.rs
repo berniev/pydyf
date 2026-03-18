@@ -201,7 +201,8 @@ impl AxialShading {
             NumberObject::build(ShadingType::Axial as i64),
         );
         dict.set("ColorSpace", NameObject::build("DeviceRGB"));
-        dict.set_array("Coords", ArrayObject::from_points(self.start, self.end));
+        let coords_array = ArrayObject::from_points(self.start, self.end);
+        dict.set("Coords", ArrayObject::build(coords_array.values));
 
         // Function (simplified: direct color interpolation)
         // In a full implementation, this would be a proper PDF function object
@@ -210,7 +211,7 @@ impl AxialShading {
         let mut extend = ArrayObject::new(None);
         extend.push_bool(self.extend_start);
         extend.push_bool(self.extend_end);
-        dict.set_array("Extend", extend);
+        dict.set("Extend", ArrayObject::build(extend.values));
 
         dict
     }

@@ -88,7 +88,7 @@ pub trait Annotation {
         if let Some(style) = self.border_style() {
             let mut bs = DictionaryObject::new(None);
             bs.set("S", NameObject::build(style.as_str()));
-            dict.set_dict("BS", bs);
+            dict.set("BS", DictionaryObject::build(bs.values));
         }
     }
 
@@ -98,7 +98,7 @@ pub trait Annotation {
         // Required entries
         dict.set("Type", NameObject::build("Annot"));
         dict.set("Subtype", NameObject::build(self.subtype()));
-        dict.set_array("Rect", ArrayObject::from_rect(self.rect()));
+        dict.set("Rect", self.rect().build());
 
         // Optional common entries
         let flags = self.flags();
@@ -226,7 +226,7 @@ impl Annotation for TextAnnotation {
         // Required
         dict.set("Type", NameObject::build("Annot"));
         dict.set("Subtype", NameObject::build(self.subtype()));
-        dict.set_array("Rect", ArrayObject::from_rect(self.rect));
+        dict.set("Rect", self.rect.build());
 
         if self.flags.bits() != 0 {
             dict.set("F", NumberObject::build(self.flags.bits() as i64));
@@ -317,7 +317,7 @@ impl Annotation for LinkAnnotation {
         // Required
         dict.set("Type", NameObject::build("Annot"));
         dict.set("Subtype", NameObject::build(self.subtype()));
-        dict.set_array("Rect", ArrayObject::from_rect(self.rect()));
+        dict.set("Rect", self.rect().build());
 
         // Optional
         let flags = self.flags();
@@ -333,7 +333,7 @@ impl Annotation for LinkAnnotation {
                 let mut action_dict = DictionaryObject::new(None);
                 action_dict.set("S", NameObject::build("URI"));
                 action_dict.set("URI", StringObject::build(uri.clone()));
-                dict.set_dict("A", action_dict);
+                dict.set("A", DictionaryObject::build(action_dict.values));
             }
             LinkAction::GoTo {
                 page,
@@ -351,7 +351,7 @@ impl Annotation for LinkAnnotation {
                 } else {
                     dest.push_name("null");
                 }
-                dict.set_array("Dest", dest);
+                dict.set("Dest", ArrayObject::build(dest.values));
             }
         }
 

@@ -126,7 +126,7 @@ impl Action for LaunchAction {
         let mut file_dict = DictionaryObject::new(None);
         file_dict.set("Type", NameObject::build("Filespec"));
         file_dict.set("F", StringObject::build(self.file.clone()));
-        dict.set_dict("F", file_dict);
+        dict.set("F", DictionaryObject::build(file_dict.values));
 
         if let Some(new_win) = self.new_window {
             dict.set("NewWindow", BooleanObject::build(new_win));

@@ -263,14 +263,14 @@ fn create_soft_mask_for_shading(pdf: &mut PDF, alpha_shading_num: usize, width: 
     group_dict.set("S", NameObject::build("Transparency"));
     group_dict.set("CS", NameObject::build("DeviceGray"));
 
-    xobj.set_dict("Group", group_dict);
+    xobj.set("Group", DictionaryObject::build(group_dict.values));
 
     let mut shading_res = DictionaryObject::new(None);
     shading_res.set_indirect("Sh0", alpha_shading_num);
 
     let mut resources = DictionaryObject::new(None);
-    resources.set_dict("Shading", shading_res);
-    xobj.set_dict("Resources", resources);
+    resources.set("Shading", DictionaryObject::build(shading_res.values));
+    xobj.set("Resources", DictionaryObject::build(resources.values));
 
     let mut form_stream = StreamObject::compressed();
     form_stream.paint_shading("Sh0");

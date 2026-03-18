@@ -134,7 +134,7 @@ impl PDF {
             let mut f = DictionaryObject::typed("Font");
             f.set("Subtype", NameObject::build(subtype));
             f.set("BaseFont", NameObject::build(name));
-            font_dict.set_dict(name, f);
+            font_dict.set(name, DictionaryObject::build(f.values));
         }
 
         font_dict
@@ -202,7 +202,7 @@ impl PDF {
         let resources_number = self.allocate_object_id();
         let mut resources = DictionaryObject::new(None);
         resources.metadata.object_identifier = Some(resources_number);
-        resources.set_dict("Font", font_dict);
+        resources.set("Font", DictionaryObject::build(font_dict.values));
         self.objects.push(Box::new(resources));
         resources_number
     }

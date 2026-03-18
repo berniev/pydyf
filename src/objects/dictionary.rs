@@ -67,14 +67,6 @@ impl DictionaryObject {
         self.values.iter().any(|(k, _)| k == key)
     }
 
-    pub fn set_array(&mut self, key: &str, array: crate::ArrayObject) {
-        self.set(key, Rc::new(array));
-    }
-
-    pub fn set_dict(&mut self, key: &str, dict: DictionaryObject) {
-        self.set(key, Rc::new(dict));
-    }
-
     pub fn get(&self, key: &str) -> Option<&Rc<dyn PdfObject>> {
         self.values.iter().find(|(k, _)| k == key).map(|(_, v)| v)
     }

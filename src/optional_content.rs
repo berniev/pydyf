@@ -87,7 +87,7 @@ impl OptionalContentGroup {
                 for i in intent {
                     arr.push_name(i);
                 }
-                dict.set_array("Intent", arr);
+                dict.set("Intent", ArrayObject::build(arr.values));
             }
         }
 
@@ -103,7 +103,7 @@ impl OptionalContentGroup {
                         VisibilityInitialState::Off => "OFF",
                     }),
                 );
-                usage_dict.set_dict("Print", print_dict);
+                usage_dict.set("Print", DictionaryObject::build(print_dict.values));
             }
 
             if let Some(ref view) = usage.view {
@@ -115,7 +115,7 @@ impl OptionalContentGroup {
                         VisibilityInitialState::Off => "OFF",
                     }),
                 );
-                usage_dict.set_dict("View", view_dict);
+                usage_dict.set("View", DictionaryObject::build(view_dict.values));
             }
 
             if let Some(ref export) = usage.export {
@@ -127,10 +127,10 @@ impl OptionalContentGroup {
                         VisibilityInitialState::Off => "OFF",
                     }),
                 );
-                usage_dict.set_dict("Export", export_dict);
+                usage_dict.set("Export", DictionaryObject::build(export_dict.values));
             }
 
-            dict.set_dict("Usage", usage_dict);
+            dict.set("Usage", DictionaryObject::build(usage_dict.values));
         }
 
         dict
@@ -214,7 +214,7 @@ impl OptionalContentConfig {
             for &id in &self.on_list {
                 arr.push_indirect(id);
             }
-            dict.set_array("ON", arr);
+            dict.set("ON", ArrayObject::build(arr.values));
         }
 
         if !self.off_list.is_empty() {
@@ -222,13 +222,13 @@ impl OptionalContentConfig {
             for &id in &self.off_list {
                 arr.push_indirect(id);
             }
-            dict.set_array("OFF", arr);
+            dict.set("OFF", ArrayObject::build(arr.values));
         }
 
         // Order array (simplified - full implementation would handle nested groups)
         if !self.order.is_empty() {
             let order_arr = self.build_order_array(&self.order);
-            dict.set_array("Order", order_arr);
+            dict.set("Order", ArrayObject::build(order_arr.values));
         }
 
         dict

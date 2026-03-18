@@ -81,7 +81,7 @@ impl ResourceDictionary {
                 sub_dict.set_indirect(name, id);
             }
             // Inlines the sub-dictionary directly into the Resources dictionary
-            root.set_dict(category, sub_dict);
+            root.set(category, DictionaryObject::build(sub_dict.values));
         }
 
         root
