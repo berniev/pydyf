@@ -4,7 +4,7 @@
 //! to navigate through the document.
 
 use crate::{
-    ArrayObject, DictionaryObject, NameObject, NumberObject, PdfResult, StringObject, action::Destination, color::RGB,
+    DictionaryObject, NameObject, NumberObject, PdfResult, StringObject, action::Destination, color::RGB,
 };
 
 //------------------ OutlineItemFlags -----------------------
@@ -204,8 +204,8 @@ impl DocumentOutline {
             dict.set_indirect("Next", next);
         }
 
-        if let Some(ref dest) = item.destination {
-            dict.set_array("Dest", ArrayObject::from_destination_ref(dest));
+        if let Some(dest) = item.destination.clone() {
+            dict.set("Dest", dest.build());
         }
 
         if !item.children.is_empty() {

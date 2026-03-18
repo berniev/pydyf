@@ -67,7 +67,7 @@ impl Action for GoToAction {
     fn to_dict(&self) -> PdfResult<DictionaryObject> {
         let mut dict = DictionaryObject::new(None);
         dict.set("S", NameObject::build(self.action_type()));
-        dict.set_array("D", ArrayObject::from_destination_ref(&self.destination));
+        dict.set("D", self.destination.clone().build());
         Ok(dict)
     }
 }
@@ -214,6 +214,10 @@ impl Destination {
 
     pub fn fit(page: usize) -> Self {
         Self::Fit { page }
+    }
+
+    pub fn build(self) -> std::rc::Rc<dyn crate::PdfObject> {
+        std::rc::Rc::new(self.to_array())
     }
 
     pub fn to_array(&self) -> ArrayObject {
