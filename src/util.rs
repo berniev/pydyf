@@ -89,6 +89,13 @@ pub struct Matrix {
     pub f: f64,
 }
 
+impl Matrix {
+    pub fn build(self) -> std::rc::Rc<dyn crate::PdfObject> {
+        use crate::ArrayObject;
+        std::rc::Rc::new(ArrayObject::from_matrix(self))
+    }
+}
+
 impl ToPdf for Matrix {
     fn to_pdf(&self) -> String {
         format!(

@@ -112,7 +112,7 @@ impl TilingPattern {
         if let Some(matrix) = self.matrix {
             extra_entries.push((
                 "Matrix".to_string(),
-                ArrayObject::build(ArrayObject::from_matrix(matrix).values),
+                matrix.build(),
             ));
         }
 
