@@ -139,3 +139,30 @@ impl From<f32> for NumberObject {
         Self::new(NumberType::Real(f as f64))
     }
 }
+
+use std::rc::Rc;
+use crate::Build;
+
+impl Build for i32 {
+    fn build(&self) -> Rc<dyn PdfObject> {
+        Rc::new(NumberObject::new(NumberType::Integer(*self as i64)))
+    }
+}
+
+impl Build for i64 {
+    fn build(&self) -> Rc<dyn PdfObject> {
+        Rc::new(NumberObject::new(NumberType::Integer(*self)))
+    }
+}
+
+impl Build for f32 {
+    fn build(&self) -> Rc<dyn PdfObject> {
+        Rc::new(NumberObject::new(NumberType::Real(*self as f64)))
+    }
+}
+
+impl Build for f64 {
+    fn build(&self) -> Rc<dyn PdfObject> {
+        Rc::new(NumberObject::new(NumberType::Real(*self)))
+    }
+}

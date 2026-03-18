@@ -44,3 +44,18 @@ impl PdfObject for NameObject {
         &mut self.metadata
     }
 }
+
+use std::rc::Rc;
+use crate::Build;
+
+impl Build for &str {
+    fn build(&self) -> Rc<dyn PdfObject> {
+        Rc::new(NameObject::new(Some(self.to_string())))
+    }
+}
+
+impl Build for String {
+    fn build(&self) -> Rc<dyn PdfObject> {
+        Rc::new(NameObject::new(Some(self.clone())))
+    }
+}

@@ -102,3 +102,18 @@ impl ToPdf for Matrix {
         )
     }
 }
+
+use std::rc::Rc;
+use crate::{ArrayObject, Build, PdfObject};
+
+impl Build for Rect {
+    fn build(&self) -> Rc<dyn PdfObject> {
+        Rc::new(ArrayObject::from_rect(*self))
+    }
+}
+
+impl Build for Matrix {
+    fn build(&self) -> Rc<dyn PdfObject> {
+        Rc::new(ArrayObject::from_matrix(*self))
+    }
+}
