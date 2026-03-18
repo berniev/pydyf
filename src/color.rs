@@ -149,5 +149,12 @@ pub struct CMYK {
     pub black: Color,
 }
 
+impl CMYK {
+    pub fn build(self) -> std::rc::Rc<dyn crate::PdfObject> {
+        use crate::ArrayObject;
+        std::rc::Rc::new(ArrayObject::from_cmyk(self))
+    }
+}
+
 impl_color_logic!(CMYK, InvalidCMYK, cmyk, cyan: "c", magenta: "m", yellow: "y", black: "k");
 
