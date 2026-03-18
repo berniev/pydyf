@@ -1,5 +1,7 @@
-use crate::encoding::f_to_pdf_num;
 use std::fmt::Display;
+
+use crate::{ArrayObject, PdfObject};
+use crate::encoding::f_to_pdf_num;
 
 //------------------------- ToPdf -----------------------------
 
@@ -42,6 +44,7 @@ where
         format!("({} x {})", self.x, self.y)
     }
 }
+
 //------------------------ Dims -------------------------------
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -71,8 +74,7 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub fn build(self) -> std::rc::Rc<dyn crate::PdfObject> {
-        use crate::ArrayObject;
+    pub fn build(self) -> std::rc::Rc<dyn PdfObject> {
         std::rc::Rc::new(ArrayObject::from_rect(self))
     }
 }
@@ -94,6 +96,10 @@ impl ToPdf for Rect {
 
 //------------------------ Matrix -------------------------------
 
+/// PDF transformation matrix [a b c d e f]
+/// | a  b  0 |
+/// | c  d  0 |
+/// | e  f  1 |
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Matrix {
     pub a: f64,
@@ -105,8 +111,7 @@ pub struct Matrix {
 }
 
 impl Matrix {
-    pub fn build(self) -> std::rc::Rc<dyn crate::PdfObject> {
-        use crate::ArrayObject;
+    pub fn build(self) -> std::rc::Rc<dyn PdfObject> {
         std::rc::Rc::new(ArrayObject::from_matrix(self))
     }
 }
