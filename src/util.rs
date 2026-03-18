@@ -21,11 +21,10 @@ impl ToPdf for f64 {
 
 //------------------------ Posn -------------------------------
 
-/// Position is X:Y. In pdf positive Y moves up.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Posn<T> {
     pub x: T,
-    pub y: T,
+    pub y: T, // In pdf zero is at the bottom
 }
 
 impl<T> ToPdf for Posn<T>
