@@ -363,36 +363,30 @@ impl StreamObject {
     }
 
     /// Set RGB color
-    pub fn set_color_rgb(&mut self, rgb: RGB, stroke: StrokeOrFill) -> PdfResult<()> {
-        rgb.validate()?;
+    pub fn set_color_rgb(&mut self, rgb: RGB, stroke: StrokeOrFill) {
         let operator = match stroke {
             StrokeOrFill::Stroke => "RG",
             StrokeOrFill::Fill => "rg",
         };
         self.push_op(&[&rgb], operator);
-        Ok(())
     }
 
     /// Set CMYK color
-    pub fn set_color_cmyk(&mut self, cmyk: CMYK, stroke: StrokeOrFill) -> PdfResult<()> {
-        cmyk.validate()?;
+    pub fn set_color_cmyk(&mut self, cmyk: CMYK, stroke: StrokeOrFill) {
         let operator = match stroke {
             StrokeOrFill::Stroke => "K",
             StrokeOrFill::Fill => "k",
         };
         self.push_op(&[&cmyk], operator);
-        Ok(())
     }
 
     /// Set grayscale color
-    pub fn set_color_grayscale(&mut self, grayscale: Color, stroke: StrokeOrFill) -> PdfResult<()> {
-        grayscale.validate()?;
+    pub fn set_color_grayscale(&mut self, grayscale: Color, stroke: StrokeOrFill) {
         let operator = match stroke {
             StrokeOrFill::Stroke => "G",
             StrokeOrFill::Fill => "g",
         };
         self.push_op(&[&grayscale], operator);
-        Ok(())
     }
 
     /// Set the non-stroking color space. stroke=`true` set stroking color space instead.

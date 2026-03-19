@@ -65,7 +65,11 @@ pub struct Color {
 
 impl Color {
     pub fn new(color: f32) -> Self {
-        Self { color }
+        let instance = Self { color };
+        instance
+            .validate()
+            .expect("color must be in range 0.0..=1.0");
+        instance
     }
 
     pub fn to_f32(&self) -> f32 {

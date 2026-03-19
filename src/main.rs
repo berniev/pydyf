@@ -17,7 +17,7 @@ fn main() {
     let mut stream = StreamObject::new();
 
     let color = RGB::new(Color::new(0.0), Color::new(0.5), Color::new(1.0));
-    let _ = stream.set_color_rgb(color, StrokeOrFill::Fill);
+    stream.set_color_rgb(color, StrokeOrFill::Fill);
     stream.rectangle(
         Posn { x: 100.0, y: 100.0 },
         Dims {
