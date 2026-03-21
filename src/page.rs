@@ -84,43 +84,50 @@ impl PageSize {
 
 //--------------------------- Page ---------------------------//
 
-/// Spec:
 /// Page:
-///     A dictionary specifying the attributes of a single page of the document, organized into
-///     various categories (e.g., Font, ColorSpace, Pattern)
-///     A page object can not have children.
+/// A dictionary specifying the attributes of a single page of the document, organized into
+/// various categories (e.g., Font, ColorSpace, Pattern)
+/// A page object can not have children.
+/// Inh = Can be inherited from parent pageTree entry.
 ///
 /// ====================  ===  ====  ===  ================  ===================================
 /// Entry Key             Ver  Reqd  Inh  Type              Value
 /// ====================  ===  ====  ===  ================  ===================================
 /// Type                       Reqd       name              "Page"
 /// Parent                     Reqd       dictionary        indirect reference
-/// LastModified               *          date              Reqd if PieceInfo
+/// LastModified               *          date              * Reqd if PieceInfo
 /// Resources                  Reqd  Inh  dictionary
 /// MediaBox                   Reqd  Inh  rectangle
-/// CropBox                    Opt   Inh  rectangle
-/// BleedBox              1.3  Opt        rectangle
-/// TrimBox               1.3  Opt        rectangle
-/// ArtBox                1.3  Opt        rectangle
-/// BoxColorInfo          1.4  Opt        dictionary
+///
+/// Annots                     Opt        array
 /// Contents                   Opt        stream or array
+/// CropBox                    Opt   Inh  rectangle
 /// Rotate                     Opt   Inh  integer
-/// Group                 1.4  Opt        dictionary
 /// Thumb                      Opt        stream
+/// Trans                      Opt        dictionary
+///
 /// B                     1.1  Opt        array
 /// Dur                   1.1  Opt        number
-/// Trans                      Opt        dictionary
-/// Annots                     Opt        array
+///
 /// AA                    1.2  Opt        dictionary
-/// Metadata              1.4  Opt        stream
-/// PieceInfo             1.3  Opt        dictionary
-/// StructParents         1.3  *          integer          Reqd if struct content items
+///
+/// ArtBox                1.3  Opt        rectangle
+/// BleedBox              1.3  Opt        rectangle
 /// ID byte               1.3  Opt        string
+/// PieceInfo             1.3  Opt        dictionary
 /// PZ                    1.3  Opt        number
 /// SeparationInfo        1.3  Opt        dictionary
+/// StructParents         1.3  *          integer          Reqd if struct content items
+/// TrimBox               1.3  Opt        rectangle
+///
+/// BoxColorInfo          1.4  Opt        dictionary
+/// Group                 1.4  Opt        dictionary
+/// Metadata              1.4  Opt        stream
+///
+/// PresSteps             1.5  Opt        dictionary
 /// Tabs                  1.5  Opt        name
 /// TemplateInstantiated  1.5  Opt        name
-/// PresSteps             1.5  Opt        dictionary
+///
 /// UserUnit              1.6  Opt        number
 /// VP                    1.6  Opt        dictionary
 
@@ -213,25 +220,29 @@ impl crate::PdfObject for PageObject {
 
 //--------------------------- Page Tree -------------------------
 
-/// Spec:
-/// Page Tree Nodes:
-///     Type    name        "Pages"    Reqd
-///     Parent  dictionary             Prohibited in root, else Reqd indirect ref to pagetree entry
-///     Kids    array                  Reqd  indirect references to descendant leaf nodes (pages)
-///     Count   integer                Reqd  Number of descendant leaf nodes (pages)
+/// PageTree Nodes:
+/// 
+/// ======  ==========  =====  =================================================================
+/// Name    PdfObjType  Reqd   Value
+/// ======  ==========  =====  =================================================================
+/// Type    Name        Reqd   "Pages" 
+/// Parent  Indirect    Reqd*  Parent PageTree. * Not allowed in root node.
+/// Kids    Array       Reqd   Indirect references to descendant leaf nodes (pages)
+/// Count   Integer     Reqd   Number of descendant leaf nodes (pages)
+///
 #[derive(Clone)]
-pub enum PageTreeItem {
+pub enum PageTreeItemType {
     Page(PageObject),
-    Node(PageTreeNode),
+    Node(PageTree),
 }
 
-impl PageTreeItem {
+impl PageTreeItemType {
     pub fn id(&self) -> ObjectId {
         match self {
-            PageTreeItem::Page(page) => {
+            PageTreeItemType::Page(page) => {
                 ObjectId::from(page.metadata.object_identifier.unwrap_or(0))
             }
-            PageTreeItem::Node(node) => {
+            PageTreeItemType::Node(node) => {
                 ObjectId::from(node.metadata.object_identifier.unwrap_or(0))
             }
         }
@@ -239,16 +250,16 @@ impl PageTreeItem {
 }
 
 #[derive(Clone)]
-pub struct PageTreeNode {
+pub struct PageTree {
     pub(crate) id: ObjectId,
     pub(crate) parent_id: Option<ObjectId>, // root is None
-    pub(crate) kids: Vec<PageTreeItem>,
+    pub(crate) kids: Vec<PageTreeItemType>,
     pub(crate) media_box: Option<PageSize>, // Shared dimensions
     pub(crate) resources: Option<ResourceDictionary>, // Shared fonts, etc.
     pub metadata: PdfMetadata,
 }
 
-impl PageTreeNode {
+impl PageTree {
     pub fn new(parent_id: Option<ObjectId>) -> Self {
         Self {
             id: ObjectId(0),
@@ -268,18 +279,18 @@ impl PageTreeNode {
         self.kids
             .iter()
             .map(|kid| match kid {
-                PageTreeItem::Page(_) => ObjectId(1),
-                PageTreeItem::Node(node) => node.count(),
+                PageTreeItemType::Page(_) => ObjectId(1),
+                PageTreeItemType::Node(node) => node.count(),
             })
             .sum()
     }
 
     pub fn add_page(&mut self, page: PageObject) {
-        self.kids.push(PageTreeItem::Page(page));
+        self.kids.push(PageTreeItemType::Page(page));
     }
 
-    pub fn add_node(&mut self, page_tree_node: PageTreeNode) {
-        self.kids.push(PageTreeItem::Node(page_tree_node));
+    pub fn add_node(&mut self, page_tree_node: PageTree) {
+        self.kids.push(PageTreeItemType::Node(page_tree_node));
     }
 
     pub fn kids_array(&self) -> String {
@@ -306,7 +317,7 @@ impl PageTreeNode {
     }
 }
 
-impl crate::PdfObject for PageTreeNode {
+impl crate::PdfObject for PageTree {
     fn data(&self) -> String {
         let mut entries = vec!["/Type /Pages".to_string()];
 

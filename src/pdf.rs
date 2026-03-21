@@ -1,4 +1,4 @@
-use crate::page::{ObjectId, PageObject, PageTreeItem, PageTreeNode};
+use crate::page::{ObjectId, PageObject, PageTreeItemType, PageTree};
 use std::io::Write;
 
 use crate::cross_ref::CrossRefTable;
@@ -57,7 +57,7 @@ pub struct PDF {
     pub version: PdfVersion,
     pub objects: Vec<Box<dyn PdfObject>>,
     pub catalog: DictionaryObject,
-    pub page_tree: PageTreeNode,
+    pub page_tree: PageTree,
     pub cross_ref_table: CrossRefTable,
     pub info: DictionaryObject,
     pub xref_position: Option<usize>,
@@ -77,7 +77,7 @@ impl PDF {
             version: PdfVersion::Auto,
             objects: Vec::new(),
             catalog: DictionaryObject::typed("Catalog"),
-            page_tree: PageTreeNode::new(None),
+            page_tree: PageTree::new(None),
             cross_ref_table: CrossRefTable::new(),
             info: DictionaryObject::new(None),
             xref_position: None,
@@ -165,7 +165,7 @@ impl PDF {
         // This is required by PDF spec - every page must have MediaBox (direct or inherited)
         if self.page_tree.media_box.is_none() {
             let has_page_with_mediabox = self.page_tree.kids.iter().any(|kid| {
-                if let PageTreeItem::Page(page) = kid {
+                if let PageTreeItemType::Page(page) = kid {
                     page.media_box.is_some()
                 } else {
                     false
@@ -192,7 +192,7 @@ impl PDF {
         let mut page_objects = Vec::new();
         let mut page_idx = 0;
         for kid in &mut self.page_tree.kids {
-            if let PageTreeItem::Page(page) = kid {
+            if let PageTreeItemType::Page(page) = kid {
                 let page_id = page_ids[page_idx];
                 page_idx += 1;
                 page.metadata.object_identifier = Some(page_id);
@@ -210,7 +210,7 @@ impl PDF {
 
         // Now add the page tree itself
         // Clone the page tree to add it to objects
-        let page_tree_clone = PageTreeNode {
+        let page_tree_clone = PageTree {
             id: self.page_tree.id.clone(),
             parent_id: self.page_tree.parent_id.clone(),
             kids: self.page_tree.kids.clone(),

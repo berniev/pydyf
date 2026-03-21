@@ -2,7 +2,7 @@ use once_cell::sync::Lazy;
 use std::any::Any;
 use std::collections::HashMap;
 
-use crate::page::PageTreeNode;
+use crate::page::PageTree;
 use crate::{ArrayObject, BooleanObject, IndirectObject, NameObject};
 use crate::{DictionaryObject, PdfMetadata, PdfObject};
 
@@ -144,12 +144,12 @@ static SUPPORTED_CATALOG_ENTRIES: Lazy<HashMap<&'static str, Info>> = Lazy::new(
 #[allow(dead_code)]
 struct Catalog {
     metadata: PdfMetadata,
-    pages: Option<PageTreeNode>,
+    pages: Option<PageTree>,
 }
 
 #[allow(dead_code)]
 impl Catalog {
-    pub fn new(pages: Option<PageTreeNode>) -> Self {
+    pub fn new(pages: Option<PageTree>) -> Self {
         Self {
             metadata: Default::default(),
             pages,
