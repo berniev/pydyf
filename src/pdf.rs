@@ -91,7 +91,7 @@ impl PDF {
         self
     }
 
-    fn next_num(&mut self) -> usize {
+    fn next_page_num(&mut self) -> usize {
         self.last_num += 1;
 
         self.last_num
@@ -116,7 +116,7 @@ impl PDF {
     }
 
     pub fn add_page(&mut self, mut page: PageObject) {
-        page.set_id((self.next_num() as u64).into());
+        page.set_id((self.next_page_num() as u64).into());
         self.page_tree.add_page(page);
     }
 
