@@ -36,7 +36,7 @@ fn test_page_has_contents_reference() {
 
     // Write PDF
     let mut output = Vec::new();
-    pdf.write(&mut output, FileIdentifierMode::None)
+    pdf.write_legacy(&mut output, FileIdentifierMode::None)
         .expect("Failed to write PDF");
 
     let pdf_str = String::from_utf8_lossy(&output);
@@ -73,7 +73,7 @@ fn test_page_contents_points_to_stream() {
 
     // Write PDF
     let mut output = Vec::new();
-    pdf.write(&mut output, FileIdentifierMode::None)
+    pdf.write_legacy(&mut output, FileIdentifierMode::None)
         .expect("Failed to write PDF");
 
     let pdf_str = String::from_utf8_lossy(&output);
@@ -117,7 +117,7 @@ fn test_multiple_content_streams() {
     pdf.add_page(page);
 
     let mut output = Vec::new();
-    pdf.write(&mut output, FileIdentifierMode::None)
+    pdf.write_legacy(&mut output, FileIdentifierMode::None)
         .expect("Failed to write PDF");
 
     let pdf_str = String::from_utf8_lossy(&output);

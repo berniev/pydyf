@@ -83,7 +83,7 @@ fn test_qpdf_validates_uncompressed_pdf() {
 
     // Write uncompressed PDF
     let mut output = Vec::new();
-    pdf.write(&mut output, FileIdentifierMode::None)
+    pdf.write_legacy(&mut output, FileIdentifierMode::None)
         .expect("Failed to write PDF");
 
     // Save to file

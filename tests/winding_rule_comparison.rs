@@ -103,7 +103,7 @@ fn test_winding_rule_even_odd() {
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     let file = File::create("/tmp/pydyf_test/winding_evenodd.pdf").unwrap();
-    pdf.write(file, FileIdentifierMode::AutoMD5).unwrap();
+    pdf.write_legacy(file, FileIdentifierMode::AutoMD5).unwrap();
 
     println!("✅ Generated: /tmp/pydyf_test/winding_evenodd.pdf");
 }
@@ -157,7 +157,7 @@ fn test_winding_rule_nonzero() {
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     let file = File::create("/tmp/pydyf_test/winding_nonzero.pdf").unwrap();
-    pdf.write(file, FileIdentifierMode::AutoMD5).unwrap();
+    pdf.write_legacy(file, FileIdentifierMode::AutoMD5).unwrap();
 
     println!("✅ Generated: /tmp/pydyf_test/winding_nonzero.pdf");
 }
@@ -227,7 +227,7 @@ fn test_winding_rule_side_by_side() {
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     let file = File::create("/tmp/pydyf_test/winding_comparison.pdf").unwrap();
-    pdf.write(file, FileIdentifierMode::AutoMD5).unwrap();
+    pdf.write_legacy(file, FileIdentifierMode::AutoMD5).unwrap();
 
     println!("✅ Generated: /tmp/pydyf_test/winding_comparison.pdf");
 }

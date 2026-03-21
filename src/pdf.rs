@@ -2,8 +2,9 @@ use crate::page::{ObjectId, PageObject, PageTreeItem, PageTreeNode};
 use std::io::Write;
 
 use crate::cross_ref::CrossRefTable;
-use crate::{DictionaryObject, IndirectObject, PdfObject};
 use crate::fonts::Fonts;
+use crate::writer::{CompressedStrategy, LegacyStrategy, PdfWriter};
+use crate::{DictionaryObject, IndirectObject, PdfObject};
 //--------------------------- PDF -------------------------
 
 /// Spec:
@@ -70,6 +71,11 @@ impl Default for PDF {
     }
 }
 
+pub enum WriteMode {
+    Legacy,
+    Compressed,
+}
+
 impl PDF {
     pub fn new() -> Self {
         PDF {
@@ -122,40 +128,39 @@ impl PDF {
 
     pub fn write<W: Write>(
         &mut self,
+        mode: WriteMode,
         output: W,
         id_mode: FileIdentifierMode,
     ) -> std::io::Result<()> {
-        // Initialize required PDF structures
         let resources_number = self.add_font_resources();
         self.initialize_page_tree(resources_number);
         self.initialize_catalog();
         self.initialize_info();
 
-        // Delegate to writer based on version
-        use crate::writer::{LegacyStrategy, PdfWriter};
+        match mode {
+            WriteMode::Legacy => PdfWriter::new(output, LegacyStrategy, id_mode).perform(self),
+            WriteMode::Compressed => {
+                PdfWriter::new(output, CompressedStrategy::new(), id_mode).perform(self)
+            }
+        }
+    }
 
-        let mut writer = PdfWriter::new(output, LegacyStrategy, id_mode);
-        writer.perform(self)
+    pub fn write_legacy<W: Write>(
+        &mut self,
+        output: W,
+        id_mode: FileIdentifierMode,
+    ) -> std::io::Result<()> {
+        self.write(WriteMode::Legacy, output, id_mode)
     }
 
     /// Write PDF to output using compressed format (PDF 1.5+)
     /// Uses object streams and cross-reference streams for smaller file size
     pub fn write_compressed<W: Write>(
         &mut self,
-        output: &mut W,
+        output: W,
         id_mode: FileIdentifierMode,
     ) -> std::io::Result<()> {
-        // Initialize required PDF structures
-        let resources_number = self.add_font_resources();
-        self.initialize_page_tree(resources_number);
-        self.initialize_catalog();
-        self.initialize_info();
-
-        // Delegate to compressed writer
-        use crate::writer::{CompressedStrategy, PdfWriter};
-
-        let mut writer = PdfWriter::new(output, CompressedStrategy::new(), id_mode);
-        writer.perform(self)
+        self.write(WriteMode::Compressed, output, id_mode)
     }
 
     pub fn add_font_resources(&mut self) -> usize {

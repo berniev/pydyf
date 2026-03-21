@@ -34,7 +34,7 @@ fn main() {
     pdf.add_page(page);
 
     let mut output = Vec::new();
-    pdf.write(&mut output, FileIdentifierMode::None)
+    pdf.write_legacy(&mut output, FileIdentifierMode::None)
         .expect("Failed to write PDF");
 
     let path = "output.pdf";

@@ -81,7 +81,7 @@ fn test_generate_simple_uncompressed_pdf() {
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     let file = File::create("/tmp/pydyf_test/u.pdf").unwrap();
-    pdf.write(file, FileIdentifierMode::AutoMD5).unwrap();
+    pdf.write_legacy(file, FileIdentifierMode::AutoMD5).unwrap();
 
     println!("✅ Generated: /tmp/pydyf_test/u.pdf");
 }
@@ -180,7 +180,7 @@ fn test_generate_circle_over_rectangle() {
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     let file = File::create("/tmp/pydyf_test/c.pdf").unwrap();
-    pdf.write(file, FileIdentifierMode::AutoMD5).unwrap();
+    pdf.write_legacy(file, FileIdentifierMode::AutoMD5).unwrap();
 
     println!("✅ Generated: /tmp/pydyf_test/c.pdf");
 }
@@ -326,7 +326,7 @@ fn test_multipage_pdf() {
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     let file = File::create("/tmp/pydyf_test/m.pdf").unwrap();
-    pdf.write(file, FileIdentifierMode::AutoMD5).unwrap();
+    pdf.write_legacy(file, FileIdentifierMode::AutoMD5).unwrap();
 
     println!("✅ Generated: /tmp/pydyf_test/m.pdf (3 pages)");
 }
@@ -487,7 +487,7 @@ fn test_graphics_operations() {
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     let file = File::create("/tmp/pydyf_test/g.pdf").unwrap();
-    pdf.write(file, FileIdentifierMode::AutoMD5).unwrap();
+    pdf.write_legacy(file, FileIdentifierMode::AutoMD5).unwrap();
 
     println!("✅ Generated: /tmp/pydyf_test/g.pdf");
 }
@@ -538,7 +538,7 @@ fn test_comparison_uncompressed() {
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     let file = File::create("/tmp/pydyf_test/cu.pdf").unwrap();
-    pdf.write(file, FileIdentifierMode::AutoMD5).unwrap();
+    pdf.write_legacy(file, FileIdentifierMode::AutoMD5).unwrap();
 
     println!("✅ Generated: /tmp/pydyf_test/cu.pdf");
 }
@@ -589,7 +589,7 @@ fn test_comparison_compressed() {
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     let file = File::create("/tmp/pydyf_test/cc.pdf").unwrap();
-    pdf.write(file, FileIdentifierMode::AutoMD5).unwrap();
+    pdf.write_legacy(file, FileIdentifierMode::AutoMD5).unwrap();
 
     println!("✅ Generated: /tmp/pydyf_test/cc.pdf");
 }
