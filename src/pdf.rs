@@ -58,10 +58,10 @@ pub struct PDF {
     pub catalog: DictionaryObject,
     pub page_tree: PageTreeNode,
     pub cross_ref_table: CrossRefTable,
-    pub last_num: usize,
     pub info: DictionaryObject,
     pub xref_position: Option<usize>,
     next_object_id: usize, // Single source of truth for object ID allocation.
+    last_num: usize,
 }
 
 impl Default for PDF {
@@ -76,12 +76,12 @@ impl PDF {
             version: PdfVersion::Auto,
             objects: Vec::new(),
             catalog: DictionaryObject::typed("Catalog"),
-            next_object_id: 1, // Start at 1 (0 is reserved)
             page_tree: PageTreeNode::new(None),
             cross_ref_table: CrossRefTable::new(),
-            last_num: 0,
             info: DictionaryObject::new(None),
             xref_position: None,
+            next_object_id: 1, // Start at 1 (0 is reserved)
+            last_num: 0,
         }
     }
 
