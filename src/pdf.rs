@@ -71,11 +71,6 @@ impl Default for PDF {
     }
 }
 
-pub enum WriteMode {
-    Legacy,
-    Compressed,
-}
-
 impl PDF {
     pub fn new() -> Self {
         PDF {
@@ -126,25 +121,11 @@ impl PDF {
         self.page_tree.add_page(page);
     }
 
-    pub fn write<W: Write>(
-        &mut self,
-        mode: WriteMode,
-        output: W,
-        id_mode: FileIdentifierMode,
-    ) -> std::io::Result<()> {
+    fn setup_write(&mut self) {
         let resources_number = self.add_font_resources();
         self.initialize_page_tree(resources_number);
         self.initialize_catalog();
         self.initialize_info();
-
-        match mode {
-            WriteMode::Legacy => {
-                PdfWriter::new(output, LegacyStrategy::default(), id_mode).perform(self)
-            }
-            WriteMode::Compressed => {
-                PdfWriter::new(output, CompressedStrategy::default(), id_mode).perform(self)
-            }
-        }
     }
 
     pub fn write_legacy<W: Write>(
@@ -152,7 +133,8 @@ impl PDF {
         output: W,
         id_mode: FileIdentifierMode,
     ) -> std::io::Result<()> {
-        self.write(WriteMode::Legacy, output, id_mode)
+        self.setup_write();
+        PdfWriter::new(output, LegacyStrategy::default(), id_mode).perform(self)
     }
 
     /// Write PDF to output using compressed format (PDF 1.5+)
@@ -161,7 +143,8 @@ impl PDF {
         output: W,
         id_mode: FileIdentifierMode,
     ) -> std::io::Result<()> {
-        self.write(WriteMode::Compressed, output, id_mode)
+        self.setup_write();
+        PdfWriter::new(output, CompressedStrategy::default(), id_mode).perform(self)
     }
 
     pub fn add_font_resources(&mut self) -> usize {
