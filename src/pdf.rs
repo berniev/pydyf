@@ -138,9 +138,11 @@ impl PDF {
         self.initialize_info();
 
         match mode {
-            WriteMode::Legacy => PdfWriter::new(output, LegacyStrategy, id_mode).perform(self),
+            WriteMode::Legacy => {
+                PdfWriter::new(output, LegacyStrategy::default(), id_mode).perform(self)
+            }
             WriteMode::Compressed => {
-                PdfWriter::new(output, CompressedStrategy::new(), id_mode).perform(self)
+                PdfWriter::new(output, CompressedStrategy::default(), id_mode).perform(self)
             }
         }
     }
@@ -154,7 +156,6 @@ impl PDF {
     }
 
     /// Write PDF to output using compressed format (PDF 1.5+)
-    /// Uses object streams and cross-reference streams for smaller file size
     pub fn write_compressed<W: Write>(
         &mut self,
         output: W,

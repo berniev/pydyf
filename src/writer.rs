@@ -5,9 +5,9 @@ use std::rc::Rc;
 
 use crate::cross_ref::CrossRefStream;
 use crate::cross_ref::{CrossRefEntry, ObjectStatus};
+use crate::generation::Generation;
 use crate::objects::string::encode_pdf_string;
 use crate::{FileIdentifierMode, PDF, PdfObject};
-use crate::generation::Generation;
 //------------------------------ PdfStream ------------------
 
 pub(crate) struct PdfStream<W: Write> {
@@ -136,6 +136,7 @@ pub(crate) trait WriteStrategy {
 }
 //------------------------------ Legacy Strategy -----------------
 
+#[derive(Default)]
 pub(crate) struct LegacyStrategy;
 
 impl WriteStrategy for LegacyStrategy {
@@ -216,14 +217,18 @@ impl WriteStrategy for LegacyStrategy {
 //------------------------ Compressed Strategy -----------------
 
 pub(crate) struct CompressedStrategy {
-    // Track which objects are in object streams: object_id -> (objstm_num, index)
-    compression_map: RefCell<HashMap<usize, (usize, usize)>>,
-    // Track object stream: (objstm_num, offset)
-    objstm_info: RefCell<Option<(usize, usize)>>,
+    compression_map: RefCell<HashMap<usize, (usize, usize)>>, // (objstm_num, index(object_id?))
+    objstm_info: RefCell<Option<(usize, usize)>>,             // (objstm_num, offset)
+}
+
+impl Default for CompressedStrategy {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CompressedStrategy {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             compression_map: RefCell::new(HashMap::new()),
             objstm_info: RefCell::new(None),
@@ -335,12 +340,6 @@ impl CompressedStrategy {
         *self.objstm_info.borrow_mut() = Some((obj_stream_num, objstm_offset));
 
         Ok(compression_map)
-    }
-}
-
-impl Default for CompressedStrategy {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
