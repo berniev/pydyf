@@ -86,11 +86,13 @@ impl PageSize {
 
 /// Spec:
 /// Page:
-///     a dictionary specifying the attributes of a single page of the document.
-///     organized into various categories (e.g., Font, ColorSpace, Pattern)
-///     A page object cannot have children.
-/// Entries:
-/// Key                   Ver             Type              Value
+///     A dictionary specifying the attributes of a single page of the document, organized into
+///     various categories (e.g., Font, ColorSpace, Pattern)
+///     A page object can not have children.
+///
+/// ====================  ===  ====  ===  ================  ===================================
+/// Entry Key             Ver  Reqd  Inh  Type              Value
+/// ====================  ===  ====  ===  ================  ===================================
 /// Type                       Reqd       name              "Page"
 /// Parent                     Reqd       dictionary        indirect reference
 /// LastModified               *          date              Reqd if PieceInfo
