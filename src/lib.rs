@@ -22,6 +22,7 @@ pub mod text;
 pub mod util;
 pub mod writer;
 pub mod fonts;
+pub mod pdf_version;
 
 // Re-export main types for user API convenience
 pub use action::{

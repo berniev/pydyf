@@ -14,8 +14,8 @@ fn main() {
     println!("Ported from Python pydyf library\n");
 
     let mut pdf = PDF::new();
-    let mut stream = StreamObject::new();
 
+    let mut stream = StreamObject::new();
     let color = RGB::new(Color::new(0.0), Color::new(0.5), Color::new(1.0));
     stream.set_color_rgb(color, StrokeOrFill::Fill);
     stream.rectangle(
@@ -28,6 +28,7 @@ fn main() {
     stream.fill(WindingRule::EvenOdd);
 
     let content_id = pdf.add_object(Box::new(stream));
+    
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);

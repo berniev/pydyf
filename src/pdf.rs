@@ -5,42 +5,8 @@ use crate::cross_ref::CrossRefTable;
 use crate::fonts::Fonts;
 use crate::writer::{CompressedStrategy, LegacyStrategy, PdfWriter};
 use crate::{DictionaryObject, IndirectObject, PdfObject};
-//--------------------------- PDF -------------------------
+use crate::pdf_version::PdfVersion;
 
-/// Spec:
-/// Object:
-///     a basic data structure from which PDF files are constructed and includes these types:
-///     array, boolean, dictionary, integer, name, null, real, stream and string
-/// Object Reference:
-///     an object value used to allow one object to refer to another: “<n> <m> R”
-///     where <n> is an indirect object number, <m> is its version number and R is the uppercase R
-/// Object stream:
-///     a stream that contains a sequence of PDF objects
-/// File Structure:
-///     Header: One line identifying pdf version
-///     Body: containing the objects that make up the document
-///     Cross-Reference Table: (xreft) information about the indirect objects in the file
-///     Trailer: location of the xreft and of certain special objects within the body of the file
-
-//--------------------------- Version -------------------------
-
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
-pub enum PdfVersion {
-    #[default]
-    Auto,
-    V1_4,
-    V1_5,
-}
-
-impl PdfVersion {
-    pub fn as_str(&self) -> &str {
-        match self {
-            PdfVersion::Auto => "Auto",
-            PdfVersion::V1_4 => "1.4",
-            PdfVersion::V1_5 => "1.5",
-        }
-    }
-}
 
 //----------------------- Identifier -----------------------
 
@@ -53,6 +19,15 @@ pub enum FileIdentifierMode {
 
 //--------------------------- PDF -------------------------
 
+/// File Structure
+///
+/// =====================  =====================================================================
+/// Header                 One line identifying pdf version
+/// Body                   The objects that make up the document
+/// Cross-Reference Table  Information about the __indirect__ objects in the file
+/// Trailer                Location of the xreft and of certain special objects in the file body
+/// ============================================================================================
+///
 pub struct PDF {
     pub version: PdfVersion,
     pub objects: Vec<Box<dyn PdfObject>>,
@@ -62,7 +37,7 @@ pub struct PDF {
     pub info: DictionaryObject,
     pub xref_position: Option<usize>,
     next_object_id: usize, // Single source of truth for object ID allocation.
-    last_num: usize,
+    last_num: usize, // todo: then what's this one for??
 }
 
 impl Default for PDF {

@@ -1,3 +1,14 @@
+/// Object:
+///     a basic data structure from which PDF files are constructed and includes these types:
+///     array, boolean, dictionary, integer, name, null, real, stream and string
+///
+/// Object Reference:
+///     an object value used to allow one object to refer to another: “<n> <m> R”
+///     where <n> is an indirect object number, <m> is its version number and R is the uppercase R
+///
+/// Object stream:
+///     a stream that contains a sequence of PDF objects
+/// 
 /*
 Direct Objects
 ==============
