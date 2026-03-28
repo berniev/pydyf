@@ -16,7 +16,7 @@ fn test_page_has_contents_reference() {
         Color::new(1.0),
     );
     stream.set_color_rgb(color, StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 50.0 },
         Dims {
             height: 100.0,
@@ -55,7 +55,7 @@ fn test_page_contents_points_to_stream() {
     let mut stream = PdfStreamObject::uncompressed();
 
     // Add content
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 0.0, y: 0.0 },
         Dims {
             height: 50.0,
@@ -93,13 +93,13 @@ fn test_multiple_content_streams() {
 
     // Create two content streams
     let mut stream1 = PdfStreamObject::uncompressed();
-    stream1.rectangle(
+    stream1.add_rectangle(
         Posn { x: 0.0, y: 0.0 },
         Dims { height: 50.0, width: 50.0 },
     );
 
     let mut stream2 = PdfStreamObject::uncompressed();
-    stream2.rectangle(
+    stream2.add_rectangle(
         Posn { x: 100.0, y: 100.0 },
         Dims { height: 50.0, width: 50.0 },
     );

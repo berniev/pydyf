@@ -41,7 +41,7 @@ fn test_massive_page_count() {
             RGB::new(Color::new(0.5), Color::new(0.5), Color::new(0.5)),
             StrokeOrFill::Fill,
         );
-        stream.rectangle(
+        stream.add_rectangle(
             Posn { x: 50.0, y: 50.0 },
             Dims {
                 width: 100.0,
@@ -69,7 +69,7 @@ fn test_extreme_coordinates() {
         RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn {
             x: -1000.0,
             y: -1000.0,
@@ -85,7 +85,7 @@ fn test_extreme_coordinates() {
         RGB::new(Color::new(0.0), Color::new(1.0), Color::new(0.0)),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn {
             x: 10000.0,
             y: 10000.0,
@@ -101,7 +101,7 @@ fn test_extreme_coordinates() {
         RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0)),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 0.0, y: 0.0 },
         Dims {
             width: 0.0,
@@ -114,7 +114,7 @@ fn test_extreme_coordinates() {
         RGB::new(Color::new(0.5), Color::new(0.5), Color::new(0.5)),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 100.0, y: 100.0 },
         Dims {
             width: 10000.0,
@@ -239,7 +239,7 @@ fn test_huge_rectangle() {
         RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 0.0, y: 0.0 },
         Dims {
             width: 5000.0,
@@ -336,7 +336,7 @@ fn test_overlapping_operations() {
         RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 100.0, y: 100.0 },
         Dims {
             width: 200.0,

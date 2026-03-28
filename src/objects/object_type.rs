@@ -111,7 +111,7 @@ pub struct ObjectId {
 }
 
 // Indirect is a wrapper, not a peer variant
-// Example: {id} {locn} obj << /Type /Font ... >> endobj
+// Example: {id} {gen} obj {object} endobj
 struct IndirectObject {
     pub id: ObjectId,
     pub location: Option<SerialLocation>,
@@ -132,4 +132,4 @@ struct DictionaryObject {}
 
 //--------------------- Streams ----------------------
 
-struct STream {}
+struct Stream {}

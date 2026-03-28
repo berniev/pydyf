@@ -42,7 +42,7 @@ impl PdfNumberObject {
 }
 
 impl PdfObject for PdfNumberObject {
-    fn data(&mut self) -> Vec<u8> {
+    fn serialise(&mut self) -> Vec<u8> {
         match self.value {
             NumberType::Integer(i) => i.to_string().into_bytes(),
             NumberType::Real(f) => {

@@ -307,18 +307,4 @@ mod tests {
         assert!(dict.contains_key("S"));
         assert!(dict.contains_key("N"));
     }
-
-    #[test]
-    fn test_destination_xyz() {
-        let dest = FitDestination::xyz(0, Some(100.0), Some(200.0), None);
-        let arr = PdfArrayObject::from_destination(dest);
-        assert_eq!(arr.values.len(), 5); // page, /XYZ, left, top, zoom
-    }
-
-    #[test]
-    fn test_destination_fit() {
-        let dest = FitDestination::fit(2);
-        let arr = PdfArrayObject::from_destination(dest);
-        assert_eq!(arr.values.len(), 2); // page, /Fit
-    }
 }

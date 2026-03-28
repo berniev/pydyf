@@ -3,9 +3,12 @@
 //! The outline provides a hierarchical table of contents that allows users
 //! to navigate through the document.
 
-use crate::{PdfDictionaryObject, PdfIndirectObject, PdfNameObject, PdfNumberObject, PdfObject, PdfResult, PdfStringObject, action::FitDestination, color::RGB, NumberType, PdfArrayObject};
+use crate::{
+    NumberType, PdfDictionaryObject, PdfNumberObject, PdfObject, PdfResult, action::FitDestination,
+    color::RGB,
+};
 
-//------------------ OutlineItemFlags -----------------------
+//------------------ OutlineItemFlags -----------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OutlineItemFlags(u32);
@@ -26,7 +29,7 @@ impl OutlineItemFlags {
     }
 }
 
-//------------------ OutlineItem -----------------------
+//------------------ OutlineItem -----------------------//
 
 #[derive(Clone)]
 pub struct OutlineItem {
@@ -78,7 +81,7 @@ impl OutlineItem {
     }
 }
 
-//------------------ DocumentOutline -----------------------
+//------------------ DocumentOutline -----------------------//
 
 pub struct DocumentOutline {
     pub items: Vec<OutlineItem>, // Root-level outline items.
@@ -149,16 +152,9 @@ impl DocumentOutline {
         let mut outline_dict = PdfDictionaryObject::new().typed("Outlines");
 
         if !self.items.is_empty() {
-            outline_dict.set("First", PdfIndirectObject::new(item_ids[0]).boxed());
-            outline_dict.set(
-                "Last",
-                PdfIndirectObject::new(item_ids[self.items.len() - 1]).boxed(),
-            );
-
-            outline_dict.set(
-                "Count",
-                PdfNumberObject::new(NumberType::from(self.total_count() as i64)).boxed(),
-            );
+            outline_dict.add_indirect_norm("First", item_ids[0]);
+            outline_dict.add_indirect_norm("Last", item_ids[self.items.len() - 1]);
+            outline_dict.add_number("Count", self.total_count() as i64);
         }
 
         Ok(OutlineDictionaries {
@@ -196,13 +192,13 @@ impl DocumentOutline {
 
         let mut dict = PdfDictionaryObject::new().typed(&*item.title);
 
-        dict.add_indirect("Parent", parent_id);
+        dict.add_indirect_norm("Parent", parent_id);
 
         if let Some(prev) = prev_id {
-            dict.add_indirect("Prev", prev);
+            dict.add_indirect_norm("Prev", prev);
         }
         if let Some(next) = next_id {
-            dict.add_indirect("Next", next);
+            dict.add_indirect_norm("Next", next);
         }
 
         if let Some(dest) = item.destination.clone() {
@@ -230,16 +226,13 @@ impl DocumentOutline {
                 )?;
             }
 
-            dict.set("First", PdfIndirectObject::new(first_child_id).boxed());
-            dict.set(
-                "Last",
-                PdfIndirectObject::new(all_ids[first_child_idx + item.children.len() - 1]).boxed(),
-            );
+            dict.add_indirect_norm("First", first_child_id);
+            dict.add_indirect_norm("Last", all_ids[first_child_idx + item.children.len() - 1]);
 
             // Count: positive if open, negative if closed
             let count = item.count_descendants();
             let count_val = if item.is_open { count } else { -count };
-            dict.set("Count", PdfNumberObject::new(NumberType::from(count_val as i64)).boxed());
+            dict.add_number("Count", count_val as i64);
         }
 
         if let Some(rgb) = item.color {
@@ -247,22 +240,23 @@ impl DocumentOutline {
         }
 
         if item.flags.bits() != 0 {
-            dict.set("F", PdfNumberObject::new(NumberType::from(item.flags.bits() as i64)).boxed());
+            dict.add_number("F", item.flags.bits() as i64);
         }
 
         dicts.push((current_id, dict));
+
         Ok(())
     }
 }
 
-//------------------ OutlineDictionaries -----------------------
+//------------------ OutlineDictionaries -----------------------//
 
 pub struct OutlineDictionaries {
     pub outline_dict: Option<(usize, PdfDictionaryObject)>,
     pub item_dicts: Vec<(usize, PdfDictionaryObject)>,
 }
 
-//------------------ test -----------------------
+//------------------ test -----------------------//
 
 #[cfg(test)]
 mod tests {

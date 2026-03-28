@@ -24,6 +24,8 @@ impl PdfArrayObject {
         Self { values: vec![] }
     }
 
+    //--------------------------- Push Methods -----------------------//
+
     pub fn push_object(&mut self, value: Box<dyn PdfObject>) {
         self.values.push(value);
     }
@@ -44,8 +46,12 @@ impl PdfArrayObject {
         self.push_object(PdfBooleanObject::new(value).boxed());
     }
 
-    pub fn push_indirect(&mut self, id: usize) {
-        self.push_object(PdfIndirectObject::new(id).boxed());
+    pub fn push_indirect_norm(&mut self, id: usize, obj: Box<dyn PdfObject>) {
+        self.push_object(PdfIndirectObject::new_standard(id, obj).boxed());
+    }
+
+    pub fn push_indirect_in_stream(&mut self, id: usize, obj: Box<dyn PdfObject>, num: usize) {
+        self.push_object(PdfIndirectObject::new_in_obj_stream(id, obj, num).boxed());
     }
 
     pub fn push_name(&mut self, name: &str) {
@@ -67,19 +73,15 @@ impl PdfArrayObject {
     pub fn push_pdf_array(&mut self, array: PdfArrayObject) {
         self.push_object(array.boxed());
     }
-
-    pub fn from_destination(dest: FitDestination) -> Self {
-        dest.to_pdf_array()
-    }
 }
 
 impl PdfObject for PdfArrayObject {
-    fn data(&mut self) -> Vec<u8> {
+    fn serialise(&mut self) -> Vec<u8> {
         let mut arr = vec![];
         arr.push(b'[');
         arr.push(b' ');
         for pdf_object in &mut self.values {
-            arr.extend(pdf_object.data());
+            arr.extend(pdf_object.serialise());
             arr.push(b' ');
         }
         arr.push(b']');

@@ -7,7 +7,7 @@ use pydyf::page::PageSize;
 fn debug_what_we_produce() {
     let mut pdf = PDF::new();
     let mut stream = PdfStreamObject::uncompressed();
-    stream.rectangle(pydyf::util::Posn { x: 0.0, y: 0.0 }, pydyf::util::Dims { height: 10.0, width: 10.0 });
+    stream.add_rectangle(pydyf::util::Posn { x: 0.0, y: 0.0 }, pydyf::util::Dims { height: 10.0, width: 10.0 });
     let content_id = pdf.add_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);

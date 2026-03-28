@@ -144,7 +144,7 @@ impl PageObject {
 }
 
 impl PdfObject for PageObject {
-    fn data(&mut self) -> Vec<u8> {
+    fn serialise(&mut self) -> Vec<u8> {
         let mut entries = vec!["/Type /Page".to_string()];
 
         entries.push(format!("/Parent {} 0 R", u64::from(self.parent.clone())));
@@ -274,7 +274,7 @@ impl PageTree {
 }
 
 impl PdfObject for PageTree {
-    fn data(&mut self) -> Vec<u8> {
+    fn serialise(&mut self) -> Vec<u8> {
         let mut entries = vec!["/Type /Pages".to_string()];
 
         entries.push(format!("/Kids {}", &self.kids_array()));

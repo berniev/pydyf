@@ -35,7 +35,7 @@ fn test_stream_operations() {
     let color = RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0));
 
     stream.set_color_rgb(color, StrokeOrFill::Stroke);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 100.0, y: 100.0 },
         Dims {
             height: 200.0,
@@ -50,7 +50,7 @@ fn test_stream_operations() {
 #[test]
 fn test_compressed_stream() {
     let stream = PdfStreamObject::compressed();
-    assert_eq!(stream.compress, pydyf::CompressionMethod::Flate);
+    assert_eq!(stream.compression_method, pydyf::CompressionMethod::Flate);
 }
 
 /*#[test]
@@ -90,7 +90,7 @@ fn test_default_page_size() {
     pdf.add_page(page);
 
     let page_obj = pdf.objects.last().unwrap();
-    let data_str = page_obj.data();
+    let data_str = page_obj.serialise();
 
     // Should NOT contain MediaBox because it's inherited. todo: from where. how?
     assert!(!data_str.contains("/MediaBox"));
@@ -137,7 +137,7 @@ fn test_compressed_pdf_generation() {
     let color = RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0));
 
     stream.set_color_rgb(color, StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 50.0 },
         Dims {
             height: 100.0,
@@ -174,7 +174,7 @@ fn test_array_object_uses_data_not_reference() {
     array.push_number(2);
     array.push_number(3);
 
-    let data = array.data();
+    let data = array.serialise();
 
     // Should be "[ 1 2 3 ]" not "[ 1 0 R 2 0 R 3 0 R ]"
     assert_eq!(data, "[ 1 2 3 ]");
@@ -218,7 +218,7 @@ fn test_object_stream_format() {
 
     let obj_stream = PdfStreamObject::uncompressed().with_data(Some(vec![content.into_bytes()]), Some(extra));
 
-    let output = obj_stream.data();
+    let output = obj_stream.serialise();
 
     // Should contain dictionary with Type, N, First
     assert!(output.contains("/Type /ObjStm"), "Missing /Type /ObjStm");
@@ -262,7 +262,7 @@ fn test_compressed_object_stream_is_valid() {
     let obj_stream =
         PdfStreamObject::compressed().with_data(Some(vec![content.into_bytes()]), Some(extra));
 
-    let output = obj_stream.data();
+    let output = obj_stream.serialise();
 
     // Extract the compressed stream data
     let start = output.find("stream\n").expect("No stream keyword") + 7;
@@ -307,7 +307,7 @@ fn test_stream_object_preserves_binary_data() {
     let binary_data = vec![0x78, 0x9c, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01]; // Valid zlib header + empty data
 
     let stream = PdfStreamObject::uncompressed().with_data(Some(vec![binary_data.clone()]), None);
-    let output = stream.data();
+    let output = stream.serialise();
 
     // Extract stream content
     let start = output.find("stream\n").unwrap() + 7;

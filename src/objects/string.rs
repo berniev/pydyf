@@ -19,7 +19,7 @@ impl PdfStringObject {
 }
 
 impl PdfObject for PdfStringObject {
-    fn data(&mut self)->Vec<u8>{
+    fn serialise(&mut self) ->Vec<u8>{
         self.value.as_bytes().to_vec()
     }
     

@@ -14,7 +14,7 @@ fn debug_xref_structure() {
 
     let color = RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0));
     stream.set_color_rgb(color, StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 50.0 },
         Dims {
             height: 100.0,

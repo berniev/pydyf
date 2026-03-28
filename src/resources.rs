@@ -54,17 +54,17 @@ impl ResourceMap {
 
     /// Transforms the logical resources into a physical DictionaryObject.
     pub fn to_dict(&self) -> PdfDictionaryObject {
-        let mut root = PdfDictionaryObject::new();
+        let mut root_dict = PdfDictionaryObject::new();
         for (name, map) in &self.categories {
             let mut sub_dict = PdfDictionaryObject::new();
             for (name, &id) in map {
-                sub_dict.set(name, PdfIndirectObject::new(id).boxed());
+                sub_dict.add_indirect_norm(name, id);
             }
             // Inlines the sub-dictionary directly into the Resources dictionary
-            root.set(name, sub_dict.boxed());
+            root_dict.add_pdf_dict(name, sub_dict);
         }
 
-        root
+        root_dict
     }
 
     pub fn is_empty(&self) -> bool {

@@ -153,67 +153,67 @@ impl ExtGState {
         let mut dict = PdfDictionaryObject::new().typed("ExtGState");
 
         if let Some(lw) = self.line_width {
-            dict.set("LW", PdfNumberObject::new(NumberType::from(lw)).boxed());
+            dict.add_number("LW", lw);
         }
 
         if let Some(lc) = self.line_cap {
-            dict.set("LC", PdfNumberObject::new(NumberType::from(lc as i64)).boxed());
+            dict.add_number("LC", lc as i64);
         }
 
         if let Some(lj) = self.line_join {
-            dict.set("LJ", PdfNumberObject::new(NumberType::from(lj as i64)).boxed());
+            dict.add_number("LJ", lj as i64);
         }
 
         if let Some(ml) = self.miter_limit {
-            dict.set("ML", PdfNumberObject::new(NumberType::from(ml)).boxed());
+            dict.add_number("ML", ml);
         }
 
         if let Some(ca) = self.stroke_alpha {
-            dict.set("CA", PdfNumberObject::new(NumberType::from(ca)).boxed());
+            dict.add_number("CA", ca);
         }
 
         if let Some(ca) = self.fill_alpha {
-            dict.set("ca", PdfNumberObject::new(NumberType::from(ca)).boxed());
+            dict.add_number("ca", ca);
         }
 
         if let Some(bm) = self.blend_mode {
-            dict.set("BM", PdfNameObject::new(bm.as_str()).boxed());
+            dict.add_name("BM", bm.as_str());
         }
 
         if let Some(ri) = self.rendering_intent {
-            dict.set("RI", PdfNameObject::new(ri.as_str()).boxed());
+            dict.add_name("RI", ri.as_str());
         }
 
         if let Some(op) = self.overprint_stroke {
-            dict.set("OP", PdfBooleanObject::new(op).boxed());
+            dict.add_bool("OP", op);
         }
 
         if let Some(op) = self.overprint_fill {
-            dict.set("op", PdfBooleanObject::new(op).boxed());
+            dict.add_bool("op", op);
         }
 
         if let Some(opm) = self.overprint_mode {
-            dict.set("OPM", PdfNumberObject::new(NumberType::from(opm as i64)).boxed());
+            dict.add_number("OPM", opm as i64);
         }
 
         if let Some(fl) = self.flatness {
-            dict.set("FL", PdfNumberObject::new(NumberType::from(fl)).boxed());
+            dict.add_number("FL", fl);
         }
 
         if let Some(sm) = self.smoothness {
-            dict.set("SM", PdfNumberObject::new(NumberType::from(sm)).boxed());
+            dict.add_number("SM", sm);
         }
 
         if let Some(sa) = self.stroke_adjust {
-            dict.set("SA", PdfBooleanObject::new(sa).boxed());
+            dict.add_bool("SA", sa);
         }
 
         if let Some(ais) = self.alpha_is_shape {
-            dict.set("AIS", PdfBooleanObject::new(ais).boxed());
+            dict.add_bool("AIS", ais);
         }
 
         if let Some(tk) = self.text_knockout {
-            dict.set("TK", PdfBooleanObject::new(tk).boxed());
+            dict.add_bool("TK", tk);
         }
 
         dict

@@ -16,7 +16,7 @@ fn test_objstm_has_type() {
     let mut stream = PdfStreamObject::uncompressed();
     let color = RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0));
     stream.set_color_rgb(color, StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 50.0 },
         Dims {
             height: 100.0,
@@ -47,7 +47,7 @@ fn test_objstm_has_type() {
 fn test_objstm_has_n() {
     let mut pdf = PDF::new();
     let mut stream = PdfStreamObject::uncompressed();
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 0.0, y: 0.0 },
         Dims {
             height: 10.0,
@@ -85,7 +85,7 @@ fn test_objstm_has_n() {
 fn test_objstm_has_first() {
     let mut pdf = PDF::new();
     let mut stream = PdfStreamObject::uncompressed();
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 0.0, y: 0.0 },
         Dims {
             height: 10.0,
@@ -126,7 +126,7 @@ fn test_objstm_has_first() {
 fn test_objstm_has_filter() {
     let mut pdf = PDF::new();
     let mut stream = PdfStreamObject::uncompressed();
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 0.0, y: 0.0 },
         Dims {
             height: 10.0,
@@ -170,7 +170,7 @@ fn test_content_streams_not_compressed() {
     let mut stream = PdfStreamObject::uncompressed();
     let color = RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0));
     stream.set_color_rgb(color, StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 10.0, y: 10.0 },
         Dims {
             height: 20.0,

@@ -84,17 +84,17 @@ impl OptionalContentGroup {
     pub fn to_dict(&self) -> PdfDictionaryObject {
         let mut dict = PdfDictionaryObject::new().typed("OCG");
         dict.add_string("Name", self.name.clone());
-        //dict.set("Name", PdfStringObject::new(self.name.clone()).boxed());
+        //dict.add_name("Name", self.name.clone());
 
         if let Some(ref intent) = self.intent {
             if intent.len() == 1 {
-                dict.set("Intent", PdfNameObject::new(&intent[0]).boxed());
+                dict.add_name("Intent", &intent[0]);
             } else {
                 let mut arr = PdfArrayObject::new();
                 for i in intent {
                     arr.push_name(i);
                 }
-                dict.set("Intent", arr.boxed());
+                dict.add_pdf_array("Intent", arr);
             }
         }
 
@@ -103,40 +103,34 @@ impl OptionalContentGroup {
 
             if let Some(ref print) = usage.print {
                 let mut print_dict = PdfDictionaryObject::new();
-                print_dict.set(
+                print_dict.add_name(
                     "PrintState",
-                    PdfNameObject::new(match print.state {
+                    match print.state {
                         VisibilityInitialState::On => "ON",
                         VisibilityInitialState::Off => "OFF",
-                    })
-                    .boxed(),
-                );
-                usage_dict.set("Print", print_dict.boxed());
+                    });
+                usage_dict.add_pdf_dict("Print", print_dict);
             }
 
             if let Some(ref view) = usage.view {
                 let mut view_dict = PdfDictionaryObject::new();
-                view_dict.set(
-                    "ViewState",
-                    PdfNameObject::new(&*view.state.to_string()).boxed(),
-                );
-                usage_dict.set("View", view_dict.boxed());
+                view_dict.add_name(
+                    "ViewState", &*view.state.to_string());
+                usage_dict.add_pdf_dict("View", view_dict);
             }
 
             if let Some(ref export) = usage.export {
                 let mut export_dict = PdfDictionaryObject::new();
-                export_dict.set(
+                export_dict.add_name(
                     "ExportState",
-                    PdfNameObject::new(match export.state {
+                    match export.state {
                         VisibilityInitialState::On => "ON",
                         VisibilityInitialState::Off => "OFF",
-                    })
-                    .boxed(),
-                );
-                usage_dict.set("Export", export_dict.boxed());
+                    });
+                usage_dict.add_pdf_dict("Export", export_dict);
             }
 
-            dict.set("Usage", usage_dict.boxed());
+            dict.add_pdf_dict("Usage", usage_dict);
         }
 
         dict
@@ -201,27 +195,25 @@ impl OptionalContentConfig {
     pub fn to_dict(&self) -> PdfDictionaryObject {
         let mut dict = PdfDictionaryObject::new();
 
-        dict.set("Name", PdfStringObject::new(self.name.clone()).boxed());
+        dict.add_string("Name", self.name.clone());
 
         if let Some(ref creator) = self.creator {
-            dict.set("Creator", PdfStringObject::new(creator.clone()).boxed());
+            dict.add_string("Creator", creator.clone());
         }
 
-        dict.set(
+        dict.add_name(
             "BaseState",
-            PdfNameObject::new(match self.base_state {
+            match self.base_state {
                 VisibilityInitialState::On => "ON",
                 VisibilityInitialState::Off => "OFF",
-            })
-            .boxed(),
-        );
+            });
 
         if !self.on_list.is_empty() {
             let mut arr = PdfArrayObject::new();
             for &id in &self.on_list {
                 arr.push_indirect(id);
             }
-            dict.set("ON", arr.boxed());
+            dict.add_pdf_array("ON", arr);
         }
 
         if !self.off_list.is_empty() {
@@ -229,7 +221,7 @@ impl OptionalContentConfig {
             for &id in &self.off_list {
                 arr.push_indirect(id);
             }
-            dict.set("OFF", arr.boxed());
+            dict.add_pdf_array("OFF", arr);
         }
 
         // Order array (simplified - full implementation would handle nested groups)

@@ -16,9 +16,11 @@ fn main() {
     let mut pdf = PDF::new();
 
     let mut stream = PdfStreamObject::uncompressed();
-    let color = RGB::new(Color::new(0.0), Color::new(0.5), Color::new(1.0));
-    stream.set_color_rgb(color, StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.set_color_rgb(
+        RGB::new(Color::new(0.0), Color::new(0.5), Color::new(1.0)),
+        StrokeOrFill::Fill,
+    );
+    stream.add_rectangle(
         Posn { x: 100.0, y: 100.0 },
         Dims {
             height: 200.0,
@@ -28,7 +30,7 @@ fn main() {
     stream.fill(WindingRule::EvenOdd);
 
     let content_id = pdf.add_object(Box::new(stream));
-    
+
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);

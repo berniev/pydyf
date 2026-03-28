@@ -112,42 +112,40 @@ impl DocumentInfo {
         let mut dict = PdfDictionaryObject::new();
 
         if let Some(ref title) = self.title {
-            dict.set("Title", PdfStringObject::new(title.clone()).boxed());
+            dict.add_string("Title", title.clone());
         }
 
         if let Some(ref author) = self.author {
-            dict.set("Author", PdfStringObject::new(author.clone()).boxed());
+            dict.add_string("Author", author.clone());
         }
 
         if let Some(ref subject) = self.subject {
-            dict.set("Subject", PdfStringObject::new(subject.clone()).boxed());
+            dict.add_string("Subject", subject.clone());
         }
 
         if let Some(ref keywords) = self.keywords {
-            dict.set("Keywords", PdfStringObject::new(keywords.clone()).boxed());
+            dict.add_string("Keywords", keywords.clone());
         }
 
         if let Some(ref creator) = self.creator {
-            dict.set("Creator", PdfStringObject::new(creator.clone()).boxed());
+            dict.add_string("Creator", creator.clone());
         }
 
         if let Some(ref producer) = self.producer {
-            dict.set("Producer", PdfStringObject::new(producer.clone()).boxed());
+            dict.add_string("Producer", producer.clone());
         }
 
         if let Some(ref creation_date) = self.creation_date {
-            dict.set(
-                "CreationDate",
-                PdfStringObject::new(creation_date.clone()).boxed(),
-            );
+            dict.add_string(
+                "CreationDate", creation_date.clone());
         }
 
         if let Some(ref mod_date) = self.mod_date {
-            dict.set("ModDate", PdfStringObject::new(mod_date.clone()).boxed());
+            dict.add_string("ModDate", mod_date.clone());
         }
 
         if let Some(trapped) = self.trapped {
-            dict.set("Trapped", PdfNameObject::new(trapped.as_name()).boxed());
+            dict.add_string("Trapped", trapped.as_name().to_string());
         }
 
         dict
@@ -229,7 +227,7 @@ impl XmpMetadata {
 
     pub fn to_stream(&self) -> PdfResult<PdfStreamObject> {
         let mut dict = PdfDictionaryObject::new().typed("Metadata");
-        dict.set("SubType", PdfNameObject::new("XML").boxed());
+        dict.add_name("SubType", "XML");
 
         let stream = PdfStreamObject::uncompressed().with_data(
             self.xmp_packet.as_bytes().to_vec(),
@@ -317,6 +315,6 @@ mod tests {
 
         // Check that stream was created (extra entries are internal)
         // Full validation would require checking the generated data() output
-        assert!(!stream.data().is_empty());
+        assert!(!stream.serialise().is_empty());
     }
 }

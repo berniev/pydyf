@@ -24,7 +24,7 @@ fn test_cmyk_colors() {
         ),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 650.0 },
         Dims {
             width: 100.0,
@@ -42,7 +42,7 @@ fn test_cmyk_colors() {
         ),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 200.0, y: 650.0 },
         Dims {
             width: 100.0,
@@ -60,7 +60,7 @@ fn test_cmyk_colors() {
         ),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 350.0, y: 650.0 },
         Dims {
             width: 100.0,
@@ -78,7 +78,7 @@ fn test_cmyk_colors() {
         ),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 500.0 },
         Dims {
             width: 100.0,
@@ -96,7 +96,7 @@ fn test_cmyk_colors() {
         ),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 200.0, y: 500.0 },
         Dims {
             width: 100.0,
@@ -151,7 +151,7 @@ fn test_grayscale_colors() {
     let mut stream = Stream::uncompressed();
 
     let _ = stream.set_color_grayscale(Color::new(0.0), StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 650.0 },
         Dims {
             width: 80.0,
@@ -161,7 +161,7 @@ fn test_grayscale_colors() {
     stream.fill(WindingRule::EvenOdd);
 
     let _ = stream.set_color_grayscale(Color::new(0.25), StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 150.0, y: 650.0 },
         Dims {
             width: 80.0,
@@ -171,7 +171,7 @@ fn test_grayscale_colors() {
     stream.fill(WindingRule::EvenOdd);
 
     let _ = stream.set_color_grayscale(Color::new(0.5), StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 250.0, y: 650.0 },
         Dims {
             width: 80.0,
@@ -181,7 +181,7 @@ fn test_grayscale_colors() {
     stream.fill(WindingRule::EvenOdd);
 
     let _ = stream.set_color_grayscale(Color::new(0.75), StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 350.0, y: 650.0 },
         Dims {
             width: 80.0,
@@ -191,7 +191,7 @@ fn test_grayscale_colors() {
     stream.fill(WindingRule::EvenOdd);
 
     let _ = stream.set_color_grayscale(Color::new(1.0), StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 450.0, y: 650.0 },
         Dims {
             width: 80.0,
@@ -202,7 +202,7 @@ fn test_grayscale_colors() {
 
     let _ = stream.set_color_grayscale(Color::new(0.0), StrokeOrFill::Stroke);
     stream.set_line_width(2.0);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 450.0, y: 650.0 },
         Dims {
             width: 80.0,
@@ -257,7 +257,7 @@ fn test_mixed_color_spaces() {
         ),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 650.0 },
         Dims {
             width: 100.0,
@@ -275,7 +275,7 @@ fn test_mixed_color_spaces() {
         ),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 200.0, y: 650.0 },
         Dims {
             width: 100.0,
@@ -285,7 +285,7 @@ fn test_mixed_color_spaces() {
     stream.fill(WindingRule::EvenOdd);
 
     let _ = stream.set_color_grayscale(Color::new(0.5), StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 350.0, y: 650.0 },
         Dims {
             width: 100.0,

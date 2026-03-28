@@ -91,7 +91,7 @@ pub(crate) trait WriteStrategy {
         let mut context = md5::Context::new();
         for obj in objects {
             if obj.metadata().status != ObjectStatus::Free {
-                context.consume(obj.data());
+                context.consume(obj.serialise());
             }
         }
         let hash_result = context.finalize().0;
@@ -267,7 +267,7 @@ impl CompressedStrategy {
                 stream.write_line_latin1(&obj.indirect())?;
             } else {
                 // Save for compression
-                compressed_objects.push((obj_id.unwrap_or(0), obj.data()));
+                compressed_objects.push((obj_id.unwrap_or(0), obj.serialise()));
             }
         }
 
@@ -308,8 +308,8 @@ impl CompressedStrategy {
         // Create object stream (reuse obj_stream_num allocated above)
 
         let mut dict = PdfDictionaryObject::new().typed("ObjStm");
-        dict.add_inti64("N", compressed_objects.len() as i64);
-        dict.add_inti64("First", first_offset as i64);
+        dict.add_number("N", compressed_objects.len() as i64);
+        dict.add_number("First", first_offset as i64);
 
         let mut obj_stream = PdfStreamObject::compressed()
             .with_data(full_content.into_bytes(), dict);

@@ -17,7 +17,7 @@ impl PdfBooleanObject {
 }
 
 impl PdfObject for PdfBooleanObject {
-    fn data(&mut self) -> Vec<u8> {
+    fn serialise(&mut self) -> Vec<u8> {
         let value = if self.value { "true" } else { "false" };
 
         Vec::from(value)

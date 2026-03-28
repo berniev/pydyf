@@ -16,7 +16,7 @@ fn debug_compressed_stream_bytes() {
     ];
 
     let obj_stream = PdfStreamObject::compressed().with_data(Some(vec![content.into_bytes()]), Some(extra));
-    let output = obj_stream.data();
+    let output = obj_stream.serialise();
 
     println!("\n=== Full output ===\n{}", output);
 

@@ -83,16 +83,16 @@ impl TilingPattern {
         stream.dict.add_name("Type", "Pattern");
         stream
             .dict
-            .add_inti64("PatternType", PatternType::Tiling as i64);
-        stream.dict.add_inti64("PaintType", self.paint_type as i64);
+            .add_number("PatternType", PatternType::Tiling as i64);
+        stream.dict.add_number("PaintType", self.paint_type as i64);
         stream
             .dict
-            .add_inti64("TilingType", self.tiling_type as i64);
+            .add_number("TilingType", self.tiling_type as i64);
         stream
             .dict
             .add_pdf_array("BBox", self.bounding_box.as_pdf_array());
-        stream.dict.add_float64("XStep", self.x_step);
-        stream.dict.add_float64("YStep", self.y_step);
+        stream.dict.add_number("XStep", self.x_step);
+        stream.dict.add_number("YStep", self.y_step);
 
         if let Some(matrix) = self.matrix {
             stream.dict.add_pdf_array("Matrix", matrix.as_pdf_array());
@@ -169,7 +169,7 @@ impl AxialShading {
     pub fn to_dict(&self) -> PdfDictionaryObject {
         let mut dict = PdfDictionaryObject::new();
 
-        dict.add_inti64("ShadingType", ShadingType::Axial as i64);
+        dict.add_number("ShadingType", ShadingType::Axial as i64);
         dict.add_name("ColorSpace", "DeviceRGB");
         dict.add_pdf_array("Coords", self.line.as_pdf_array());
 
@@ -177,10 +177,10 @@ impl AxialShading {
         // In a full implementation, this would be a proper PDF function object
         // todo: For now, we use a simplified representation
 
-        let mut extend = PdfArrayObject::new();
-        extend.push_bool(self.extend_start);
-        extend.push_bool(self.extend_end);
-        dict.set("Extend", extend.boxed());
+        let mut extend_arr = PdfArrayObject::new();
+        extend_arr.push_bool(self.extend_start);
+        extend_arr.push_bool(self.extend_end);
+        dict.add_pdf_array("Extend", extend_arr);
 
         dict
     }

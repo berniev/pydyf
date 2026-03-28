@@ -24,7 +24,7 @@ impl PdfNameObject {
 }
 
 impl PdfObject for PdfNameObject {
-    fn data(&mut self) -> Vec<u8> {
+    fn serialise(&mut self) -> Vec<u8> {
         format!("/{}", self.value).into_bytes()
     }
 }

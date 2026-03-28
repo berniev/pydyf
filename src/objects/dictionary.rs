@@ -7,6 +7,7 @@
 ///     The entries in a dictionary represent an associative table and as such shall be unordered
 ///     even though an arbitrary order may be imposed upon them when written in a file. That
 ///     ordering shall be ignored.
+///
 ///     Multiple entries in the same dictionary shall not have the same key.
 ///     A dictionary shall be written as a sequence of key-value pairs enclosed in double angle
 ///     brackets (<< … >>) (using LESS-THAN SIGNs (3Ch) and GREATER-THAN SIGNs (3Eh)).
@@ -37,52 +38,6 @@ impl PdfDictionaryObject {
         self
     }
 
-    fn make_name(&self, name: &str) -> PdfNameObject {
-        PdfNameObject::new(name)
-    }
-
-    pub fn set(&mut self, key: &str, object: Box<dyn PdfObject>) {
-        let k_obj = self.make_name(key);
-        self.values.push((k_obj, object));
-    }
-
-    pub fn add_string(&mut self, key: &str, value: String) {
-        self.set(key, self.make_name(&value).boxed());
-    }
-
-    pub fn add_name(&mut self, key: &str, value: &str) {
-        self.set(key, PdfNameObject::new(value).boxed());
-    }
-
-    pub fn add_indirect(&mut self, key: &str, value: usize) {
-        self.set(key, PdfIndirectObject::new(value).boxed());
-    }
-
-    pub fn add_bool(&mut self, key: &str, value: bool) {
-        self.set(key, PdfBooleanObject::new(value).boxed());
-    }
-
-    pub fn add_float64(&mut self, key: &str, value: f64) {
-        self.set(key, PdfNumberObject::new(NumberType::Real(value)).boxed());
-    }
-
-    pub fn add_inti64(&mut self, key: &str, value: i64) {
-        self.set(
-            key,
-            PdfNumberObject::new(NumberType::Integer(value)).boxed(),
-        );
-    }
-
-    /// param: PdfArrayObject
-    pub fn add_pdf_array(&mut self, key: &str, array: PdfArrayObject) {
-        self.set(key, array.boxed());
-    }
-
-    /// param: PdfDictionaryObject
-    pub fn add_pdf_dict(&mut self, key: &str, value: PdfDictionaryObject) {
-        self.set(key, value.boxed());
-    }
-
     pub fn len(&self) -> usize {
         self.values.len()
     }
@@ -94,16 +49,75 @@ impl PdfDictionaryObject {
     pub fn contains_key(&self, key: &str) -> bool {
         self.values.iter().any(|(k, _)| k.value == key)
     }
+
+    fn make_name(&self, name: &str) -> PdfNameObject {
+        PdfNameObject::new(name)
+    }
+
+    fn set(&mut self, key: &str, object: Box<dyn PdfObject>) {
+        // todo: duplicates not allowed
+        let k_obj = self.make_name(key);
+        self.values.push((k_obj, object));
+    }
+
+    //--------------------------- Add Methods -----------------------//
+
+    pub fn add_string(&mut self, key: &str, value: String) {
+        self.set(key, self.make_name(&value).boxed());
+    }
+
+    pub fn add_name(&mut self, key: &str, value: &str) {
+        self.set(key, PdfNameObject::new(value).boxed());
+    }
+
+    pub fn add_indirect_norm(&mut self, key: &str, value: usize, obj: Box<dyn PdfObject>) {
+        self.set(key, PdfIndirectObject::new_standard(value, obj).boxed());
+    }
+
+     pub fn add_indirect_in_stream(
+        &mut self,
+        key: &str,
+        value: usize,
+        obj: Box<dyn PdfObject>,
+        num: usize,
+    ) {
+        self.set(
+            key,
+            PdfIndirectObject::new_in_obj_stream(value, obj, num).boxed(),
+        );
+    }
+
+    pub fn add_bool(&mut self, key: &str, value: bool) {
+        self.set(key, PdfBooleanObject::new(value).boxed());
+    }
+
+    pub fn add_number(&mut self, key: &str, value: impl Into<NumberType>) {
+        self.set(key, PdfNumberObject::new(value.into()).boxed());
+    }
+
+    pub fn add_indirect_ref(&mut self, key: &str, value: PdfIndirectReference) {
+        self.set(key, value.boxed());
+    }
+
+    /// param: PdfArrayObject
+    pub fn add_pdf_array(&mut self, key: &str, array: PdfArrayObject) {
+        self.set(key, array.boxed());
+    }
+
+    /// param: PdfDictionaryObject
+    pub fn add_pdf_dict(&mut self, key: &str, value: PdfDictionaryObject) {
+        self.set(key, value.boxed());
+    }
 }
 
 impl PdfObject for PdfDictionaryObject {
-    fn data(&mut self) -> Vec<u8> {
+    fn serialise(&mut self) -> Vec<u8> {
         let mut arr = vec![];
         arr.extend(b"<<");
-        for (pdf_name_obj, pdf_object) in &self.values {
-            arr.extend(pdf_name_obj.data());
+        for (pdf_name_obj, pdf_object) in &mut self.values {
+            arr.extend(pdf_name_obj.serialise());
             arr.push(b' ');
-            arr.extend(pdf_object.data());
+            arr.extend(pdf_object.serialise());
         }
         arr.extend(b">>");
 

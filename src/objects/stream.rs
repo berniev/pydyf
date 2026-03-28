@@ -64,7 +64,7 @@ use crate::encoding::{ascii85_encode, f_to_pdf_num};
 use crate::error::{PdfError, PdfResult};
 use crate::objects::string::encode_pdf_string;
 pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, ToPdf, WindingRule};
-use crate::{PdfDictionaryObject, PdfNameObject, PdfNumberObject, PdfObject};
+use crate::{PdfDictionaryObject, PdfObject};
 
 //------------------------ PdfStreamObject -----------------------
 
@@ -72,7 +72,7 @@ pub struct PdfStreamObject {
     pub dict: PdfDictionaryObject,
     pub content: Vec<u8>,
 
-    pub compress: CompressionMethod,
+    pub compression_method: CompressionMethod,
 }
 
 impl Default for PdfStreamObject {
@@ -81,7 +81,7 @@ impl Default for PdfStreamObject {
             dict: PdfDictionaryObject::new(),
             content: Vec::new(),
 
-            compress: CompressionMethod::None,
+            compression_method: CompressionMethod::None,
         }
     }
 }
@@ -89,14 +89,14 @@ impl Default for PdfStreamObject {
 impl PdfStreamObject {
     pub fn uncompressed() -> Self {
         Self {
-            compress: CompressionMethod::None,
+            compression_method: CompressionMethod::None,
             ..Default::default()
         }
     }
 
     pub fn compressed() -> Self {
         Self {
-            compress: CompressionMethod::Flate,
+            compression_method: CompressionMethod::Flate,
             ..Default::default()
         }
     }
@@ -112,13 +112,8 @@ impl PdfStreamObject {
         self.content.extend(bytes);
     }
 
-    pub fn add_to_dict(&mut self, key: &str, object: Box<dyn PdfObject>) {
-        self.dict.set(key, object);
-    }
-
     fn push_op(&mut self, operands: &[&dyn ToPdf], operator: &str) {
         let mut cmd_parts: Vec<String> = operands.iter().map(|n| n.to_pdf()).collect();
-
         cmd_parts.push(operator.to_string());
         self.add_to_content(cmd_parts.join(" ").into_bytes());
     }
@@ -250,7 +245,7 @@ impl PdfStreamObject {
             )));
         }
 
-        let data_to_encode = match self.compress {
+        let data_to_encode = match self.compression_method {
             CompressionMethod::Flate => {
                 let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
                 encoder.write_all(raw_pixel_data)?;
@@ -262,18 +257,13 @@ impl PdfStreamObject {
         let mut encoded_data = ascii85_encode(&data_to_encode);
         encoded_data.extend(b"~>"); // ASCII85 end marker
 
-        let filters = match self.compress {
-            CompressionMethod::Flate => "/A85 /Fl",
-            CompressionMethod::None => "/A85",
-        };
-
         let header_string = format!(
             "BI /W {} /H {} /BPC {} /CS /Device{} /F {} /L {} ID ",
             f_to_pdf_num(width_pixels as f64),
             f_to_pdf_num(height_pixels as f64),
             f_to_pdf_num(bits_per_component as f64),
             color_space,
-            filters,
+            self.compression_method.to_string(),
             encoded_data.len()
         );
 
@@ -337,7 +327,7 @@ impl PdfStreamObject {
     /// Add rectangle to current path as complete subpath.
     ///
     /// `posn` is the lower-left corner and `size` the dimensions.
-    pub fn rectangle(&mut self, posn: Posn, size: Dims) {
+    pub fn add_rectangle(&mut self, posn: Posn, size: Dims) {
         self.push_op(&[&posn, &size], "re");
     }
 
@@ -384,7 +374,7 @@ impl PdfStreamObject {
         stroke: StrokeOrFill,
         operands: &[f64],
     ) {
-        let mut cmd_parts: Vec<String> = operands.iter().map(|&n| f_to_pdf_num(n)).collect();
+        let mut cmd_parts = operands.iter().map(|&n| f_to_pdf_num(n)).collect::<Vec<String>>();
         if let Some(n) = name {
             cmd_parts.push(format!("/{n}"));
         }
@@ -481,7 +471,7 @@ impl PdfStreamObject {
         self.add_to_content(b"s".to_vec());
     }
 
-    pub fn rounded_rectangle(
+    pub fn add_rounded_rectangle(
         &mut self,
         posn: Posn,
         size: Dims,
@@ -572,8 +562,8 @@ impl PdfStreamObject {
 }
 
 impl PdfObject for PdfStreamObject {
-    fn data(&mut self) -> Vec<u8> {
-        let stream_bytes: Vec<u8> = match self.compress {
+    fn serialise(&mut self) -> Vec<u8> {
+        let stream_bytes: Vec<u8> = match self.compression_method {
             CompressionMethod::None => self.content.clone(),
             CompressionMethod::Flate => {
                 let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
@@ -583,12 +573,12 @@ impl PdfObject for PdfStreamObject {
         };
 
         let dict = &mut self.dict;
-        dict.add_float64("Length", stream_bytes.len() as f64);
-        if self.compress == CompressionMethod::Flate {
+        dict.add_number("Length", stream_bytes.len() as f64);
+        if self.compression_method == CompressionMethod::Flate {
             dict.add_name("Filter", "FlateDecode");
         }
 
-        let mut vec = dict.data();
+        let mut vec = dict.serialise();
         vec.push(b'\n');
         vec.extend(b"stream\n");
         vec.extend(&stream_bytes);

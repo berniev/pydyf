@@ -45,7 +45,7 @@ use pydyf::util::{Dims, Posn};
 fn spec_objstm_must_have_type() {
     let mut pdf = PDF::new();
     let mut stream = PdfStreamObject::uncompressed();
-    stream.rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
+    stream.add_rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
     pdf.add_object(Box::new(stream));
 
     let mut output = Vec::new();
@@ -60,7 +60,7 @@ fn spec_objstm_must_have_type() {
 fn spec_objstm_must_have_n() {
     let mut pdf = PDF::new();
     let mut stream = PdfStreamObject::uncompressed();
-    stream.rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
+    stream.add_rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
     pdf.add_object(Box::new(stream));
 
     let mut output = Vec::new();
@@ -82,7 +82,7 @@ fn spec_objstm_must_have_n() {
 fn spec_objstm_must_have_first() {
     let mut pdf = PDF::new();
     let mut stream = PdfStreamObject::uncompressed();
-    stream.rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
+    stream.add_rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
     pdf.add_object(Box::new(stream));
 
     let mut output = Vec::new();
@@ -108,7 +108,7 @@ fn spec_stream_objects_not_compressible() {
     let mut stream = PdfStreamObject::uncompressed();
     let color = RGB::new( Color::new(1.0),Color::new(0.0), Color::new(0.0) );
     stream.set_color_rgb(color, StrokeOrFill::Fill);
-    stream.rectangle(Posn { x: 10.0, y: 10.0 }, Dims { height: 20.0, width: 20.0 });
+    stream.add_rectangle(Posn { x: 10.0, y: 10.0 }, Dims { height: 20.0, width: 20.0 });
     stream.fill(WindingRule::EvenOdd);
     let content_id = pdf.add_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());

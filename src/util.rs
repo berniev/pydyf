@@ -57,9 +57,9 @@ pub struct Line {
     pub end: Posn,
 }
 
-impl Line{
-    pub fn as_pdf_array(&self) -> PdfArrayObject{
-        let mut arr=PdfArrayObject::new();
+impl Line {
+    pub fn as_pdf_array(&self) -> PdfArrayObject {
+        let mut arr = PdfArrayObject::new();
         arr.push_pdf_array(self.start.as_pdf_array());
         arr.push_pdf_array(self.end.as_pdf_array());
 
@@ -76,11 +76,11 @@ pub struct Dims {
 
 impl ToPdf for Dims {
     fn to_pdf(&self) -> String {
-        format!("{} {}", f_to_pdf_num(self.width), f_to_pdf_num(self.height),)
+        format!("{} {}", f_to_pdf_num(self.width), f_to_pdf_num(self.height), )
     }
 
     fn as_string(&self) -> String {
-        format!("w:{} x h:{}", self.width, self.height,)
+        format!("w:{} x h:{}", self.width, self.height, )
     }
 }
 
@@ -196,6 +196,14 @@ pub enum CompressionMethod {
     Flate,
 }
 
+impl CompressionMethod {
+    pub fn to_string(&self) -> String {
+        match self{
+            CompressionMethod::Flate => "/A85 /Fl".to_string(),
+            CompressionMethod::None => "/A85".to_string(),
+        }
+    }
+}
 //--------------------- StrokeOrFill -----------------------------
 
 #[derive(Debug, Clone, Copy, PartialEq)]

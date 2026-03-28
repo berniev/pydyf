@@ -5,7 +5,7 @@ use crate::cross_ref::CrossRefTable;
 use crate::fonts::Fonts;
 use crate::pdf_version::PdfVersion;
 use crate::writer::{CompressedStrategy, LegacyStrategy, PdfWriter};
-use crate::{PdfDictionaryObject, PdfIndirectObject, PdfObject};
+use crate::{PdfDictionaryObject, PdfIndirectObject, PdfObject, PdfStreamObject};
 
 /// File Structure
 ///
@@ -13,7 +13,7 @@ use crate::{PdfDictionaryObject, PdfIndirectObject, PdfObject};
 /// Header                 One line identifying pdf version
 /// Body                   The objects that make up the document
 /// Cross-Reference Table  Information about the __indirect__ objects in the file
-/// Trailer                Location of the xreft and of certain special objects in the file body
+/// Trailer                Location of the xref tbl and of certain special objects in the file body
 /// ============================================================================================
 ///
 
@@ -38,12 +38,6 @@ pub struct PDF {
     pub xref_position: Option<usize>,
     next_object_id: usize, // Single source of truth for object ID allocation.
     last_num: usize,       // todo: what's this one for??
-}
-
-impl Default for PDF {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl PDF {
@@ -83,7 +77,17 @@ impl PDF {
         self.next_object_id
     }
 
+    // todo: is this creating a direct or indirect object?
     pub fn add_object(&mut self, mut object: Box<dyn PdfObject>) -> usize {
+        let number = self.allocate_object_id();
+        object.metadata_mut().object_identifier = Some(number);
+        self.objects.push(object);
+
+        number
+    }
+
+    pub fn add_pdf_stream(&mut self, stream: PdfStreamObject) -> usize {
+        // is a stream an indirect object ie needs wrapping in PdfIndirectObject ?
         let number = self.allocate_object_id();
         object.metadata_mut().object_identifier = Some(number);
         self.objects.push(object);
@@ -122,13 +126,13 @@ impl PDF {
     }
 
     pub fn add_font_resources(&mut self) -> usize {
-        let mut resources = PdfDictionaryObject::new();
-        resources.set("Font", Fonts::get_standard_fonts_dict().boxed());
+        let mut resources_dict = PdfDictionaryObject::new();
+        resources_dict.add_pdf_dict("Font", Fonts::get_standard_fonts_dict());
         
-        self.objects.push(resources.boxed());
+        self.objects.push(resources_dict.boxed());
 
         let resources_number = self.allocate_object_id();
-        resources.metadata.object_identifier = Some(resources_number);
+        resources_dict.metadata.object_identifier = Some(resources_number);
 
         resources_number
     }
@@ -209,7 +213,7 @@ impl PDF {
         // Add reference to page tree
         let pages_id = self.page_tree.metadata.object_identifier.unwrap();
         self.catalog
-            .set("Pages", PdfIndirectObject::new(pages_id));
+            .add_indirect_norm("Pages", pages_id);
 
         let catalog_copy = self.catalog.clone();
         self.objects.push(Box::new(catalog_copy));

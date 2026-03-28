@@ -24,7 +24,7 @@ fn test_generate_simple_uncompressed_pdf() {
         RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 100.0, y: 100.0 },
         Dims {
             width: 200.0,
@@ -95,7 +95,7 @@ fn test_generate_circle_over_rectangle() {
         RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0)),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 650.0 },
         Dims {
             width: 200.0,
@@ -194,7 +194,7 @@ fn test_multipage_pdf() {
         RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
         StrokeOrFill::Fill,
     );
-    stream1.rectangle(
+    stream1.add_rectangle(
         Posn { x: 50.0, y: 650.0 },
         Dims {
             width: 200.0,
@@ -239,7 +239,7 @@ fn test_multipage_pdf() {
         RGB::new(Color::new(0.0), Color::new(1.0), Color::new(0.0)),
         StrokeOrFill::Fill,
     );
-    stream2.rectangle(
+    stream2.add_rectangle(
         Posn { x: 150.0, y: 550.0 },
         Dims {
             width: 200.0,
@@ -284,7 +284,7 @@ fn test_multipage_pdf() {
         RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0)),
         StrokeOrFill::Fill,
     );
-    stream3.rectangle(
+    stream3.add_rectangle(
         Posn { x: 250.0, y: 450.0 },
         Dims {
             width: 200.0,
@@ -340,7 +340,7 @@ fn test_graphics_operations() {
         RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 700.0 },
         Dims {
             width: 100.0,
@@ -354,7 +354,7 @@ fn test_graphics_operations() {
         StrokeOrFill::Stroke,
     );
     stream.set_line_width(3.0);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 200.0, y: 700.0 },
         Dims {
             width: 100.0,
@@ -372,7 +372,7 @@ fn test_graphics_operations() {
         StrokeOrFill::Stroke,
     );
     stream.set_line_width(2.0);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 350.0, y: 700.0 },
         Dims {
             width: 100.0,
@@ -501,7 +501,7 @@ fn test_comparison_uncompressed() {
         RGB::new(Color::new(0.9), Color::new(0.9), Color::new(0.9)),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 50.0 },
         Dims {
             width: 512.0,
@@ -552,7 +552,7 @@ fn test_comparison_compressed() {
         RGB::new(Color::new(0.9), Color::new(0.9), Color::new(0.9)),
         StrokeOrFill::Fill,
     );
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 50.0 },
         Dims {
             width: 512.0,

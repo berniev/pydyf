@@ -109,7 +109,7 @@ pub trait Annotation {
         // Optional common entries
         let flags = self.flags();
         if flags.bits() != 0 {
-            dict.add_inti64("F", flags.bits() as i64);
+            dict.add_number("F", flags.bits() as i64);
         }
 
         self.add_border_style_to_dict(&mut dict);
@@ -231,7 +231,7 @@ impl Annotation for TextAnnotation {
         dict.add_name("Subtype", self.subtype());
         dict.add_pdf_array("Rect", self.rect.as_pdf_array());
         if !self.flags.is_empty() {
-            dict.add_inti64("F", self.flags.bits() as i64);
+            dict.add_number("F", self.flags.bits() as i64);
         }
         if let Some(rgb) = self.color {
             dict.add_pdf_array("C", rgb.as_pdf_array());
@@ -317,7 +317,7 @@ impl Annotation for LinkAnnotation {
 
         let flags = self.flags();
         if flags.bits() != 0 {
-            dict.add_inti64("F", flags.bits() as i64);
+            dict.add_number("F", flags.bits() as i64);
         }
 
         self.add_border_style_to_dict(&mut dict);

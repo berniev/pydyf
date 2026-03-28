@@ -15,7 +15,7 @@ fn test_qpdf_validates_compressed_pdf() {
     // Add some content
     let color = RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0));
     stream.set_color_rgb(color, StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 50.0, y: 50.0 },
         Dims {
             height: 100.0,
@@ -66,7 +66,7 @@ fn test_qpdf_validates_uncompressed_pdf() {
     let color = RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0));
 
     stream.set_color_rgb(color, StrokeOrFill::Fill);
-    stream.rectangle(
+    stream.add_rectangle(
         Posn { x: 100.0, y: 100.0 },
         Dims {
             height: 50.0,
