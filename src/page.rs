@@ -65,49 +65,9 @@
 /// MediaBox  Rectangle   Opt    Inh
 /// CropBox   Rectangle   Opt    Inh
 /// Rotate    Integer     Opt    Inh
-///
-use std::fmt;
-use std::iter::Sum;
-
-
 use crate::objects::pdf_object::Pdf;
 pub use crate::page_size::PageSize;
-use crate::{PdfArrayObject, PdfDictionaryObject};
-
-//--------------------------- ObjectId ---------------------------//
-
-#[derive(Clone, Debug, Default)]
-pub struct ObjectId(u64);
-
-impl From<u64> for ObjectId {
-    fn from(value: u64) -> Self {
-        ObjectId(value)
-    }
-}
-
-impl From<usize> for ObjectId {
-    fn from(value: usize) -> Self {
-        ObjectId(value as u64)
-    }
-}
-
-impl From<ObjectId> for u64 {
-    fn from(object_num: ObjectId) -> u64 {
-        object_num.0
-    }
-}
-
-impl Sum for ObjectId {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        ObjectId(iter.map(|id| id.0).sum())
-    }
-}
-
-impl fmt::Display for ObjectId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfObject};
 
 //--------------------------- Page ---------------------------//
 
@@ -127,7 +87,7 @@ pub fn make_page_tree() -> PdfDictionaryObject {
     tree
 }
 
-/*fn add_page_to_tree(mut page: PdfDictionaryObject, mut tree: PdfDictionaryObject) {
+fn add_page_to_tree(mut page: PdfDictionaryObject, mut tree: PdfDictionaryObject) {
     if !page.contains_key("Resources") {
         let resources = match tree.get("Resources") {
             Some(PdfObject::Dictionary(dict)) => Pdf::dict(dict.clone()),
@@ -142,4 +102,4 @@ pub fn make_page_tree() -> PdfDictionaryObject {
         }
     }
 }
-*/
+
