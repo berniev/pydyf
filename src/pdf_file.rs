@@ -1,17 +1,3 @@
-use crate::page::{ObjectId, PageObject, PageTree, PageTreeItem};
-use std::io::Write;
-
-use crate::body::Body;
-use crate::cross_ref::CrossRefTable;
-use crate::fonts::Fonts;
-use crate::header::Header;
-use crate::pdf_version::PdfVersion;
-use crate::trailer::Trailer;
-use crate::writer::{CompressedStrategy, LegacyStrategy, PdfWriter};
-use crate::{PdfDictionaryObject, PdfObject, PdfStreamObject};
-use crate::file_identifier::FileIdentifierMode;
-use crate::objects::pdf_object::Pdf;
-
 /// File Structure
 ///
 /// =====================  =====================================================================
@@ -47,19 +33,55 @@ startxref
 %%EOF
 ```
 */
+/*
+How to determine if an object will be indirect or direct?
 
-//--------------------------- PDF -------------------------
+Three criteria, in order of priority:
+1. Spec mandates it — some objects must be indirect. Streams are always indirect. Certain
+   dictionary entries like /Pages and /Outlines are required to be indirect references. No choice.
+2. Shared — if the same object is referenced from multiple places, it must be indirect so multiple
+   references can point to it by number. A font used on every page is the classic example.
+3. Size / complexity — large or complex objects (page dictionaries, images, fonts) are better
+   as indirect so the cross-reference table enables random access to them without parsing the
+   whole file. Small trivial values (a boolean, a name, a short string) are better inline as
+   direct objects — the overhead of an indirect object isn't worth it.
+
+In practice for a write-once writer: if in doubt, make it indirect.
+The cost is just an xref entry.
+
+so maybe for starters we:
+    indirect: stream, dict, array.
+    direct  : bool, name, string, number, null. (always part of an indirect object)
+
+    So the concrete rule is: if the object has a /Type entry, it's almost certainly indirect.
+    Typed objects are named, standalone PDF entities. Untyped objects are supporting data
+    embedded in their parent.
+*/
+use std::io::Write;
+
+use crate::cross_reference_table::{CrossRefTable, CrossReferenceEntry};
+use crate::file_identifier::FileIdentifierMode;
+use crate::fonts::Fonts;
+use crate::header::Header;
+use crate::objects::pdf_object::Pdf;
+use crate::page::make_page_tree;
+use crate::pdf_version::PdfVersion;
+use crate::trailer::Trailer;
+use crate::writer::{CompressedStrategy, LegacyStrategy, PdfWriter};
+use crate::{PdfDictionaryObject, PdfObject};
+use crate::body::Body;
+
+//--------------------------- PDF -------------------------//
 
 pub struct PdfFile {
     header: Header,
     body: Body,
-    xref: CrossRefTable,
+    cross_reference_table: CrossRefTable,
     trailer: Trailer,
 
     xref_position: Option<usize>,
 
-
-    root_page_tree: PageTree, // catalog /Pages entry must point to this
+    pages_root: PdfDictionaryObject, // catalog /Pages entry must point to this
 }
 
 impl PdfFile {
@@ -67,46 +89,37 @@ impl PdfFile {
         PdfFile {
             header: Header::new(),
             body: Body::new(),
-            xref: CrossRefTable::new(),
+            cross_reference_table: CrossRefTable::new(),
             trailer: Trailer::new(),
-            
+
             xref_position: None,
-            root_page_tree: PageTree::new(None),
+            pages_root: make_page_tree(),
         }
     }
 
-    pub fn with_version(mut self, version: PdfVersion) -> Self {
+    pub fn version(mut self, version: PdfVersion) -> Self {
         self.header.set_version(version);
 
         self
     }
 
-    // todo: is this creating a direct or indirect object?
-    pub fn add_object(&mut self, mut object: Box<dyn PdfObject>) -> usize {
-        let number = self.allocate_object_id();
-        object.metadata_mut().object_identifier = Some(number);
-        self.indirect_pdf_objects.push(object);
+    // all objects added here are to be indirect
+    pub fn add_object(&mut self, obj: Box<dyn PdfObject>) -> usize {
+        let object_number = self.body.next_num();
+        self.cross_reference_table.add_entry(CrossReferenceEntry {
+            object_number,
+            object_status: Default::default(), // in use
+            offset_or_next_free: 0,
+            generation: 0,
+        });
 
-        number
-    }
 
-    pub fn add_pdf_stream(&mut self, stream: PdfStreamObject) -> usize {
-        // is a stream an indirect object ie needs wrapping in PdfIndirectObject ?
-        let number = self.allocate_object_id();
-        object.metadata_mut().object_identifier = Some(number);
-        self.indirect_pdf_objects.push(object);
 
-        number
-    }
-
-    pub fn add_page(&mut self, mut page: PageObject) {
-        page.set_id((self.next_page_num() as u64).into());
-        self.root_page_tree.add_page(page);
+        0
     }
 
     fn write_common(&mut self) {
         let resources_number = self.add_font_resources();
-        self.initialize_page_tree(resources_number);
         self.initialize_catalog();
     }
 
@@ -140,80 +153,9 @@ impl PdfFile {
         resources_number
     }
 
-    pub fn initialize_page_tree(&mut self, resources_number: usize) {
-        if self.root_page_tree.metadata.object_identifier.is_some() {
-            return;
-        }
-
-        // Ensure page tree has a MediaBox if no pages have one
-        // every page must have MediaBox (direct or inherited)
-        if self.root_page_tree.media_box.is_none() {
-            let has_page_with_mediabox = self.root_page_tree.kids.iter().any(|kid| {
-                if let PageTreeItem::Page(page) = kid {
-                    page.media_box.is_some()
-                } else {
-                    false
-                }
-            });
-            if !has_page_with_mediabox {
-                // Set default A4 size
-                self.root_page_tree.media_box = Some(crate::page::PageSize::A4);
-            }
-        }
-
-        // Count pages and allocate IDs
-        let num_pages = self.root_page_tree.kids.len();
-        let mut page_ids = Vec::new();
-        for _ in 0..num_pages {
-            page_ids.push(self.allocate_object_id());
-        }
-
-        // Allocate ID for page tree itself (after all pages)
-        let pages_number = self.allocate_object_id();
-        self.root_page_tree.metadata.object_identifier = Some(pages_number);
-
-        // Now assign IDs and clone pages
-        let mut page_objects = Vec::new();
-        let mut page_idx = 0;
-        for kid in &mut self.root_page_tree.kids {
-            if let PageTreeItem::Page(page) = kid {
-                let page_id = page_ids[page_idx];
-                page_idx += 1;
-                page.metadata.object_identifier = Some(page_id);
-                page_objects.push((page_id, page.clone()));
-            }
-        }
-
-        // Add all pages to objects with correct parent reference
-        for (page_id, mut page) in page_objects {
-            page.parent = ObjectId::from(pages_number);
-            page.resources_id = Some(resources_number);
-            page.metadata.object_identifier = Some(page_id);
-            self.indirect_pdf_objects.push(Box::new(page));
-        }
-
-        // Now add the page tree itself
-        // Clone the page tree to add it to objects
-        let page_tree_clone = PageTree {
-            id: self.root_page_tree.id.clone(),
-            parent_id: self.root_page_tree.parent_id.clone(),
-            kids: self.root_page_tree.kids.clone(),
-            media_box: self.root_page_tree.media_box,
-            resources: self.root_page_tree.resources.clone(),
-        };
-        self.indirect_pdf_objects.push(Box::new(page_tree_clone));
-    }
-
     pub fn initialize_catalog(&mut self) {
-        if self.catalog.metadata.object_identifier.is_some() {
-            return;
-        }
-
-        self.catalog.metadata.object_identifier = Some(self.allocate_object_id());
-
-        // Add reference to page tree
-        let pages_id = self.root_page_tree.metadata.object_identifier.unwrap();
-        self.catalog.add_indirect_norm("Pages", pages_id);
+        let pages_id = self.pages_root.metadata.object_identifier.unwrap();
+        self.catalog.add("Pages", pages_id);
 
         let catalog_copy = self.catalog.clone();
         self.indirect_pdf_objects.push(Box::new(catalog_copy));

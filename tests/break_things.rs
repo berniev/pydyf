@@ -17,9 +17,9 @@ fn create_page_with_content(page_size: PageSize, content_index: usize) -> PageOb
 #[test]
 fn test_empty_page() {
     let mut pdf = PdfFile::new();
-    let stream = PdfStreamObject::uncompressed();
+    let stream = PdfStreamObject::new();
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
 
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
@@ -36,7 +36,7 @@ fn test_massive_page_count() {
     let mut pdf = PdfFile::new();
 
     for _ in 0..500 {
-        let mut stream = PdfStreamObject::uncompressed();
+        let mut stream = PdfStreamObject::new();
         stream.set_color_rgb(
             RGB::new(Color::new(0.5), Color::new(0.5), Color::new(0.5)),
             StrokeOrFill::Fill,
@@ -50,7 +50,7 @@ fn test_massive_page_count() {
         );
         stream.fill(WindingRule::EvenOdd);
 
-        let content_index = pdf.add_object(Box::new(stream));
+        let content_index = pdf.add_indirect_object(Box::new(stream));
         let page = create_page_with_content(PageSize::A4, content_index);
         pdf.add_page(page);
     }
@@ -63,7 +63,7 @@ fn test_massive_page_count() {
 #[test]
 fn test_extreme_coordinates() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
 
     stream.set_color_rgb(
         RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
@@ -123,7 +123,7 @@ fn test_extreme_coordinates() {
     );
     stream.fill(WindingRule::EvenOdd);
 
-    let content_index = pdf.add_object(Box::new(stream));
+    let content_index = pdf.add_indirect_object(Box::new(stream));
     let page = create_page_with_content(PageSize::A4, content_index);
     pdf.add_page(page);
 
@@ -135,7 +135,7 @@ fn test_extreme_coordinates() {
 #[test]
 fn test_very_long_text() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
 
     stream.set_color_rgb(
         RGB::new(Color::new(0.0), Color::new(0.0), Color::new(0.0)),
@@ -158,7 +158,7 @@ fn test_very_long_text() {
 
     stream.end_text();
 
-    let content_index = pdf.add_object(Box::new(stream));
+    let content_index = pdf.add_indirect_object(Box::new(stream));
     let page = create_page_with_content(PageSize::A4, content_index);
     pdf.add_page(page);
 
@@ -170,7 +170,7 @@ fn test_very_long_text() {
 #[test]
 fn test_special_characters_text() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
 
     stream.set_color_rgb(
         RGB::new(Color::new(0.0), Color::new(0.0), Color::new(0.0)),
@@ -221,7 +221,7 @@ fn test_special_characters_text() {
 
     stream.end_text();
 
-    let content_index = pdf.add_object(Box::new(stream));
+    let content_index = pdf.add_indirect_object(Box::new(stream));
     let page = create_page_with_content(PageSize::A4, content_index);
     pdf.add_page(page);
 
@@ -233,7 +233,7 @@ fn test_special_characters_text() {
 #[test]
 fn test_huge_rectangle() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
 
     stream.set_color_rgb(
         RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
@@ -248,7 +248,7 @@ fn test_huge_rectangle() {
     );
     stream.fill(WindingRule::EvenOdd);
 
-    let content_index = pdf.add_object(Box::new(stream));
+    let content_index = pdf.add_indirect_object(Box::new(stream));
     let page = create_page_with_content(PageSize::A4, content_index);
     pdf.add_page(page);
 
@@ -260,9 +260,9 @@ fn test_huge_rectangle() {
 #[test]
 fn test_compressed_empty() {
     let mut pdf = PdfFile::new();
-    let stream = PdfStreamObject::compressed();
+    let stream = PdfStreamObject::new().compressed();
 
-    let content_index = pdf.add_object(Box::new(stream));
+    let content_index = pdf.add_indirect_object(Box::new(stream));
     let page = create_page_with_content(PageSize::A4, content_index);
     pdf.add_page(page);
 
@@ -274,7 +274,7 @@ fn test_compressed_empty() {
 #[test]
 fn test_extreme_font_sizes() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
 
     stream.set_color_rgb(
         RGB::new(Color::new(0.0), Color::new(0.0), Color::new(0.0)),
@@ -317,7 +317,7 @@ fn test_extreme_font_sizes() {
 
     stream.end_text();
 
-    let content_index = pdf.add_object(Box::new(stream));
+    let content_index = pdf.add_indirect_object(Box::new(stream));
     let page = create_page_with_content(PageSize::A4, content_index);
     pdf.add_page(page);
 
@@ -329,7 +329,7 @@ fn test_extreme_font_sizes() {
 #[test]
 fn test_overlapping_operations() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
 
     stream.begin_text();
     stream.set_color_rgb(
@@ -346,7 +346,7 @@ fn test_overlapping_operations() {
     stream.fill(WindingRule::EvenOdd);
     stream.end_text();
 
-    let content_index = pdf.add_object(Box::new(stream));
+    let content_index = pdf.add_indirect_object(Box::new(stream));
     let page = create_page_with_content(PageSize::A4, content_index);
     pdf.add_page(page);
 

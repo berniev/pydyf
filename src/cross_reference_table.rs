@@ -16,10 +16,10 @@
 /// only one subsection, whose object numbering begins at 0.
 ///
 /// We are not designing for modification.
-/// 
+///
 pub use crate::generation::Generation;
 pub use crate::objects::metadata::ObjectStatus;
-
+use crate::PdfObject;
 //--------------------------- CrossRefError -------------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -30,18 +30,18 @@ pub enum CrossRefError {
 
 //--------------------------- Entry -------------------------//
 
-pub struct Entry {
-    object_number: u32,
-    object_status: ObjectStatus, // determines treatment of offset
-    offset_or_next_free: u64,    // InUse: offset in stream. Free: next free object number
-    generation: Generation,      // 65535 for root entry, otherwise 0
+pub struct CrossReferenceEntry {
+    pub object_number: u64,
+    pub object_status: ObjectStatus, // determines treatment of offset
+    pub offset_or_next_free: u64,    // InUse: offset in stream. Free: next free object number
+    pub generation: u16,             // 65535 for root entry, otherwise 0
 }
 
-impl Entry {
-    pub fn new(number: u32, in_use: ObjectStatus, offset: u64, generation: Generation) -> Self {
-        Entry {
+impl CrossReferenceEntry {
+    pub fn new(number: u64, status: ObjectStatus, offset: u64, generation: u16) -> Self {
+        CrossReferenceEntry {
             object_number: number,
-            object_status: in_use,
+            object_status: status,
             offset_or_next_free: offset,
             generation,
         }
@@ -51,26 +51,25 @@ impl Entry {
     /// generation: 5-digit number padded with leading zeros
     /// status: n
     /// eol: 2-character end-of-line sequence
-    pub fn as_pdf(&self) -> String {
+    pub fn serialise(&self) -> Vec<u8> {
         format!(
-            "{:010} {:05} {} \r\n",
+            "{:010} {:05} {} \r\n", // todo space before endline?
             self.offset_or_next_free,
-            self.generation.as_u16(),
+            self.generation,
             self.object_status.as_char()
-        )
+        ).as_bytes().to_vec()
     }
 }
 
+impl Default for CrossReferenceEntry {
+    fn default() -> Self {
+        Self::new(0, ObjectStatus::Free, 0, 65535)
+    }
+}
 //--------------------------- CrossRefTable -------------------------//
 
 pub struct CrossRefTable {
-    entries: Vec<Entry>, // contiguous, order by object number
-}
-
-impl Default for CrossRefTable {
-    fn default() -> Self {
-        Self::new()
-    }
+    entries: Vec<CrossReferenceEntry>, // contiguous, ordered by object number
 }
 
 impl CrossRefTable {
@@ -78,13 +77,12 @@ impl CrossRefTable {
         let mut table = CrossRefTable {
             entries: Vec::new(),
         };
-        let root = Entry::new(0, ObjectStatus::Free, 0, Generation::Root);
-        table.add_entry(root);
+        table.add_entry(CrossReferenceEntry::default());
 
         table
     }
 
-    pub fn add_entry(&mut self, entry: Entry) {
+    pub fn add_entry(&mut self, entry: CrossReferenceEntry) {
         self.entries.push(entry);
     }
 
@@ -105,8 +103,8 @@ impl CrossRefTable {
             + &self
                 .entries
                 .iter()
-                .map(|entry| entry.as_pdf())
-                .collect::<String>())
+                .map(|entry| entry.serialise())
+                .collect::<String>()) // todo not String
     }
 }
 

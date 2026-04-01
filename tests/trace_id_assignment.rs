@@ -7,8 +7,8 @@ fn trace_id_assignments_during_write_compressed() {
     let mut pdf = PdfFile::new();
 
     // Add a stream object (like the test does)
-    let stream = Box::new(PdfStreamObject::uncompressed());
-    let stream_id = pdf.add_object(stream);
+    let stream = Box::new(PdfStreamObject::new());
+    let stream_id = pdf.add_indirect_object(stream);
     println!("1. Added stream via add_object(), got ID: {}", stream_id);
     println!("   pdf.objects.len() = {}", pdf.objects.len());
 
@@ -74,13 +74,13 @@ fn trace_next_object_number_helper() {
 
     println!("Initial: pdf.objects.len() = {}", pdf.objects.len());
 
-    let id1 = pdf.add_object(Box::new(PdfStreamObject::uncompressed()));
+    let id1 = pdf.add_indirect_object(Box::new(PdfStreamObject::new()));
     println!("After add_object #1: ID={}, pdf.objects.len()={}", id1, pdf.objects.len());
 
-    let id2 = pdf.add_object(Box::new(PdfStreamObject::uncompressed()));
+    let id2 = pdf.add_indirect_object(Box::new(PdfStreamObject::new()));
     println!("After add_object #2: ID={}, pdf.objects.len()={}", id2, pdf.objects.len());
 
-    let id3 = pdf.add_object(Box::new(PdfStreamObject::uncompressed()));
+    let id3 = pdf.add_indirect_object(Box::new(PdfStreamObject::new()));
     println!("After add_object #3: ID={}, pdf.objects.len()={}", id3, pdf.objects.len());
 
     // What next_object_number() should return is: objects.len() + 1
@@ -88,7 +88,7 @@ fn trace_next_object_number_helper() {
     println!("\nExpected next object number: {}", expected_next);
 
     // Verify with actual add
-    let id4 = pdf.add_object(Box::new(PdfStreamObject::uncompressed()));
+    let id4 = pdf.add_indirect_object(Box::new(PdfStreamObject::new()));
     println!("Actual next object number: {}", id4);
 
     assert_eq!(id4, expected_next);
@@ -103,7 +103,7 @@ fn trace_page_tree_id_calculation() {
     let mut pdf = PdfFile::new();
 
     // Add one object
-    pdf.add_object(Box::new(PdfStreamObject::uncompressed()));
+    pdf.add_indirect_object(Box::new(PdfStreamObject::new()));
     println!("After adding 1 object:");
     println!("  pdf.objects.len() = {}", pdf.objects.len());
     println!("  next_object_number would be: {}", pdf.objects.len() + 1);

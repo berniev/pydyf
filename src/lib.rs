@@ -2,7 +2,7 @@ pub mod action;
 pub mod annotation;
 pub mod catalog;
 pub mod color;
-pub mod cross_ref;
+pub mod cross_reference_table;
 pub mod encoding;
 pub mod error;
 pub mod extended_graphics_state;
@@ -58,7 +58,7 @@ pub use optional_content::{
     LayerOrder, OptionalContentConfig, OptionalContentGroup, VisibilityInitialState,
 };
 pub use outline::{DocumentOutline, OutlineItem, OutlineItemFlags};
-pub use page::{PageObject, PageSize};
+pub use page::PageSize;
 pub use pattern::{AxialShading, PaintType, PatternType, ShadingType, TilingPattern, TilingType};
 pub use pdf_file::{PdfFile};
 pub use resource::{Resource, ResourceCategory, ResourceManager};

@@ -6,8 +6,8 @@ fn find_both_object_5_assignments() {
     use pydyf::page::PageSize;
 
     let mut pdf = PdfFile::new();
-    let stream = PdfStreamObject::uncompressed();
-    let content_id = pdf.add_object(Box::new(stream));
+    let stream = PdfStreamObject::new();
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);

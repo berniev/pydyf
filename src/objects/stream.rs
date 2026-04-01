@@ -1,3 +1,4 @@
+use std::any::Any;
 /// PDF content stream.
 ///
 /// Content streams define page content, eg:
@@ -62,10 +63,10 @@ use flate2::write::ZlibEncoder;
 use crate::color::{CMYK, Color, ColorSpace, RGB};
 use crate::encoding::{ascii85_encode, f_to_pdf_num};
 use crate::error::{PdfError, PdfResult};
+use crate::objects::pdf_object::Pdf;
 use crate::objects::string::encode_pdf_string;
 pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, ToPdf, WindingRule};
 use crate::{PdfDictionaryObject, PdfObject};
-use crate::objects::pdf_object::Pdf;
 
 //------------------------ PdfStreamObject -----------------------
 
@@ -88,18 +89,17 @@ impl Default for PdfStreamObject {
 }
 
 impl PdfStreamObject {
-    pub fn uncompressed() -> Self {
+    pub fn new() -> Self {
         Self {
             compression_method: CompressionMethod::None,
             ..Default::default()
         }
     }
 
-    pub fn compressed() -> Self {
-        Self {
-            compression_method: CompressionMethod::Flate,
-            ..Default::default()
-        }
+    pub fn compressed(mut self) -> Self{
+        self.compression_method = CompressionMethod::Flate;
+
+        self
     }
 
     pub fn with_data(mut self, stream: Vec<u8>, dict: PdfDictionaryObject) -> Self {
@@ -109,14 +109,18 @@ impl PdfStreamObject {
         self
     }
 
-    pub fn add_to_content(&mut self, bytes: Vec<u8>) {
+    pub fn compression_method(&self) -> CompressionMethod {
+        self.compression_method
+    }
+
+    pub fn add_content(&mut self, bytes: Vec<u8>) {
         self.content.extend(bytes);
     }
 
     fn push_op(&mut self, operands: &[&dyn ToPdf], operator: &str) {
         let mut cmd_parts: Vec<String> = operands.iter().map(|n| n.to_pdf()).collect();
         cmd_parts.push(operator.to_string());
-        self.add_to_content(cmd_parts.join(" ").into_bytes());
+        self.add_content(cmd_parts.join(" ").into_bytes());
     }
 
     fn cmd(&mut self, cmd: char) {
@@ -129,11 +133,11 @@ impl PdfStreamObject {
             WindingRule::EvenOdd => op_bytes.push(b'*'),
             WindingRule::NonZero => op_bytes.push(b' '),
         }
-        self.add_to_content(op_bytes);
+        self.add_content(op_bytes);
     }
 
     fn float_cmd(&mut self, string: &str, value: f64) {
-        self.add_to_content(format!("{} {}", f_to_pdf_num(value), string).into_bytes());
+        self.add_content(format!("{} {}", f_to_pdf_num(value), string).into_bytes());
     }
 
     fn int_cmd(&mut self, string: &str, value: i32) {
@@ -143,73 +147,61 @@ impl PdfStreamObject {
     pub fn begin_marked_content(&mut self, tag: &str, property_list: Option<Vec<u8>>) {
         match property_list {
             None => {
-                self.add_to_content(format!("/{tag} BMC").into_bytes());
+                self.add_content(format!("/{tag} BMC").into_bytes());
             }
 
             Some(props) => {
                 let mut cmd = format!("/{tag} ").into_bytes();
                 cmd.extend(props);
                 cmd.extend(b" BDC");
-                self.add_to_content(cmd);
+                self.add_content(cmd);
             }
         }
     }
 
     pub fn begin_text(&mut self) {
-        self.add_to_content(b"BT".to_vec());
+        self.add_content(b"BT".to_vec());
     }
 
-    /// Modify current clipping path by intersecting it with current path.
-    ///
     /// Use the nonzero winding number rule to determine which regions lie inside the clipping path by default.
-    /// Use the even-odd rule if `even_odd` set to `true`.
     pub fn clip(&mut self, even_odd: WindingRule) {
         self.windable_cmd('W', even_odd);
     }
 
-    /// Close current subpath.
-    ///
-    /// Append a straight line segment from the current point to the starting point of the subpath.
     pub fn close(&mut self) {
         self.cmd('h');
     }
 
-    /// Add cubic Bézier curve to current path.
-    ///
     /// extend curve from `pos3` using `pos1` and `pos2` as Bézier control points.
     pub fn curve_to(&mut self, pos1: Posn, pos2: Posn, pos3: Posn) {
         self.push_op(&[&pos1, &pos2, &pos3], "c");
     }
 
-    /// Add cubic Bézier curve to current path.
-    ///
     /// Extend curve to `pos3` using current point, and `pos2` as Bézier control points.
     pub fn curve_start_to(&mut self, pos2: Posn, pos3: Posn) {
         self.push_op(&[&pos2, &pos3], "v");
     }
 
-    /// Add cubic Bézier curve to current path.
-    ///
     /// extend curve to `pos3` using `pos1`, and `pos3` as Bézier control points.
     pub fn curve_end_to(&mut self, pos1: Posn, pos3: Posn) {
         self.push_op(&[&pos1, &pos3], "y");
     }
 
     pub fn draw_x_object(&mut self, reference: &str) {
-        self.add_to_content(format!("/{} Do", reference).into_bytes());
+        self.add_content(format!("/{} Do", reference).into_bytes());
     }
 
     /// End path without filling or stroking.
     pub fn end(&mut self) {
-        self.add_to_content(b"n".to_vec());
+        self.add_content(b"n".to_vec());
     }
 
     pub fn end_marked_content(&mut self) {
-        self.add_to_content(b"EMC".to_vec());
+        self.add_content(b"EMC".to_vec());
     }
 
     pub fn end_text(&mut self) {
-        self.add_to_content(b"ET".to_vec());
+        self.add_content(b"ET".to_vec());
     }
 
     pub fn fill(&mut self, even_odd: WindingRule) {
@@ -224,20 +216,12 @@ impl PdfStreamObject {
         self.windable_cmd('b', even_odd);
     }
 
-    /// Add an inline image from raw pixel data.
-    ///
-    /// # Arguments
-    /// * `width` - Image width in pixels
-    /// * `height` - Image height in pixels
-    /// * `color_space` - Color space: "RGB", "Gray", or "CMYK"
-    /// * `bits_per_component` - Bits per color component (typically 8)
-    /// * `raw_pixel_data` - Raw pixel data bytes
     pub fn inline_image(
         &mut self,
         width_pixels: u32,
         height_pixels: u32,
         color_space: ColorSpace,
-        bits_per_component: u8,
+        bits_per_component: u8, // typ 8
         raw_pixel_data: &[u8],
     ) -> PdfResult<()> {
         if width_pixels == 0 || height_pixels == 0 {
@@ -272,14 +256,12 @@ impl PdfStreamObject {
         final_command_bytes.extend(encoded_data); // image data
         final_command_bytes.extend(b" EI"); // End Image marker
 
-        self.add_to_content(final_command_bytes);
+        self.add_content(final_command_bytes);
 
         Ok(())
     }
 
-    /// Load and add an inline image from a file (PNG, JPEG, etc.).
-    ///
-    /// The image will be automatically converted to RGB format and embedded.
+    /// image converted to RGB format and embedded.
     /// Use `push_state()` and `set_matrix()` before this call to position and scale the image.
     pub fn inline_image_from_file(&mut self, path: &str) -> PdfResult<()> {
         let img = image::open(path).map_err(|e| {
@@ -314,25 +296,21 @@ impl PdfStreamObject {
         let mut cmd = b"/".to_vec();
         cmd.extend(name.as_bytes());
         cmd.extend(b" sh");
-        self.add_to_content(cmd);
+        self.add_content(cmd);
     }
 
     pub fn pop_state(&mut self) {
-        self.add_to_content(b"Q".to_vec());
+        self.add_content(b"Q".to_vec());
     }
 
     pub fn push_state(&mut self) {
-        self.add_to_content(b"q".to_vec());
+        self.add_content(b"q".to_vec());
     }
 
-    /// Add rectangle to current path as complete subpath.
-    ///
-    /// `posn` is the lower-left corner and `size` the dimensions.
     pub fn add_rectangle(&mut self, posn: Posn, size: Dims) {
         self.push_op(&[&posn, &size], "re");
     }
 
-    /// Set RGB color
     pub fn set_color_rgb(&mut self, rgb: RGB, stroke: StrokeOrFill) {
         let operator = match stroke {
             StrokeOrFill::Stroke => "RG",
@@ -341,7 +319,6 @@ impl PdfStreamObject {
         self.push_op(&[&rgb], operator);
     }
 
-    /// Set CMYK color
     pub fn set_color_cmyk(&mut self, cmyk: CMYK, stroke: StrokeOrFill) {
         let operator = match stroke {
             StrokeOrFill::Stroke => "K",
@@ -350,7 +327,6 @@ impl PdfStreamObject {
         self.push_op(&[&cmyk], operator);
     }
 
-    /// Set grayscale color
     pub fn set_color_grayscale(&mut self, grayscale: Color, stroke: StrokeOrFill) {
         let operator = match stroke {
             StrokeOrFill::Stroke => "G",
@@ -359,23 +335,24 @@ impl PdfStreamObject {
         self.push_op(&[&grayscale], operator);
     }
 
-    /// Set the non-stroking color space. stroke=`true` set stroking color space instead.
     pub fn set_color_space(&mut self, space: &str, stroke: StrokeOrFill) {
         let operator = match stroke {
             StrokeOrFill::Stroke => "CS",
             StrokeOrFill::Fill => "cs",
         };
-        self.add_to_content(format!("/ {space} {operator}").into_bytes());
+        self.add_content(format!("/ {space} {operator}").into_bytes());
     }
 
-    /// Set special color. For non-stroking operations unless `stroke`=`true` (stroking operation)
     pub fn set_color_special(
         &mut self,
         name: Option<&str>,
         stroke: StrokeOrFill,
         operands: &[f64],
     ) {
-        let mut cmd_parts = operands.iter().map(|&n| f_to_pdf_num(n)).collect::<Vec<String>>();
+        let mut cmd_parts = operands
+            .iter()
+            .map(|&n| f_to_pdf_num(n))
+            .collect::<Vec<String>>();
         if let Some(n) = name {
             cmd_parts.push(format!("/{n}"));
         }
@@ -386,7 +363,7 @@ impl PdfStreamObject {
             })
             .to_string(),
         );
-        self.add_to_content(cmd_parts.join(" ").into_bytes());
+        self.add_content(cmd_parts.join(" ").into_bytes());
     }
 
     pub fn set_dash_line_pattern(&mut self, dash_array: &[f64], dash_phase: i32) {
@@ -396,11 +373,11 @@ impl PdfStreamObject {
         // Build the entire command in one single allocation
         let cmd = format!("[{}] {} d", array_str.join(" "), dash_phase).into_bytes();
 
-        self.add_to_content(cmd);
+        self.add_content(cmd);
     }
 
     pub fn set_font_name_and_size(&mut self, font: &str, size: f64) {
-        self.add_to_content(format!("/{} {} Tf", font, f_to_pdf_num(size)).into_bytes());
+        self.add_content(format!("/{} {} Tf", font, f_to_pdf_num(size)).into_bytes());
     }
 
     pub fn set_text_rendering_mode(&mut self, mode: i32) {
@@ -433,7 +410,7 @@ impl PdfStreamObject {
 
     /// Set specified parameters in graphic state.
     pub fn set_state(&mut self, state_name: &str) {
-        self.add_to_content(format!("/{state_name} gs").into_bytes());
+        self.add_content(format!("/{state_name} gs").into_bytes());
     }
     /// Set current text and text line transformation matrix.
     pub fn set_text_matrix(&mut self, matrix: Matrix) {
@@ -455,21 +432,21 @@ impl PdfStreamObject {
     }
 
     pub fn show_text_strings(&mut self, text: &str) {
-        self.add_to_content(format!("[{text}] TJ").into_bytes());
+        self.add_content(format!("[{text}] TJ").into_bytes());
     }
 
     pub fn show_single_text_string(&mut self, text: &str) {
         let mut cmd = encode_pdf_string(text);
         cmd.push_str(" Tj");
-        self.add_to_content(Vec::from(cmd));
+        self.add_content(Vec::from(cmd));
     }
 
     pub fn stroke_path(&mut self) {
-        self.add_to_content(b"S".to_vec());
+        self.add_content(b"S".to_vec());
     }
 
     pub fn stroke_and_close_path(&mut self) {
-        self.add_to_content(b"s".to_vec());
+        self.add_content(b"s".to_vec());
     }
 
     pub fn add_rounded_rectangle(
@@ -514,25 +491,28 @@ impl PdfStreamObject {
         });
 
         draw_corner(
+            // top right
             self,
             radius_top_left,
             Posn {
                 x: width,
                 y: height,
             },
-        ); // top right
+        );
 
         self.line_to_x_y(Posn {
+            // right
             x: x + width - radius_top_right,
             y: y + height,
-        }); // right
+        });
 
         draw_corner(self, radius_top_right, Posn { x: width, y: 0.0 }); // bottom right
 
         self.line_to_x_y(Posn {
+            // bottom
             x: x + width,
             y: y + radius_bottom_right,
-        }); // bottom
+        });
 
         draw_corner(self, radius_bottom_right, Posn { x: 0.0, y: 0.0 }); // bottom left
 
@@ -541,9 +521,10 @@ impl PdfStreamObject {
         draw_corner(self, radius_bottom_left, Posn { x: 0.0, y: height }); // top left
 
         self.line_to_x_y(Posn {
+            // top
             x: x + radius_bottom_left,
             y,
-        }); // top
+        });
 
         self.close();
     }
@@ -563,28 +544,33 @@ impl PdfStreamObject {
 }
 
 impl PdfObject for PdfStreamObject {
-    fn serialise(&mut self) -> Vec<u8> {
+    fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         let stream_bytes: Vec<u8> = match self.compression_method {
             CompressionMethod::None => self.content.clone(),
             CompressionMethod::Flate => {
+                self.dict.add("Filter", Pdf::name("FlateDecode"));
                 let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-                encoder.write_all(&self.content).unwrap();
-                encoder.finish().unwrap()
+                encoder.write_all(&self.content)?;
+                encoder.finish()?
             }
         };
 
-        let dict = &mut self.dict;
-        dict.add("Length", Pdf::num(stream_bytes.len() as f64));
-        if self.compression_method == CompressionMethod::Flate {
-            dict.add("Filter", Pdf::name("FlateDecode"));
-        }
+        self.dict.add("Length", Pdf::num(stream_bytes.len() as f64));
 
-        let mut vec = dict.serialise();
+        let mut vec = self.dict.serialise()?;
         vec.push(b'\n');
         vec.extend(b"stream\n");
         vec.extend(&stream_bytes);
         vec.extend(b"endstream\n");
 
-        vec
+        Ok(vec)
+    }
+
+    fn is_indirect_by_default(&self) -> bool {
+        true
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }

@@ -1,4 +1,4 @@
-use crate::cross_ref::ObjectStatus;
+use crate::cross_reference_table::ObjectStatus;
 use crate::generation::Generation;
 
 /// Object:

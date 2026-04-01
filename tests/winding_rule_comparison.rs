@@ -57,7 +57,7 @@ fn draw_concentric_circles(
 #[test]
 fn test_winding_rule_even_odd() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     // Set blue fill color
     stream.set_color_rgb(
@@ -96,7 +96,7 @@ fn test_winding_rule_even_odd() {
     stream.show_single_text_string("Even-odd rule counts path crossings: odd=fill, even=no fill.");
     stream.end_text();
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let content_ref = format!("{} 0 R", content_id).into_bytes();
     let page = create_page_with_content(content_ref);
     pdf.add_page(page);
@@ -111,7 +111,7 @@ fn test_winding_rule_even_odd() {
 #[test]
 fn test_winding_rule_nonzero() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     // Set red fill color
     stream.set_color_rgb(
@@ -150,7 +150,7 @@ fn test_winding_rule_nonzero() {
     stream.show_single_text_string("Non-zero rule uses winding direction: same direction = fill.");
     stream.end_text();
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let content_ref = format!("{} 0 R", content_id).into_bytes();
     let page = create_page_with_content(content_ref);
     pdf.add_page(page);
@@ -165,7 +165,7 @@ fn test_winding_rule_nonzero() {
 #[test]
 fn test_winding_rule_side_by_side() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     // Left circles - Even-Odd (blue) - creates donut
     stream.set_color_rgb(
@@ -220,7 +220,7 @@ fn test_winding_rule_side_by_side() {
     stream.show_single_text_string("Winding Rule Comparison");
     stream.end_text();
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let content_ref = format!("{} 0 R", content_id).into_bytes();
     let page = create_page_with_content(content_ref);
     pdf.add_page(page);

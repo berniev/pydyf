@@ -10,7 +10,7 @@ use std::process::Command;
 #[test]
 fn test_qpdf_validates_compressed_pdf() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
 
     // Add some content
     let color = RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0));
@@ -24,7 +24,7 @@ fn test_qpdf_validates_compressed_pdf() {
     );
     stream.fill(WindingRule::EvenOdd);
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);
@@ -60,7 +60,7 @@ fn test_qpdf_validates_compressed_pdf() {
 #[test]
 fn test_qpdf_validates_uncompressed_pdf() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
 
     // Add some content
     let color = RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0));
@@ -75,7 +75,7 @@ fn test_qpdf_validates_uncompressed_pdf() {
     );
     stream.fill(WindingRule::EvenOdd);
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);

@@ -15,7 +15,7 @@ fn debug_compressed_stream_bytes() {
         ("First".to_string(), Rc::new(PdfNumberObject::new(NumberType::Integer((index_section.len() + 1) as i64))) as Rc<dyn PdfObject>),
     ];
 
-    let obj_stream = PdfStreamObject::compressed().with_data(Some(vec![content.into_bytes()]), Some(extra));
+    let obj_stream = PdfStreamObject::new().compressed().with_data(Some(vec![content.into_bytes()]), Some(extra));
     let output = obj_stream.serialise();
 
     println!("\n=== Full output ===\n{}", output);

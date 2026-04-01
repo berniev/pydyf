@@ -10,7 +10,7 @@ use std::io::Write as IoWrite;
 #[ignore]
 fn debug_xref_structure() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
 
     let color = RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0));
     stream.set_color_rgb(color, StrokeOrFill::Fill);
@@ -23,7 +23,7 @@ fn debug_xref_structure() {
     );
     stream.fill(WindingRule::EvenOdd);
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);

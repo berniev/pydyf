@@ -15,8 +15,8 @@ fn test_create_pdf() {
 #[test]
 fn test_add_page() {
     let mut pdf = PdfFile::new();
-    let stream = PdfStreamObject::uncompressed();
-    let content_id = pdf.add_object(Box::new(stream));
+    let stream = PdfStreamObject::new();
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);
@@ -30,7 +30,7 @@ fn test_add_page() {
 
 #[test]
 fn test_stream_operations() {
-    let mut stream = PdfStreamObject::compressed();
+    let mut stream = PdfStreamObject::new().compressed();
 
     let color = RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0));
 
@@ -49,8 +49,8 @@ fn test_stream_operations() {
 
 #[test]
 fn test_compressed_stream() {
-    let stream = PdfStreamObject::compressed();
-    assert_eq!(stream.compression_method, pydyf::CompressionMethod::Flate);
+    let stream = PdfStreamObject::new().compressed();
+    assert_eq!(stream.compression_method(), pydyf::CompressionMethod::Flate);
 }
 
 /*#[test]
@@ -67,8 +67,8 @@ fn test_text_operations() {
 #[test]
 fn test_add_page_with_pagesize_adds_mediabox() {
     let mut pdf = PdfFile::new();
-    let stream = PdfStreamObject::uncompressed();
-    let content_id = pdf.add_object(Box::new(stream));
+    let stream = PdfStreamObject::new();
+    let content_id = pdf.add_indirect_object(Box::new(stream));
 
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
@@ -82,8 +82,8 @@ fn test_add_page_with_pagesize_adds_mediabox() {
 fn test_default_page_size() {
     let mut pdf = PdfFile::new();
 
-    let stream = PdfStreamObject::uncompressed();
-    let content_id = pdf.add_object(Box::new(stream));
+    let stream = PdfStreamObject::new();
+    let content_id = pdf.add_indirect_object(Box::new(stream));
 
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
@@ -131,7 +131,7 @@ fn test_pagesize_custom_validation() {
 #[test]
 fn test_compressed_pdf_generation() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
 
     // Add some content to the stream
     let color = RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0));
@@ -146,7 +146,7 @@ fn test_compressed_pdf_generation() {
     );
     stream.fill(WindingRule::EvenOdd);
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);
@@ -216,7 +216,7 @@ fn test_object_stream_format() {
         ),
     ];
 
-    let obj_stream = PdfStreamObject::uncompressed().with_data(Some(vec![content.into_bytes()]), Some(extra));
+    let obj_stream = PdfStreamObject::new().with_data(Some(vec![content.into_bytes()]), Some(extra));
 
     let output = obj_stream.serialise();
 
@@ -260,7 +260,7 @@ fn test_compressed_object_stream_is_valid() {
     ];
 
     let obj_stream =
-        PdfStreamObject::compressed().with_data(Some(vec![content.into_bytes()]), Some(extra));
+        PdfStreamObject::new().with_data(Some(vec![content.into_bytes()]), Some(extra)).compressed();
 
     let output = obj_stream.serialise();
 
@@ -306,7 +306,7 @@ fn test_stream_object_preserves_binary_data() {
     // Create stream with known binary data
     let binary_data = vec![0x78, 0x9c, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01]; // Valid zlib header + empty data
 
-    let stream = PdfStreamObject::uncompressed().with_data(Some(vec![binary_data.clone()]), None);
+    let stream = PdfStreamObject::new().with_data(Some(vec![binary_data.clone()]), None);
     let output = stream.serialise();
 
     // Extract stream content

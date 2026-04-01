@@ -13,7 +13,7 @@ fn create_page_with_content(content_index: usize) -> PageObject {
 #[test]
 fn test_cmyk_colors() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     stream.set_color_cmyk(
         CMYK::new(
@@ -134,7 +134,7 @@ fn test_cmyk_colors() {
     stream.show_single_text_string("Bottom row: Black (K:100%) | Blue (C:50%+M:100%)");
     stream.end_text();
 
-    let content_index = pdf.add_object(Box::new(stream));
+    let content_index = pdf.add_indirect_object(Box::new(stream));
     let page = create_page_with_content(content_index);
     pdf.add_page(page);
 
@@ -148,7 +148,7 @@ fn test_cmyk_colors() {
 #[test]
 fn test_grayscale_colors() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     let _ = stream.set_color_grayscale(Color::new(0.0), StrokeOrFill::Fill);
     stream.add_rectangle(
@@ -233,7 +233,7 @@ fn test_grayscale_colors() {
     stream.show_single_text_string("Black: 0% | Dark gray: 25% | Mid gray: 50% | Light gray: 75% | White: 100% (black border)");
     stream.end_text();
 
-    let content_index = pdf.add_object(Box::new(stream));
+    let content_index = pdf.add_indirect_object(Box::new(stream));
     let page = create_page_with_content(content_index);
     pdf.add_page(page);
 
@@ -247,7 +247,7 @@ fn test_grayscale_colors() {
 #[test]
 fn test_mixed_color_spaces() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     stream.set_color_rgb(
         RGB::new(
@@ -321,7 +321,7 @@ fn test_mixed_color_spaces() {
     stream.show_single_text_string("Gray 50%");
     stream.end_text();
 
-    let content_index = pdf.add_object(Box::new(stream));
+    let content_index = pdf.add_indirect_object(Box::new(stream));
     let page = create_page_with_content(content_index);
     pdf.add_page(page);
 

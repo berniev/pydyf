@@ -11,7 +11,7 @@ pub enum PdfVersion {
 impl PdfVersion {
     pub fn as_str(&self) -> &str {
         match self {
-            PdfVersion::Auto => "Auto",
+            PdfVersion::Auto => "1.7",
             PdfVersion::V1_4 => "1.4",
             PdfVersion::V1_5 => "1.5",
         }

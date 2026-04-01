@@ -35,12 +35,11 @@ Where objects live:
     Indirect: in the body (referenced by the XRef)
     Direct:   inside indirect objects (or inside other direct objs that are inside indirect objs)
 */
-use crate::{
-    NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfIndirectObject,
-    PdfNameObject, PdfNullObject, PdfNumberObject, PdfStringObject,
-};
+use crate::{NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfIndirectObject, PdfNameObject, PdfNullObject, PdfNumberObject, PdfStringObject};
 
 //--------------------------- Pdf -------------------------//
+
+use std::any::Any;
 
 pub struct Pdf {}
 
@@ -87,13 +86,17 @@ impl Pdf {
 
 //--------------------------- PdfObject -------------------------//
 
-pub trait PdfObject: 'static {
-    fn serialise(&mut self) -> Vec<u8>;
+pub trait PdfObject: Any {
+    fn serialise(&mut self) -> Result<Vec<u8>, PdfError>;
 
-    fn boxed(self) -> Box<dyn PdfObject>
+    fn is_indirect_by_default(&self) -> bool;
+
+/*    fn boxed(self) -> Box<dyn PdfObject>
     where
         Self: Sized,
     {
         Box::new(self)
     }
+*/    
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 }

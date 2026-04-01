@@ -18,7 +18,7 @@ fn create_page_with_content(content_stream_ref: Vec<u8>) -> PageObject {
 #[test]
 fn test_generate_simple_uncompressed_pdf() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     stream.set_color_rgb(
         RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
@@ -74,7 +74,7 @@ fn test_generate_simple_uncompressed_pdf() {
     stream.show_single_text_string("Tests basic shapes and text rendering");
     stream.end_text();
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let content_ref = format!("{} 0 R", content_id).into_bytes();
     let page = create_page_with_content(content_ref);
     pdf.add_page(page);
@@ -89,7 +89,7 @@ fn test_generate_simple_uncompressed_pdf() {
 #[test]
 fn test_generate_circle_over_rectangle() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     stream.set_color_rgb(
         RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0)),
@@ -173,7 +173,7 @@ fn test_generate_circle_over_rectangle() {
     stream.show_single_text_string("Tests Bezier curves for circular paths");
     stream.end_text();
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let content_ref = format!("{} 0 R", content_id).into_bytes();
     let page = create_page_with_content(content_ref);
     pdf.add_page(page);
@@ -189,7 +189,7 @@ fn test_generate_circle_over_rectangle() {
 fn test_multipage_pdf() {
     let mut pdf = PdfFile::new();
 
-    let mut stream1 = Stream::uncompressed();
+    let mut stream1 = Stream::new();
     stream1.set_color_rgb(
         RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
         StrokeOrFill::Fill,
@@ -229,12 +229,12 @@ fn test_multipage_pdf() {
     stream1.show_single_text_string("Red rectangle - Tests multi-page PDF generation");
     stream1.end_text();
 
-    let content_id1 = pdf.add_object(Box::new(stream1));
+    let content_id1 = pdf.add_indirect_object(Box::new(stream1));
     let content_ref1 = format!("{} 0 R", content_id1).into_bytes();
     let page1 = create_page_with_content(content_ref1);
     pdf.add_page(page1);
 
-    let mut stream2 = Stream::uncompressed();
+    let mut stream2 = Stream::new();
     stream2.set_color_rgb(
         RGB::new(Color::new(0.0), Color::new(1.0), Color::new(0.0)),
         StrokeOrFill::Fill,
@@ -274,12 +274,12 @@ fn test_multipage_pdf() {
     stream2.show_single_text_string("Green rectangle");
     stream2.end_text();
 
-    let content_id2 = pdf.add_object(Box::new(stream2));
+    let content_id2 = pdf.add_indirect_object(Box::new(stream2));
     let content_ref2 = format!("{} 0 R", content_id2).into_bytes();
     let page2 = create_page_with_content(content_ref2);
     pdf.add_page(page2);
 
-    let mut stream3 = Stream::uncompressed();
+    let mut stream3 = Stream::new();
     stream3.set_color_rgb(
         RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0)),
         StrokeOrFill::Fill,
@@ -319,7 +319,7 @@ fn test_multipage_pdf() {
     stream3.show_single_text_string("Blue rectangle");
     stream3.end_text();
 
-    let content_id3 = pdf.add_object(Box::new(stream3));
+    let content_id3 = pdf.add_indirect_object(Box::new(stream3));
     let content_ref3 = format!("{} 0 R", content_id3).into_bytes();
     let page3 = create_page_with_content(content_ref3);
     pdf.add_page(page3);
@@ -334,7 +334,7 @@ fn test_multipage_pdf() {
 #[test]
 fn test_graphics_operations() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     stream.set_color_rgb(
         RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
@@ -480,7 +480,7 @@ fn test_graphics_operations() {
     stream.show_single_text_string("Cyan triangle | Orange trapezoid");
     stream.end_text();
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let content_ref = format!("{} 0 R", content_id).into_bytes();
     let page = create_page_with_content(content_ref);
     pdf.add_page(page);
@@ -495,7 +495,7 @@ fn test_graphics_operations() {
 #[test]
 fn test_comparison_uncompressed() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     stream.set_color_rgb(
         RGB::new(Color::new(0.9), Color::new(0.9), Color::new(0.9)),
@@ -531,7 +531,7 @@ fn test_comparison_uncompressed() {
 
     stream.end_text();
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let content_ref = format!("{} 0 R", content_id).into_bytes();
     let page = create_page_with_content(content_ref);
     pdf.add_page(page);
@@ -546,7 +546,7 @@ fn test_comparison_uncompressed() {
 #[test]
 fn test_comparison_compressed() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::compressed();
+    let mut stream = Stream::new().compressed();
 
     stream.set_color_rgb(
         RGB::new(Color::new(0.9), Color::new(0.9), Color::new(0.9)),
@@ -582,7 +582,7 @@ fn test_comparison_compressed() {
 
     stream.end_text();
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let content_ref = format!("{} 0 R", content_id).into_bytes();
     let page = create_page_with_content(content_ref);
     pdf.add_page(page);

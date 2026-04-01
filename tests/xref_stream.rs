@@ -1,7 +1,7 @@
 /// Tests for cross-reference stream generation according to PDF spec
 /// PDF Reference 1.7, Section 3.4.7: Cross-Reference Streams
 
-use pydyf::cross_ref::Generation;
+use pydyf::cross_reference_table::Generation;
 
 #[test]
 fn test_xref_stream_basic_structure() {

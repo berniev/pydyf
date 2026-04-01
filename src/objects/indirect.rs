@@ -19,19 +19,21 @@
 /// Together, the combination of an object number and a generation number shall uniquely
 /// identify an indirect object.
 ///
-use crate::PdfObject;
+use crate::{PdfError, PdfObject};
 
-//-------------------------- PdfIndirectObject ----------------------//
+//--------------------------- HostType --------------------------//
 
 pub enum HostType {
     Standard { generation_number: u16 },
     ObjectStream { stream_obj_num: usize }, // v1.5+, stream_obj_num is obj num of containing ObjStm
 }
 
+//-------------------------- PdfIndirectObject ----------------------//
+
 pub struct PdfIndirectObject {
-    pub obj_num: usize,
-    pub storage: HostType,
-    
+    pub object_being_wrapped: Box<dyn PdfObject>,
+    pub host_type: HostType,
+
     /// HostType       byte_offset from
     /// =============  ================
     /// Standard       start of file
@@ -40,10 +42,10 @@ pub struct PdfIndirectObject {
 }
 
 impl PdfIndirectObject {
-    pub fn new_standard(obj_num: usize) -> Self {
+    pub fn new_standard(object_being_wrapped: Box<dyn PdfObject>) -> Self {
         Self {
-            obj_num,
-            storage: HostType::Standard {
+            object_being_wrapped,
+            host_type: HostType::Standard {
                 generation_number: 0,
             },
             byte_offset: 0,
@@ -51,18 +53,18 @@ impl PdfIndirectObject {
     }
 
     pub fn new_in_obj_stream(
-        obj_num: usize,
+        object_being_wrapped: Box<dyn PdfObject>,
         stream_obj_num: usize,
     ) -> Self {
         Self {
-            obj_num,
-            storage: HostType::ObjectStream { stream_obj_num },
+            object_being_wrapped,
+            host_type: HostType::ObjectStream { stream_obj_num },
             byte_offset: 0,
         }
     }
 
     pub fn reference(&self) -> Vec<u8> {
-        let gen_num = match &self.storage {
+        let gen_num = match &self.host_type {
             HostType::Standard { generation_number } => *generation_number,
             HostType::ObjectStream { .. } => 0,
         };
@@ -70,21 +72,23 @@ impl PdfIndirectObject {
     }
 }
 
-impl PdfObject for PdfIndirectObject {
-    fn serialise(&mut self) -> Vec<u8> {
-        match &self.storage {
-            HostType::Standard { generation_number } => {
-                let gen_num = *generation_number;
-                let mut out = format!("{} {} obj\n", self.obj_num, gen_num).into_bytes();
-                //out.extend(self.object_being_wrapped.serialise());
-                out.extend(b"\nendobj\n");
-                out
-            }
-            HostType::ObjectStream { .. } => self.object_being_wrapped.serialise(),
+pub fn serialise_indirect_object(mut object_being_wrapped: Box<dyn PdfObject>, host_type: HostType, object_number :u64) -> Result<Vec<u8>, PdfError> {
+    match host_type {
+        HostType::Standard { generation_number } => {
+            let mut vec: Vec<u8> = vec![];
+            vec.extend(object_number.to_string().into_bytes());
+            vec.push(b' ');
+            vec.extend(generation_number.to_string().into_bytes());
+            vec.extend(b"obj\n");
+            vec.extend(object_being_wrapped.serialise()?);
+            vec.extend(b"\nendobj\n");
+
+            Ok(vec)
         }
+        HostType::ObjectStream { .. } => Ok(object_being_wrapped.serialise()?),
     }
 }
 
-struct PdfIndirectRef{
-    
+fn default_is_indirect() -> bool {
+    true
 }

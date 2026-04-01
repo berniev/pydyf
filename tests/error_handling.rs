@@ -15,7 +15,7 @@ fn test_color_too_low() {
 
 #[test]
 fn test_invalid_color_space() {
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     let data = vec![255, 0, 0];
 
     // Note: ColorSpace is now an enum, so we can't test "INVALID" directly

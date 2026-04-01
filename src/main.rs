@@ -15,7 +15,7 @@ fn main() {
 
     let mut pdf = PdfFile::new();
 
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     stream.set_color_rgb(
         RGB::new(Color::new(0.0), Color::new(0.5), Color::new(1.0)),
         StrokeOrFill::Fill,
@@ -29,7 +29,7 @@ fn main() {
     );
     stream.fill(WindingRule::EvenOdd);
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
 
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);

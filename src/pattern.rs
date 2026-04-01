@@ -77,9 +77,9 @@ impl TilingPattern {
     }
 
     pub fn to_stream(&self) -> PdfStreamObject {
-        let mut stream = PdfStreamObject::uncompressed();
+        let mut stream = PdfStreamObject::new();
 
-        stream.add_to_content(self.content.clone());
+        stream.add_content(self.content.clone());
 
         stream.dict.add("Type", Pdf::name("Pattern"));
         stream.dict.add("PatternType", Pdf::num(PatternType::Tiling as i64));

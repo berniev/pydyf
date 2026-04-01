@@ -8,7 +8,8 @@
 ///     one or more decimal digits with an optional sign and a leading, trailing, or embedded
 ///     PERIOD (2Eh) (decimal point)
 ///
-use crate::PdfObject;
+use crate::{PdfError, PdfObject};
+use std::any::Any;
 
 //---------------- PdfNumberObject -----------------
 
@@ -42,8 +43,8 @@ impl PdfNumberObject {
 }
 
 impl PdfObject for PdfNumberObject {
-    fn serialise(&mut self) -> Vec<u8> {
-        match self.value {
+    fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+        Ok(match self.value {
             NumberType::Integer(i) => i.to_string().into_bytes(),
             NumberType::Real(f) => {
                 format!("{:.4}", f) // use a reasonable precisio
@@ -52,7 +53,15 @@ impl PdfObject for PdfNumberObject {
                     .to_string()
                     .into_bytes()
             }
-        }
+        })
+    }
+
+    fn is_indirect_by_default(&self) -> bool {
+        false
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }
 

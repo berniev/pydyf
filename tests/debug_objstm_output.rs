@@ -6,9 +6,9 @@ use pydyf::page::PageSize;
 #[test]
 fn debug_what_we_produce() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     stream.add_rectangle(pydyf::util::Posn { x: 0.0, y: 0.0 }, pydyf::util::Dims { height: 10.0, width: 10.0 });
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);

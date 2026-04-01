@@ -2,8 +2,8 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::Write;
 
-use crate::cross_ref::CrossRefStream;
-use crate::cross_ref::{CrossRefEntry, ObjectStatus};
+use crate::cross_reference_table::CrossRefStream;
+use crate::cross_reference_table::{CrossRefEntry, ObjectStatus};
 use crate::generation::Generation;
 use crate::objects::pdf_object::Pdf;
 use crate::objects::string::encode_pdf_string;
@@ -316,7 +316,7 @@ impl CompressedStrategy {
         dict.add("First", Pdf::num(first_offset as i64));
 
         let mut obj_stream =
-            PdfStreamObject::compressed().with_data(full_content.into_bytes(), dict);
+            PdfStreamObject::new().compressed().with_data(full_content.into_bytes(), dict);
 
         obj_stream.metadata_mut().object_identifier = Some(obj_stream_num);
         let objstm_offset = stream.pos;

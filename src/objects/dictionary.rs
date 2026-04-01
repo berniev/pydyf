@@ -1,5 +1,4 @@
-use std::ops::Deref;
-use crate::objects::pdf_object::Pdf;
+use crate::objects::pdf_object::{Pdf};
 /// Spec:
 /// Dictionary:
 ///     An associative table containing pairs of objects, the first object being a name object
@@ -18,7 +17,8 @@ use crate::objects::pdf_object::Pdf;
 ///         name "Subtype" Opt (requires Type)
 ///
 ///
-use crate::{PdfNameObject, PdfObject};
+use crate::{PdfError, PdfNameObject, PdfObject};
+use std::any::Any;
 
 //--------------------------- PdfDictionaryObject ----------------------//
 
@@ -49,6 +49,18 @@ impl PdfDictionaryObject {
         self.values.iter().any(|(k, _)| k.value == key)
     }
 
+    pub fn get(&self, key: &str) -> Option<&Box<dyn PdfObject>> {
+        self.values
+            .iter()
+            .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
+    }
+
+    pub fn get_mut(&mut self, key: &str) -> Option<&mut Box<dyn PdfObject>> {
+        self.values
+            .iter_mut()
+            .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
+    }
+    
     pub fn add(&mut self, key: &str, object: Box<dyn PdfObject>) {
         // todo: check key is not duplicate
         self.values.push((PdfNameObject::new(key), object));
@@ -56,17 +68,25 @@ impl PdfDictionaryObject {
 }
 
 impl PdfObject for PdfDictionaryObject {
-    fn serialise(&mut self) -> Vec<u8> {
+    fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         let mut arr = vec![];
         arr.extend(b"<<");
         for (pdf_name_obj, pdf_object) in &mut self.values {
-            arr.extend(pdf_name_obj.serialise());
+            arr.extend(pdf_name_obj.serialise()?);
             arr.push(b' ');
-            arr.extend(pdf_object.serialise());
+            arr.extend(pdf_object.serialise()?);
         }
         arr.extend(b">>");
 
-        arr
+        Ok(arr)
+    }
+
+    fn is_indirect_by_default(&self) -> bool {
+        true
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }
 

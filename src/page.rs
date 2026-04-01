@@ -1,8 +1,10 @@
-/// Page (pdf dictionary):
-/// A dictionary specifying the attributes of a single page of the document, organized into
-/// various categories (e.g., Font, ColorSpace, Pattern)
-/// A page object can not have children.
-/// Inh = Can be inherited from parent pageTree entry.
+/// Page: (pdf dictionary)
+///
+/// The attributes of a page, organized into various categories (e.g., Font, ColorSpace, Pattern)
+///
+///     A page object may not have children.
+///
+/// Inh = Can be inherited from parent pageTree heirarchy, which satisfies Reqd.
 ///
 /// ====================  ===  ====  ===  ================  ===================================
 /// Entry Key             Ver  Reqd  Inh  Type              Value
@@ -45,25 +47,31 @@
 /// UserUnit              1.6  Opt        number
 /// VP                    1.6  Opt        dictionary
 
-//==============================================================================================
+//==============================================================================================//
+
+/// PageTree: (pdf dictionary)
 ///
-/// PageTree: (pdf dictionary) 
-/// 
 /// Nodes:
-/// 
-/// ======  ==========  =====  =================================================================
-/// Name    PdfObjType  Reqd   Value
-/// ======  ==========  =====  =================================================================
-/// Type    Name        Reqd   "Pages" 
-/// Parent  Indirect    Reqd*  Parent PageTree. * Not allowed in root node.
-/// Kids    Array       Reqd   Indirect references to descendant leaf nodes (pages)
-/// Count   Integer     Reqd   Number of descendant leaf nodes (pages)
+///
+/// ========  ==========  =====  ===  ===============================================
+/// Name      PdfObjType  Reqd   Inh  Value
+/// ========  ==========  =====  ===  ===============================================
+/// Type      Name        Reqd        "Pages"
+/// Parent    Indirect    Reqd*       Parent PageTree. * Not allowed in root node.
+/// Kids      Array       Reqd        Indirect references to descendant pages
+/// Count     Integer     Reqd        Number of descendant pages
+///
+/// Resources Dictionary  Opt    Inh
+/// MediaBox  Rectangle   Opt    Inh
+/// CropBox   Rectangle   Opt    Inh
+/// Rotate    Integer     Opt    Inh
 ///
 use std::fmt;
 use std::iter::Sum;
 
-use crate::{PdfMetadata, PdfObject, ResourceMap};
+use crate::objects::pdf_object::Pdf;
 pub use crate::page_size::PageSize;
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfObject};
 
 //--------------------------- ObjectId ---------------------------//
 
@@ -102,190 +110,39 @@ impl fmt::Display for ObjectId {
 
 //--------------------------- Page ---------------------------//
 
+pub fn make_page() -> PdfDictionaryObject {
+    let tree = PdfDictionaryObject::new().typed("Page");
 
-#[derive(Clone)]
-pub struct PageObject {
-    pub(crate) id: ObjectId,
-    pub(crate) parent: ObjectId,
-    pub(crate) resources: Option<ResourceMap>,
-    pub(crate) resources_id: Option<usize>,
-    pub media_box: Option<PageSize>,
-    pub(crate) contents: Vec<usize>, // Content stream object IDs
-    pub(crate) metadata: PdfMetadata,
-}
-
-impl PageObject {
-    pub fn new(parent: ObjectId) -> Self {
-        Self {
-            id: ObjectId(0),
-            parent,
-            resources: None,
-            resources_id: None,
-            media_box: None,
-            contents: Vec::new(),
-            metadata: PdfMetadata::default(),
-        }
-    }
-
-    pub fn set_id(&mut self, id: ObjectId) {
-        self.id = id;
-    }
-
-    pub fn set_media_box(&mut self, size: PageSize) {
-        self.media_box = Some(size);
-    }
-
-    pub fn set_resources(&mut self, resources: ResourceMap) {
-        self.resources = Some(resources);
-    }
-
-    pub fn add_content(&mut self, content_id: usize) {
-        self.contents.push(content_id);
-    }
-
-    pub fn set_contents(&mut self, content_ids: Vec<usize>) {
-        self.contents = content_ids;
-    }
-}
-
-impl PdfObject for PageObject {
-    fn serialise(&mut self) -> Vec<u8> {
-        let mut entries = vec!["/Type /Page".to_string()];
-
-        entries.push(format!("/Parent {} 0 R", u64::from(self.parent.clone())));
-
-        if !self.contents.is_empty() {
-            let refs: Vec<String> = self
-                .contents
-                .iter()
-                .map(|id| format!("{} 0 R", id))
-                .collect();
-            entries.push(format!("/Contents [{}]", refs.join(" ")));
-        }
-
-        // MediaBox (optional if parent provides - inheritance)
-        if let Some(size) = &self.media_box {
-            let dims = size.dims();
-            entries.push(format!("/MediaBox [0 0 {} {}]", dims.width, dims.height));
-        }
-
-        // Resources (optional if parent provides - inheritance)
-        if let Some(resources_id) = self.resources_id {
-            entries.push(format!("/Resources {} 0 R", resources_id));
-        }
-
-        format!("<< {} >>", entries.join(" ")).into_bytes()
-    }
-}
-
-//--------------------------- PageTreeItemType -------------------------//
-
-#[derive(Clone)]
-pub enum PageTreeItem {
-    Page(PageObject),
-    Node(PageTree),
-}
-
-impl PageTreeItem {
-    pub fn id(&self) -> ObjectId {
-        match self {
-            PageTreeItem::Page(page) => {
-                ObjectId::from(page.metadata.object_identifier.unwrap_or(0))
-            }
-            PageTreeItem::Node(node) => {
-                ObjectId::from(node.metadata.object_identifier.unwrap_or(0))
-            }
-        }
-    }
+    tree
 }
 
 //--------------------------- PageTree -------------------------//
 
-#[derive(Clone)]
-pub struct PageTree {
-    pub(crate) id: ObjectId,
-    pub(crate) parent_id: Option<ObjectId>, // root is None
-    pub(crate) kids: Vec<PageTreeItem>,
-    pub(crate) media_box: Option<PageSize>, // Shared dimensions
-    pub(crate) resources: Option<ResourceMap>, // Shared fonts, etc.
+pub fn make_page_tree() -> PdfDictionaryObject {
+    let mut tree = PdfDictionaryObject::new().typed("Pages");
+    tree.add("Kids", Pdf::array(PdfArrayObject::new()));
+    tree.add("Count", Pdf::num(0));
+
+    tree
 }
 
-impl PageTree {
-    pub fn new(parent_id: Option<ObjectId>) -> Self {
-        Self {
-            id: ObjectId(0),
-            parent_id,
-            kids: Vec::new(),
-            media_box: None,
-            resources: None,
+fn add_page_to_tree(mut page: PdfDictionaryObject, mut tree: PdfDictionaryObject) {
+    if !page.contains_key("Resources") {
+        let res: Option<&Box<dyn PdfObject>> = tree.get("Resources");
+        page.add(
+            "Resources",
+            if res.is_some() {
+                Pdf::dict(Some(res))
+            } else {
+                Pdf::dict(PdfDictionaryObject::new())
+            },
+        );
+    }
+
+    if let Some(obj) = tree.get_mut("Kids") {
+        if let Some(array) = obj.as_any_mut().downcast_mut::<PdfArrayObject>() {
+            array.push(Pdf::dict(page));
         }
-    }
-
-    pub fn id(&self) -> ObjectId {
-        self.id.clone()
-    }
-
-    pub fn count(&self) -> ObjectId {
-        self.kids
-            .iter()
-            .map(|kid| match kid {
-                PageTreeItem::Page(_) => ObjectId(1),
-                PageTreeItem::Node(node) => node.count(),
-            })
-            .sum()
-    }
-
-    pub fn add_page(&mut self, page: PageObject) {
-        self.kids.push(PageTreeItem::Page(page));
-    }
-
-    pub fn add_node(&mut self, page_tree_node: PageTree) {
-        self.kids.push(PageTreeItem::Node(page_tree_node));
-    }
-
-    pub fn kids_array(&self) -> String {
-        format!(
-            "[{}]",
-            self.kids
-                .iter()
-                .map(|kid| format!("{} 0 R", kid.id()))
-                .collect::<Vec<_>>()
-                .join(" ")
-        )
-    }
-
-    pub fn set_media_box(&mut self, size: PageSize) {
-        self.media_box = Some(size);
-    }
-
-    pub fn set_resources(&mut self, resources: ResourceMap) {
-        self.resources = Some(resources);
-    }
-
-    pub fn reference(&self) -> String {
-        format!("{} 0 R", self.metadata.object_identifier.unwrap_or(0))
     }
 }
 
-impl PdfObject for PageTree {
-    fn serialise(&mut self) -> Vec<u8> {
-        let mut entries = vec!["/Type /Pages".to_string()];
-
-        entries.push(format!("/Kids {}", &self.kids_array()));
-
-        entries.push(format!("/Count {}", self.count()));
-
-        // MediaBox (optional, inherited)
-        if let Some(size) = &self.media_box {
-            let dims = size.dims();
-            entries.push(format!("/MediaBox [0 0 {} {}]", dims.width, dims.height));
-        }
-
-        // Resources (optional, inherited)
-        if let Some(_resources) = &self.resources {
-            // TODO: Serialize resources
-        }
-
-        format!("<< {} >>", entries.join(" ")).into_bytes()
-    }
-}

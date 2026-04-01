@@ -94,8 +94,9 @@ everything it points to with N 0 R are separate indirect objects in the body, ea
 XRef entry.
 
 The catalog dictionary contains only:
-    Direct objects — names, booleans, strings, and small dictionaries/arrays embedded inline
-    Indirect references (N 0 R) — pointers to indirect objects defined elsewhere in the body
+    Direct objects — names, booleans, strings, and small dictionaries/arrays embedded inline.
+    Indirect references (N 0 R) — pointers to indirect objects defined elsewhere in the body.
+    
 The actual obj...endobj definitions are never inside the catalog — they're always elsewhere in the
 body. The catalog just holds the references to find them.
 

@@ -44,9 +44,9 @@ use pydyf::util::{Dims, Posn};
 #[test]
 fn spec_objstm_must_have_type() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     stream.add_rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
-    pdf.add_object(Box::new(stream));
+    pdf.add_indirect_object(Box::new(stream));
 
     let mut output = Vec::new();
     pdf.write_compressed(&mut output, FileIdentifierMode::None).unwrap();
@@ -59,9 +59,9 @@ fn spec_objstm_must_have_type() {
 #[test]
 fn spec_objstm_must_have_n() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     stream.add_rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
-    pdf.add_object(Box::new(stream));
+    pdf.add_indirect_object(Box::new(stream));
 
     let mut output = Vec::new();
     pdf.write_compressed(&mut output, FileIdentifierMode::None).unwrap();
@@ -81,9 +81,9 @@ fn spec_objstm_must_have_n() {
 #[test]
 fn spec_objstm_must_have_first() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     stream.add_rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
-    pdf.add_object(Box::new(stream));
+    pdf.add_indirect_object(Box::new(stream));
 
     let mut output = Vec::new();
     pdf.write_compressed(&mut output, FileIdentifierMode::None).unwrap();
@@ -105,12 +105,12 @@ fn spec_stream_objects_not_compressible() {
     let mut pdf = PdfFile::new();
 
     // Add a stream object (with actual stream data)
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     let color = RGB::new( Color::new(1.0),Color::new(0.0), Color::new(0.0) );
     stream.set_color_rgb(color, StrokeOrFill::Fill);
     stream.add_rectangle(Posn { x: 10.0, y: 10.0 }, Dims { height: 20.0, width: 20.0 });
     stream.fill(WindingRule::EvenOdd);
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);

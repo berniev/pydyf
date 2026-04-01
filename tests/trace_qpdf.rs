@@ -6,10 +6,10 @@ fn trace_qpdf_test_sequence() {
     use pydyf::page::PageSize;
 
     let mut pdf = PdfFile::new();
-    let stream = PdfStreamObject::uncompressed();
+    let stream = PdfStreamObject::new();
 
     // Add stream
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     println!("1. Added stream object");
     println!("   pdf.objects.len() = {}", pdf.objects.len());
 

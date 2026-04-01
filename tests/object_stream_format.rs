@@ -13,7 +13,7 @@ use pydyf::{FileIdentifierMode, PdfFile, PageObject, PdfStreamObject};
 #[test]
 fn test_objstm_has_type() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     let color = RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0));
     stream.set_color_rgb(color, StrokeOrFill::Fill);
     stream.add_rectangle(
@@ -25,7 +25,7 @@ fn test_objstm_has_type() {
     );
     stream.fill(WindingRule::EvenOdd);
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);
@@ -46,7 +46,7 @@ fn test_objstm_has_type() {
 #[test]
 fn test_objstm_has_n() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     stream.add_rectangle(
         Posn { x: 0.0, y: 0.0 },
         Dims {
@@ -54,7 +54,7 @@ fn test_objstm_has_n() {
             width: 10.0,
         },
     );
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
 
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
@@ -84,7 +84,7 @@ fn test_objstm_has_n() {
 #[test]
 fn test_objstm_has_first() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     stream.add_rectangle(
         Posn { x: 0.0, y: 0.0 },
         Dims {
@@ -92,7 +92,7 @@ fn test_objstm_has_first() {
             width: 10.0,
         },
     );
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
 
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
@@ -125,7 +125,7 @@ fn test_objstm_has_first() {
 #[test]
 fn test_objstm_has_filter() {
     let mut pdf = PdfFile::new();
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     stream.add_rectangle(
         Posn { x: 0.0, y: 0.0 },
         Dims {
@@ -133,7 +133,7 @@ fn test_objstm_has_filter() {
             width: 10.0,
         },
     );
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
 
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
@@ -167,7 +167,7 @@ fn test_content_streams_not_compressed() {
     let mut pdf = PdfFile::new();
 
     // Add a content stream
-    let mut stream = PdfStreamObject::uncompressed();
+    let mut stream = PdfStreamObject::new();
     let color = RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0));
     stream.set_color_rgb(color, StrokeOrFill::Fill);
     stream.add_rectangle(
@@ -178,7 +178,7 @@ fn test_content_streams_not_compressed() {
         },
     );
     stream.fill(WindingRule::EvenOdd);
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);

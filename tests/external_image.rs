@@ -29,7 +29,7 @@ fn test_external_image_from_file() {
     img.save("/tmp/pydyf_test/gradient.png").unwrap();
 
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     stream.push_state();
     stream.set_transformation_matrix(Matrix { a: 200.0, b: 0.0, c: 0.0, d: 200.0, e: 50.0, f: 500.0 });
@@ -64,7 +64,7 @@ fn test_external_image_from_file() {
     stream.show_single_text_string("Scaled to 200x200 points");
     stream.end_text();
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let content_ref = format!("{} 0 R", content_id).into_bytes();
     let page = create_page_with_content(content_ref);
     pdf.add_page(page);

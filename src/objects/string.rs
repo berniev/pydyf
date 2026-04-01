@@ -1,8 +1,9 @@
 /// String Object:
 ///     Consists of a series of bytes (unsigned integer values in the range 0 to 255) and the bytes
 ///     are not integer objects, but are stored in a more compact form
-/// 
-use crate::{PdfObject};
+///
+use crate::{PdfError, PdfObject};
+use std::any::Any;
 
 //--------------------------- PdfStringObject----------------------//
 
@@ -13,16 +14,23 @@ pub struct PdfStringObject {
 impl PdfStringObject {
     pub fn new(value: &str) -> Self {
         Self {
-            value:value.to_string(),
+            value: value.to_string(),
         }
     }
 }
 
 impl PdfObject for PdfStringObject {
-    fn serialise(&mut self) ->Vec<u8>{
-        self.value.as_bytes().to_vec()
+    fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+        Ok(self.value.as_bytes().to_vec())
     }
-    
+
+    fn is_indirect_by_default(&self) -> bool {
+        false
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 }
 
 pub fn encode_pdf_string(string: &str) -> String {
@@ -44,7 +52,7 @@ pub fn encode_ascii(string: &str) -> String {
         result.push(ch);
     }
     result.push(')');
-    
+
     result
 }
 

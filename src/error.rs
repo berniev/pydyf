@@ -3,38 +3,19 @@ use std::io;
 
 use crate::color::{CMYK, Color, RGB, RGBA};
 
-/// Errors that can occur during PDF generation
 #[derive(Debug)]
 pub enum PdfError {
-    /// I/O error during file operations
     Io(io::Error),
-
-    /// Invalid object reference (object number doesn't exist)
     InvalidObjectReference(usize),
-
-    /// Invalid compression state
     CompressionError(String),
-
-    /// Invalid font name or configuration
     InvalidFont(String),
-
-    InvalidColorChannel {
-        color: Color,
-    },
-    InvalidRGB {
-        rgb: RGB,
-    },
-    InvalidRGBA {
-        rgb: RGBA,
-    },
-    InvalidCMYK {
-        cmyk: CMYK,
-    },
-    /// Invalid image data
+    InvalidColorChannel { color: Color },
+    InvalidRGB { rgb: RGB },
+    InvalidRGBA { rgb: RGBA },
+    InvalidCMYK { cmyk: CMYK },
     InvalidImage(String),
-
-    /// PDF structure error
     StructureError(String),
+    SerializeError(String),
 }
 
 impl fmt::Display for PdfError {
@@ -80,6 +61,7 @@ impl fmt::Display for PdfError {
             }
             PdfError::InvalidImage(msg) => write!(f, "Invalid image: {}", msg),
             PdfError::StructureError(msg) => write!(f, "PDF structure error: {}", msg),
+            PdfError::SerializeError(msg) => write!(f, "Serialization error: {}", msg),
         }
     }
 }

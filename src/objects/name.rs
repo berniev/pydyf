@@ -1,3 +1,4 @@
+use std::any::Any;
 /// Spec:
 /// name object:
 ///     an atomic symbol uniquely defined by a sequence of characters introduced by a SOLIDUS (/),
@@ -7,7 +8,7 @@
 ///     similar to a dictionary that associates keys and values but the keys in a name tree are
 ///     strings and are ordered
 ///
-use crate::PdfObject;
+use crate::{PdfError, PdfObject};
 
 //--------------------------- PdfNameObject ----------------------//
 
@@ -24,7 +25,12 @@ impl PdfNameObject {
 }
 
 impl PdfObject for PdfNameObject {
-    fn serialise(&mut self) -> Vec<u8> {
-        format!("/{}", self.value).into_bytes()
+    fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+        Ok(format!("/{}", self.value).into_bytes())
     }
-}
+
+    fn is_indirect_by_default(&self) -> bool {
+        false
+    }
+
+fn as_any_mut(&mut self) -> &mut dyn Any { self }}

@@ -229,7 +229,7 @@ impl XmpMetadata {
         dict.add("SubType", Pdf::name("XML"));
 
         let stream =
-            PdfStreamObject::uncompressed().with_data(self.xmp_packet.as_bytes().to_vec(), dict);
+            PdfStreamObject::new().with_data(self.xmp_packet.as_bytes().to_vec(), dict);
 
         Ok(stream)
     }
@@ -310,8 +310,6 @@ mod tests {
         let xmp = XmpMetadata::from_packet("<xml>test</xml>".to_string());
         let mut stream = xmp.to_stream().unwrap();
 
-        // Check that stream was created (extra entries are internal)
-        // Full validation would require checking the generated data() output
-        assert!(!stream.serialise().is_empty());
+        assert!(!stream.serialise().expect("REASON").is_empty());
     }
 }

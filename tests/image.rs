@@ -17,7 +17,7 @@ fn create_page_with_content(content_stream_ref: Vec<u8>) -> PageObject {
 #[test]
 fn test_inline_image() {
     let mut pdf = PdfFile::new();
-    let mut stream = Stream::uncompressed();
+    let mut stream = Stream::new();
 
     let image_data = vec![255, 0, 0, 255, 0, 0, 0, 0, 255, 0, 0, 255];
 
@@ -54,7 +54,7 @@ fn test_inline_image() {
     stream.show_single_text_string("Pixels: Red, Red (top) | Blue, Blue (bottom)");
     stream.end_text();
 
-    let content_id = pdf.add_object(Box::new(stream));
+    let content_id = pdf.add_indirect_object(Box::new(stream));
     let content_ref = format!("{} 0 R", content_id).into_bytes();
     let page = create_page_with_content(content_ref);
     pdf.add_page(page);
