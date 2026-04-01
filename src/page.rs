@@ -12,8 +12,8 @@
 /// Type                       Reqd       name              "Page"
 /// Parent                     Reqd       dictionary        indirect reference
 /// LastModified               *          date              * Reqd if PieceInfo
-/// Resources                  Reqd  Inh  dictionary
-/// MediaBox                   Reqd  Inh  rectangle
+/// Resources                  Reqd  Inh  dictionary        Reqd if not inherited
+/// MediaBox                   Reqd  Inh  rectangle         Reqd if not inherited
 ///
 /// Annots                     Opt        array
 /// Contents                   Opt        stream or array
@@ -72,10 +72,8 @@ use crate::{PdfArrayObject, PdfDictionaryObject, PdfObject};
 //--------------------------- Page ---------------------------//
 
 pub fn make_page() -> PdfDictionaryObject {
-    let tree = PdfDictionaryObject::new().typed("Page");
-
-    tree
-}
+    PdfDictionaryObject::new().typed("Page")
+ }
 
 //--------------------------- PageTree -------------------------//
 
@@ -87,19 +85,19 @@ pub fn make_page_tree() -> PdfDictionaryObject {
     tree
 }
 
-fn add_page_to_tree(mut page: PdfDictionaryObject, mut tree: PdfDictionaryObject) {
-    if !page.contains_key("Resources") {
-        let resources = match tree.get("Resources") {
-            Some(PdfObject::Dictionary(dict)) => Pdf::dict(dict.clone()),
-            _ => Pdf::dict(PdfDictionaryObject::new()),
-        };
-        page.add("Resources", resources);
-    }
+//--------------------------- add_page_to_tree -------------------------//
 
-    if let Some(obj) = tree.get_mut("Kids") {
+fn add_page_to_tree(mut page_dict: PdfDictionaryObject, mut tree_dict: PdfDictionaryObject) {
+   page_dict.add("Parent", Pdf::num(0)); // indirect ref to tree
+    if !page_dict.contains_key("Resources") && !tree_dict.contains_key("Resources") {}
+    if !page_dict.contains_key("MediaBox") && !tree_dict.contains_key("MediaBox") {}
+    let curr_count = tree_dict.get_integer("Count").unwrap_or(0);
+    //tree_dict.add_ref(page_dict);
+    tree_dict.update("Count", Pdf::num(curr_count + 1));
+
+    /*if let Some(obj) = tree_dict.get_mut("Kids") {
         if let Some(array) = obj.as_any_mut().downcast_mut::<PdfArrayObject>() {
-            array.push(Pdf::dict(page));
+            array.push(Pdf::dict(page_dict));
         }
-    }
+    }*/
 }
-

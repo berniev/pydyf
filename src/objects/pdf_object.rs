@@ -1,5 +1,8 @@
-use crate::{NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject, PdfNullObject, PdfStreamObject, PdfStringObject};
 use crate::objects::number::PdfNumberObject;
+use crate::{
+    NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject,
+    PdfNullObject, PdfStreamObject, PdfStringObject,
+};
 //--------------------------- Pdf -------------------------//
 
 pub struct Pdf {}
@@ -44,8 +47,22 @@ impl Pdf {
         PdfObject::String(PdfStringObject::new(value))
     }
 }
+/*
+Is it referenced from more than one place? → indirect (shared fonts, images, etc.)
+Does anything need to refer to it by object number? → indirect (e.g. a page in the Kids array)
+Is it a stream? → indirect (spec mandates it)
+Everything else → direct*/
 
 //--------------------------- PdfObject -------------------------//
+
+// IfReqd:
+//   referenced from multiple places (shared fonts, images, etc.), or
+//   referenced by object number (e.g. a page in the Kids array)
+pub enum Indirect {
+    Always,
+    Never,
+    IfReferenced,
+}
 
 #[derive(Clone)]
 pub enum PdfObject {
@@ -73,16 +90,16 @@ impl PdfObject {
         }
     }
 
-    pub fn is_indirect_by_default(&self) -> bool {
+    pub fn is_indirect_by_default(&self) -> Indirect {
         match self {
-            PdfObject::Array(_) => true,
-            PdfObject::Boolean(_) => false,
-            PdfObject::Dictionary(_) => true,
-            PdfObject::Name(_) => false,
-            PdfObject::Number(_) => false,
-            PdfObject::Null(_) => false,
-            PdfObject::Stream(_) => true,
-            PdfObject::String(_) => false,
+            PdfObject::Array(_) => Indirect::IfReferenced,
+            PdfObject::Boolean(_) => Indirect::Never,
+            PdfObject::Dictionary(_) => Indirect::IfReferenced,
+            PdfObject::Name(_) => Indirect::Never,
+            PdfObject::Number(_) => Indirect::Never,
+            PdfObject::Null(_) => Indirect::Never,
+            PdfObject::Stream(_) => Indirect::Always,
+            PdfObject::String(_) => Indirect::Never,
         }
     }
 }

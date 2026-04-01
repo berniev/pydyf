@@ -113,9 +113,7 @@ impl PdfFile {
             offset_or_next_free: 0,
             generation: Generation::Normal,
         });
-
-
-
+        
         0
     }
 

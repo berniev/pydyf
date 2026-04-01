@@ -18,7 +18,7 @@
 /// We are not designing for modification.
 ///
 pub use crate::generation::Generation;
-pub use crate::objects::metadata::ObjectStatus;
+pub use crate::objects::object_status::ObjectStatus;
 //--------------------------- CrossRefError -------------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

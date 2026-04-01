@@ -1,4 +1,4 @@
-use crate::objects::pdf_object::{Pdf};
+use crate::objects::pdf_object::Pdf;
 /// Spec:
 /// Dictionary:
 ///     An associative table containing pairs of objects, the first object being a name object
@@ -53,6 +53,21 @@ impl PdfDictionaryObject {
         self.values
             .iter()
             .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
+    }
+
+    pub fn get_integer(&self, key: &str) -> Option<i64> {
+        match self.get(key) {
+            Some(PdfObject::Number(n)) => Some(n.as_int()),
+            _ => None,
+        }
+    }
+
+    pub fn update(&mut self, key: &str, object: PdfObject) {
+        if let Some((_, value)) = self.values.iter_mut().find(|(k, _)| k.value == key) {
+            *value = object;
+        } else {
+            self.values.push((PdfNameObject::new(key), object));
+        }
     }
 
     pub fn get_mut(&mut self, key: &str) -> Option<&mut PdfObject> {
