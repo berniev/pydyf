@@ -19,7 +19,6 @@
 ///
 pub use crate::generation::Generation;
 pub use crate::objects::metadata::ObjectStatus;
-use crate::PdfObject;
 //--------------------------- CrossRefError -------------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -34,11 +33,11 @@ pub struct CrossReferenceEntry {
     pub object_number: u64,
     pub object_status: ObjectStatus, // determines treatment of offset
     pub offset_or_next_free: u64,    // InUse: offset in stream. Free: next free object number
-    pub generation: u16,             // 65535 for root entry, otherwise 0
+    pub generation: Generation,      // 65535 for root entry, otherwise 0
 }
 
 impl CrossReferenceEntry {
-    pub fn new(number: u64, status: ObjectStatus, offset: u64, generation: u16) -> Self {
+    pub fn new(number: u64, status: ObjectStatus, offset: u64, generation: Generation) -> Self {
         CrossReferenceEntry {
             object_number: number,
             object_status: status,
@@ -57,13 +56,15 @@ impl CrossReferenceEntry {
             self.offset_or_next_free,
             self.generation,
             self.object_status.as_char()
-        ).as_bytes().to_vec()
+        )
+        .as_bytes()
+        .to_vec()
     }
 }
 
 impl Default for CrossReferenceEntry {
     fn default() -> Self {
-        Self::new(0, ObjectStatus::Free, 0, 65535)
+        Self::new(0, ObjectStatus::Free, 0, Generation::Root)
     }
 }
 //--------------------------- CrossRefTable -------------------------//
@@ -86,7 +87,7 @@ impl CrossRefTable {
         self.entries.push(entry);
     }
 
-    pub fn as_pdf(&self) -> Result<String, CrossRefError> {
+    pub fn as_pdf(&self) -> Result<Vec<u8>, CrossRefError> {
         if self.entries.is_empty() {
             return Err(CrossRefError::EmptyTable);
         }
@@ -97,14 +98,17 @@ impl CrossRefTable {
             return Err(CrossRefError::InvalidRootEntry);
         }
 
+        /*let head = vec![
+            "xref\r\n ".as_bytes(),
+            first.object_number.to_string().as_bytes(),
+            b" ",
+            self.entries.len().to_string().as_bytes(),
+        ];*/
         let head = format!("xref\r\n{} {}\r\n", first.object_number, self.entries.len());
 
-        Ok(head
-            + &self
-                .entries
-                .iter()
-                .map(|entry| entry.serialise())
-                .collect::<String>()) // todo not String
+        let mut result = head.into_bytes();
+        result.extend(self.entries.iter().flat_map(|entry| entry.serialise()));
+        Ok(result)
     }
 }
 
@@ -232,10 +236,12 @@ impl CrossRefEntry {
 
 //--------------------------- CrossRefStream -------------------------//
 
+#[allow(dead_code)]
 pub(crate) struct CrossRefStream {
     entries: Vec<CrossRefEntry>,
 }
 impl CrossRefStream {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         let mut stream = CrossRefStream {
             entries: Vec::new(),
@@ -247,12 +253,14 @@ impl CrossRefStream {
         stream
     }
 
+    #[allow(dead_code)]
     pub fn add_entry(&mut self, entry: CrossRefEntry) {
         self.entries.push(entry);
     }
 
     /// Calculate optimal field widths based on actual entry data
     /// Returns (field2_width, field3_width)
+    #[allow(dead_code)]
     pub fn calculate_optimal_widths(&self) -> (usize, usize) {
         self.entries
             .iter()
@@ -262,6 +270,7 @@ impl CrossRefStream {
             })
     }
 
+    #[allow(dead_code)]
     pub fn build_binary_data(&self, field2_width: usize, field3_width: usize) -> Vec<u8> {
         let mut data = Vec::new();
         for entry in &self.entries {
@@ -293,12 +302,14 @@ impl CrossRefStream {
         data
     }
 
+    #[allow(dead_code)]
     pub fn entry_count(&self) -> usize {
         self.entries.len()
     }
 
     /// Build the complete xref stream object with dictionary and binary data
     /// Returns (stream_bytes, xref_data_length) for writing to PDF
+    #[allow(dead_code)]
     pub fn build_stream_object(
         &self,
         stream_num: usize,

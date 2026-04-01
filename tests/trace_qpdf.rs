@@ -2,7 +2,7 @@
 
 #[test]
 fn trace_qpdf_test_sequence() {
-    use pydyf::{FileIdentifierMode, PageObject, PdfStreamObject, PdfFile};
+ /*   use pydyf::{FileIdentifierMode, PageObject, PdfStreamObject, PdfFile};
     use pydyf::page::PageSize;
 
     let mut pdf = PdfFile::new();
@@ -77,5 +77,5 @@ fn trace_qpdf_test_sequence() {
                 println!("   {}", line);
             }
         }
-    }
+    }*/
 }

@@ -127,13 +127,13 @@ impl DocumentOutline {
         }
 
         let outline_id = allocate_id();
-        let mut item_dicts = Vec::new();
+        let item_dicts = Vec::new();
 
         let mut item_ids = Vec::new();
         self.allocate_item_ids(&self.items, allocate_id, &mut item_ids);
 
-        let mut idx = 0;
-        for (i, item) in self.items.iter().enumerate() {
+ //       let mut idx = 0;
+ /*       for (i, item) in self.items.iter().enumerate() {
             self.build_item_dict(
                 item,
                 &mut item_dicts,
@@ -148,12 +148,12 @@ impl DocumentOutline {
                 },
             )?;
         }
-
+*/
         let mut outline_dict = PdfDictionaryObject::new().typed("Outlines");
 
         if !self.items.is_empty() {
-            outline_dict.add("First", Pdf::indirect(item_ids[0]));
-            outline_dict.add("Last", Pdf::indirect(item_ids[self.items.len() - 1]));
+            outline_dict.add("First", Pdf::num(item_ids[0]));
+            outline_dict.add("Last", Pdf::num(item_ids[self.items.len() - 1]));
             outline_dict.add("Count", Pdf::num(self.total_count() as i64));
         }
 
@@ -177,13 +177,14 @@ impl DocumentOutline {
         }
     }
 
+    #[allow(dead_code)]
     fn build_item_dict(
         &self,
         item: &OutlineItem,
         dicts: &mut Vec<(usize, PdfDictionaryObject)>,
         all_ids: &[usize],
         idx: &mut usize,
-        parent_id: usize,
+        //parent_id: usize,
         prev_id: Option<usize>,
         next_id: Option<usize>,
     ) -> PdfResult<()> {
@@ -192,13 +193,13 @@ impl DocumentOutline {
 
         let mut dict = PdfDictionaryObject::new().typed(&*item.title);
 
-        dict.add("Parent", Pdf::indirect(parent_id));
+        //dict.add("Parent", Pdf::indirect(parent_id));
 
         if let Some(prev) = prev_id {
-            dict.add("Prev", Pdf::indirect(prev));
+            dict.add("Prev", Pdf::num(prev));
         }
         if let Some(next) = next_id {
-            dict.add("Next", Pdf::indirect(next));
+            dict.add("Next", Pdf::num(next));
         }
 
         if let Some(dest) = item.destination.clone() {
@@ -209,25 +210,25 @@ impl DocumentOutline {
             let first_child_idx = *idx;
             let first_child_id = all_ids[first_child_idx];
 
-            for (i, child) in item.children.iter().enumerate() {
-                let child_prev = if i > 0 {
+            for (i, _child) in item.children.iter().enumerate() {
+                let _child_prev = if i > 0 {
                     Some(all_ids[first_child_idx + i - 1])
                 } else {
                     None
                 };
-                let child_next = if i < item.children.len() - 1 {
+                let _child_next = if i < item.children.len() - 1 {
                     Some(all_ids[first_child_idx + i + 1])
                 } else {
                     None
                 };
 
-                self.build_item_dict(
+ /*               self.build_item_dict(
                     child, dicts, all_ids, idx, current_id, child_prev, child_next,
                 )?;
-            }
+ */           }
 
-            dict.add("First", Pdf::indirect(first_child_id));
-            dict.add("Last", Pdf::indirect(all_ids[first_child_idx + item.children.len() - 1]));
+            dict.add("First", Pdf::num(first_child_id));
+            dict.add("Last", Pdf::num(all_ids[first_child_idx + item.children.len() - 1]));
 
             // Count: positive if open, negative if closed
             let count = item.count_descendants();

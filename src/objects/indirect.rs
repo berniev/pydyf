@@ -31,7 +31,7 @@ pub enum HostType {
 //-------------------------- PdfIndirectObject ----------------------//
 
 pub struct PdfIndirectObject {
-    pub object_being_wrapped: Box<dyn PdfObject>,
+    pub object_being_wrapped: PdfObject,
     pub host_type: HostType,
 
     /// HostType       byte_offset from
@@ -42,7 +42,7 @@ pub struct PdfIndirectObject {
 }
 
 impl PdfIndirectObject {
-    pub fn new_standard(object_being_wrapped: Box<dyn PdfObject>) -> Self {
+    pub fn new_standard(object_being_wrapped: PdfObject) -> Self {
         Self {
             object_being_wrapped,
             host_type: HostType::Standard {
@@ -52,10 +52,7 @@ impl PdfIndirectObject {
         }
     }
 
-    pub fn new_in_obj_stream(
-        object_being_wrapped: Box<dyn PdfObject>,
-        stream_obj_num: usize,
-    ) -> Self {
+    pub fn new_in_obj_stream(object_being_wrapped: PdfObject, stream_obj_num: usize) -> Self {
         Self {
             object_being_wrapped,
             host_type: HostType::ObjectStream { stream_obj_num },
@@ -63,16 +60,20 @@ impl PdfIndirectObject {
         }
     }
 
-    pub fn reference(&self) -> Vec<u8> {
+/*    pub fn reference(&self) -> Vec<u8> {
         let gen_num = match &self.host_type {
             HostType::Standard { generation_number } => *generation_number,
             HostType::ObjectStream { .. } => 0,
         };
         format!("{} {} R", self.obj_num, gen_num).into_bytes()
     }
-}
+*/}
 
-pub fn serialise_indirect_object(mut object_being_wrapped: Box<dyn PdfObject>, host_type: HostType, object_number :u64) -> Result<Vec<u8>, PdfError> {
+pub fn serialise_indirect_object(
+    mut object_being_wrapped: PdfObject,
+    host_type: HostType,
+    object_number: u64,
+) -> Result<Vec<u8>, PdfError> {
     match host_type {
         HostType::Standard { generation_number } => {
             let mut vec: Vec<u8> = vec![];
@@ -89,6 +90,7 @@ pub fn serialise_indirect_object(mut object_being_wrapped: Box<dyn PdfObject>, h
     }
 }
 
-fn default_is_indirect() -> bool {
+/*fn default_is_indirect() -> bool {
     true
 }
+*/

@@ -4,7 +4,7 @@
 //! visible or hidden, commonly used for layers in technical drawings.
 
 use crate::objects::pdf_object::Pdf;
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfObject};
+use crate::{PdfArrayObject, PdfDictionaryObject};
 
 //------------------ VisibilityInitialState -----------------------
 
@@ -212,18 +212,18 @@ impl OptionalContentConfig {
         );
 
         if !self.on_list.is_empty() {
-            let mut arr = PdfArrayObject::new();
-            for &id in &self.on_list {
-                arr.push(Pdf::indirect(id));
-            }
+            let arr = PdfArrayObject::new();
+            /*for &id in &self.on_list {
+                //arr.push(Pdf::indirect(id));
+            }*/
             dict.add("ON", Pdf::array(arr));
         }
 
         if !self.off_list.is_empty() {
-            let mut arr = PdfArrayObject::new();
-            for &id in &self.off_list {
-                arr.push(Pdf::indirect(id));
-            }
+            let arr = PdfArrayObject::new();
+            //for &id in &self.off_list {
+                //arr.push(Pdf::indirect(id));
+            //}
             dict.add("OFF", Pdf::array(arr));
         }
 
@@ -240,8 +240,8 @@ impl OptionalContentConfig {
 
         for order in orders {
             match order {
-                LayerOrder::Single(id) => {
-                    arr.push(Pdf::indirect(*id));
+                LayerOrder::Single(_id) => {
+                    //arr.push(Pdf::indirect(*id));
                 }
                 LayerOrder::Group { label, children } => {
                     arr.push(Pdf::string(label.as_str()));

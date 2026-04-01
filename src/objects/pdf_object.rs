@@ -1,102 +1,88 @@
-/**
- a direct object must always be owned by something, and that something ultimately traces back to an indirect object.
-The containment hierarchy is:
-```
-body
-└── indirect object  (5 0 obj ... endobj)
-    └── dictionary
-        ├── /MediaBox [ 0 0 612 792 ]   ← direct array
-        │   ├── 0                        ← direct integer
-        │   ├── 0                        ← direct integer
-        │   └── ...
-        └── /Rotate 0                    ← direct integer
-```
-```
-6 0 obj
-42
-endobj
-
-7 0 obj
-[ 1 2 3 ]
-endobj
-
-8 0 obj
-<< /Length 12 >>
-stream
-Hello World!
-endstream
-endobj
-```
-A direct object can be nested arbitrarily deep — a dictionary inside an array inside a dictionary
-inside an indirect object — but there's always an indirect object at the root of the tree.
-The spec puts it plainly: "a direct object is any object that is not an indirect object" — meaning
-it has no obj/endobj wrapper, no object number, and cannot exist free-standing in the body.
-Where objects live:
-    Indirect: in the body (referenced by the XRef)
-    Direct:   inside indirect objects (or inside other direct objs that are inside indirect objs)
-*/
-use crate::{NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfIndirectObject, PdfNameObject, PdfNullObject, PdfNumberObject, PdfStringObject};
+use crate::{NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject, PdfNullObject, PdfNumberObject, PdfStreamObject, PdfStringObject};
 
 //--------------------------- Pdf -------------------------//
-
-use std::any::Any;
 
 pub struct Pdf {}
 
 impl Pdf {
-    pub fn bool(value: bool) -> Box<dyn PdfObject> {
-        Box::new(PdfBooleanObject::new(value))
+    pub fn array(value: PdfArrayObject) -> PdfObject {
+        PdfObject::Array(value)
     }
 
-    pub fn name(value: &str) -> Box<dyn PdfObject> {
-        Box::new(PdfNameObject::new(value))
+    pub fn bool(value: bool) -> PdfObject {
+        PdfObject::Boolean(PdfBooleanObject::new(value))
     }
 
-    pub fn num(value: impl Into<NumberType>) -> Box<dyn PdfObject> {
-        Box::new(PdfNumberObject::new(value.into()))
+    pub fn dict(value: PdfDictionaryObject) -> PdfObject {
+        PdfObject::Dictionary(value)
     }
 
-    pub fn num_or_null<T: Into<NumberType>>(value: Option<T>) -> Box<dyn PdfObject> {
+    pub fn name(value: &str) -> PdfObject {
+        PdfObject::Name(PdfNameObject::new(value))
+    }
+
+    pub fn null() -> PdfObject {
+        PdfObject::Null(PdfNullObject::new())
+    }
+
+    pub fn num(value: impl Into<NumberType>) -> PdfObject {
+        PdfObject::Number(PdfNumberObject::new(value.into()))
+    }
+
+    pub fn num_or_null<T: Into<NumberType>>(value: Option<T>) -> PdfObject {
         match value {
             Some(v) => Pdf::num(v),
             None => Pdf::null(),
         }
     }
 
-    pub fn null() -> Box<dyn PdfObject> {
-        Box::new(PdfNullObject::new())
+    pub fn stream(value: PdfStreamObject) -> PdfObject {
+        PdfObject::Stream(value)
     }
 
-    pub fn string(value: &str) -> Box<dyn PdfObject> {
-        Box::new(PdfStringObject::new(value))
-    }
-
-    pub fn array(value: PdfArrayObject) -> Box<dyn PdfObject> {
-        Box::new(value)
-    }
-
-    pub fn dict(value: PdfDictionaryObject) -> Box<dyn PdfObject> {
-        Box::new(value)
-    }
-
-    pub fn indirect(value: usize) -> Box<dyn PdfObject> {
-        Box::new(PdfIndirectObject::new_standard(value))
+    pub fn string(value: &str) -> PdfObject {
+        PdfObject::String(PdfStringObject::new(value))
     }
 }
 
 //--------------------------- PdfObject -------------------------//
 
-pub trait PdfObject: Any {
-    fn serialise(&mut self) -> Result<Vec<u8>, PdfError>;
+#[derive(Clone)]
+pub enum PdfObject {
+    Array(PdfArrayObject),
+    Boolean(PdfBooleanObject),
+    Dictionary(PdfDictionaryObject),
+    Name(PdfNameObject),
+    Null(PdfNullObject),
+    Number(PdfNumberObject),
+    Stream(PdfStreamObject),
+    String(PdfStringObject),
+}
 
-    fn is_indirect_by_default(&self) -> bool;
-
-/*    fn boxed(self) -> Box<dyn PdfObject>
-    where
-        Self: Sized,
-    {
-        Box::new(self)
+impl PdfObject {
+    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+        match self {
+            PdfObject::Array(a) => a.serialise(),
+            PdfObject::Boolean(b) => b.serialise(),
+            PdfObject::Dictionary(d) => d.serialise(),
+            PdfObject::Name(na) => na.serialise(),
+            PdfObject::Null(nu) => nu.serialise(),
+            PdfObject::Number(m) => m.serialise(),
+            PdfObject::Stream(s) => s.serialise(),
+            PdfObject::String(sg) => sg.serialise(),
+        }
     }
-*/    
-    fn as_any_mut(&mut self) -> &mut dyn Any;
+
+    pub fn is_indirect_by_default(&self) -> bool {
+        match self {
+            PdfObject::Array(_) => true,
+            PdfObject::Boolean(_) => false,
+            PdfObject::Dictionary(_) => true,
+            PdfObject::Name(_) => false,
+            PdfObject::Number(_) => false,
+            PdfObject::Null(_) => false,
+            PdfObject::Stream(_) => true,
+            PdfObject::String(_) => false,
+        }
+    }
 }

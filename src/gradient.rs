@@ -1,9 +1,8 @@
 use std::rc::Rc;
-
 use crate::color::RGBA;
 use crate::objects::pdf_object::Pdf;
 use crate::util::{Dims, Posn};
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfFile, PdfObject, PdfStreamObject};
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfFile};
 
 //--------------------------- PDF Function ---------------------------//
 
@@ -137,9 +136,9 @@ impl Gradient {
         };
         color_shading_dict.add("Coords", Pdf::array(make_coords()));
 
-        let color_func_num = pdf.add_indirect_object(Box::new(color_func)); // <== todo
+        pdf.add_object(Pdf::dict(color_func));
 
-        color_shading_dict.add("Function", Pdf::indirect(color_func_num));
+        //color_shading_dict.add("Function", Pdf::indirect(color_func_num));
 
         let make_extend = || {
             let mut arr = PdfArrayObject::new();
@@ -150,7 +149,7 @@ impl Gradient {
 
         color_shading_dict.add("Extend", Pdf::array(make_extend()));
 
-        let shading_num = pdf.add_indirect_object(Box::new(color_shading_dict)); // <== todo
+        //let shading_num = pdf.add_object(Pdf::dict(color_shading_dict));
 
         let has_transparency = first.has_transparency() || last.has_transparency();
         let gs_name = if !has_transparency {
@@ -164,27 +163,27 @@ impl Gradient {
                 vec![last.a().to_f64()],
                 0.0,
             );
-            let alpha_func_num = pdf.add_indirect_object(Box::new(alpha_func_dict)); // <== todo
+            pdf.add_object(Pdf::dict(alpha_func_dict)); // <== todo
 
             let mut alpha_shading_dict = PdfDictionaryObject::new();
             alpha_shading_dict.add("ShadingType", Pdf::num(shading_type as i64));
             alpha_shading_dict.add("ColorSpace", Pdf::name("DeviceGray"));
             alpha_shading_dict.add("Coords", Pdf::array(make_coords()));
-            alpha_shading_dict.add("Function", Pdf::indirect(alpha_func_num));
+            //alpha_shading_dict.add("Function", Pdf::indirect(alpha_func_num));
             alpha_shading_dict.add("Extend", Pdf::array(make_extend()));
 
-            let alpha_shading_num = pdf.add_indirect_object(Box::new(alpha_shading_dict)); // <== todo
+            pdf.add_object(Pdf::dict(alpha_shading_dict)); // <== todo
 
-            create_soft_mask_for_shading(pdf, alpha_shading_num, size.width, size.height);
+            //create_soft_mask_for_shading(pdf, alpha_shading_num, size.width, size.height);
 
             Some(name)
         };
 
         let mut pattern_dict = PdfDictionaryObject::new().typed("Pattern");
         pattern_dict.add("PatternType", Pdf::num(2));
-        pattern_dict.add("Shading", Pdf::indirect(shading_num));
+        //pattern_dict.add("Shading", Pdf::indirect(shading_num));
 
-        pdf.add_indirect_object(Box::new(pattern_dict)); // <== todo
+        pdf.add_object(Pdf::dict(pattern_dict)); // <== todo
 
         Some((pattern_name, gs_name))
     }
@@ -251,7 +250,7 @@ fn to_array(v: Vec<f64>) -> PdfArrayObject {
     arr
 }
 
-fn create_soft_mask_for_shading(
+/*fn create_soft_mask_for_shading(
     pdf: &mut PdfFile,
     alpha_shading_num: usize,
     width: f64,
@@ -268,11 +267,11 @@ fn create_soft_mask_for_shading(
 
     xobj_dict.add("Group", Pdf::dict(group_dict));
 
-    let mut shading_res_dict = PdfDictionaryObject::new();
-    shading_res_dict.add("Sh0", Pdf::indirect(alpha_shading_num));
+    //let mut shading_res_dict = PdfDictionaryObject::new();
+    //shading_res_dict.add("Sh0", Pdf::indirect(alpha_shading_num));
 
     let mut resources_dict = PdfDictionaryObject::new();
-    resources_dict.add("Shading", Pdf::dict(shading_res_dict));
+    //resources_dict.add("Shading", Pdf::dict(shading_res_dict));
     xobj_dict.add("Resources", Pdf::dict(resources_dict));
 
     let mut form_stream = PdfStreamObject::new().compressed();
@@ -281,19 +280,18 @@ fn create_soft_mask_for_shading(
     cmd.extend(b" sh");
     form_stream.add_content(cmd);
 
-    let form_number = pdf.add_object(form_stream); // <== todo
+    pdf.add_object(Pdf::stream(form_stream));
 
     let mut smask_dict = PdfDictionaryObject::new().typed("Mask");
     smask_dict.add("S", Pdf::name("Luminosity"));
 
-    let form_number = pdf.add_object(form_stream); // <== todo
+    //smask_dict.add("G", Pdf::indirect(form_number));
 
-    smask_dict.add("G", Pdf::indirect(form_number));
+    pdf.add_object(Pdf::dict(smask_dict));
 
-    let smask_number = pdf.add_object(smask_dict); // <== todo
+    //let mut gs_dict = PdfDictionaryObject::new().typed("ExtGState");
+    //gs_dict.add("SMask", Pdf::indirect(smask_number));
 
-    let mut gs_dict = PdfDictionaryObject::new().typed("ExtGState");
-    gs_dict.add("SMask", Pdf::indirect(smask_number));
-
-    pdf.add_object(gs_dict); // <== todo
+    //pdf.add_object(Pdf::dict(gs_dict));
 }
+*/

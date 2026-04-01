@@ -69,9 +69,10 @@
 use std::fmt;
 use std::iter::Sum;
 
+
 use crate::objects::pdf_object::Pdf;
 pub use crate::page_size::PageSize;
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfObject};
+use crate::{PdfArrayObject, PdfDictionaryObject};
 
 //--------------------------- ObjectId ---------------------------//
 
@@ -126,17 +127,13 @@ pub fn make_page_tree() -> PdfDictionaryObject {
     tree
 }
 
-fn add_page_to_tree(mut page: PdfDictionaryObject, mut tree: PdfDictionaryObject) {
+/*fn add_page_to_tree(mut page: PdfDictionaryObject, mut tree: PdfDictionaryObject) {
     if !page.contains_key("Resources") {
-        let res: Option<&Box<dyn PdfObject>> = tree.get("Resources");
-        page.add(
-            "Resources",
-            if res.is_some() {
-                Pdf::dict(Some(res))
-            } else {
-                Pdf::dict(PdfDictionaryObject::new())
-            },
-        );
+        let resources = match tree.get("Resources") {
+            Some(PdfObject::Dictionary(dict)) => Pdf::dict(dict.clone()),
+            _ => Pdf::dict(PdfDictionaryObject::new()),
+        };
+        page.add("Resources", resources);
     }
 
     if let Some(obj) = tree.get_mut("Kids") {
@@ -145,4 +142,4 @@ fn add_page_to_tree(mut page: PdfDictionaryObject, mut tree: PdfDictionaryObject
         }
     }
 }
-
+*/

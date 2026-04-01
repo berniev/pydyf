@@ -10,7 +10,7 @@ use crate::objects::pdf_object::Pdf;
 /// predating XMP. Still widely supported and used.
 ///
 use crate::{
-    PdfDictionaryObject, PdfNameObject, PdfObject, PdfResult, PdfStreamObject, PdfStringObject,
+    PdfDictionaryObject, PdfResult, PdfStreamObject,
 };
 //--------------------------TrappedState-------------------------------//
 

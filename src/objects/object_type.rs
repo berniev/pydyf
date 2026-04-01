@@ -1,17 +1,14 @@
-use crate::cross_reference_table::ObjectStatus;
-use crate::generation::Generation;
-
-/// Object:
-///     a basic data structure from which PDF files are constructed and includes these types:
-///     array, boolean, dictionary, integer, name, null, real, stream and string
-///
-/// Object Reference:
-///     an object value used to allow one object to refer to another: “<n> <m> R”
-///     where <n> is an indirect object number, <m> is its version number and R is the uppercase R
-///
-/// Object stream:
-///     a stream that contains a sequence of PDF objects
-///
+// Object:
+//     a basic data structure from which PDF files are constructed and includes these types:
+//     array, boolean, dictionary, integer, name, null, real, stream and string
+//
+// Object Reference:
+//     an object value used to allow one object to refer to another: “<n> <m> R”
+//     where <n> is an indirect object number, <m> is its version number and R is the uppercase R
+//
+// Object stream:
+//     a stream that contains a sequence of PDF objects
+//
 /*
 Direct Objects
 ==============
@@ -63,7 +60,7 @@ or an indirect object might reference another indirect object.
 */
 
 //--------------------- Document ----------------------
-
+/*
 pub struct PDF {
     pub objects: Vec<IndirectObject>,  // no metadata on inner objects
     pub cross_ref: Vec<CrossRefEntry>, // populated during write
@@ -121,3 +118,4 @@ struct DictionaryObject {}
 //--------------------- Streams ----------------------
 
 struct Stream {}
+*/

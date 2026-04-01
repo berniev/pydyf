@@ -1,5 +1,5 @@
 use crate::objects::pdf_object::Pdf;
-use crate::{PdfDictionaryObject, PdfError, PdfObject, PdfResult};
+use crate::{PdfDictionaryObject, PdfError, PdfResult};
 use std::collections::HashMap;
 
 pub const STANDARD_RESOURCE_CATEGORIES: &[&str] = &[
@@ -59,7 +59,7 @@ impl ResourceMap {
         for (name, map) in &self.categories {
             let mut sub_dict = PdfDictionaryObject::new();
             for (name, &id) in map {
-                sub_dict.add(name, Pdf::indirect(id));
+                sub_dict.add(name, Pdf::num(id));
             }
             // Inlines the sub-dictionary directly into the Resources dictionary
             root_dict.add(name, Pdf::dict(sub_dict));

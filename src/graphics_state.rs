@@ -44,7 +44,7 @@ impl GraphicsStateManager {
         let mut gs_dict = PdfDictionaryObject::new().typed("/ExtGState");
         gs_dict.add("CA", Pdf::num(alpha as f64)); // Stroke alpha
         gs_dict.add("ca", Pdf::num(alpha as f64)); // Fill alpha
-        let obj_num = pdf.add_indirect_object(Box::new(gs_dict));
+        let obj_num = pdf.add_object(Pdf::dict(gs_dict));
 
         self.opacity_states.insert(opacity_key, obj_num);
 

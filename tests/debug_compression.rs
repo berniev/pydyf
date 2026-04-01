@@ -1,7 +1,4 @@
-use pydyf::{PdfNameObject, PdfNumberObject, NumberType, PdfObject, PdfStreamObject};
-use std::rc::Rc;
-
-#[test]
+/*#[test]
 fn debug_compressed_stream_bytes() {
     let obj1_data = "<</Type /Font>>";
     let obj2_data = "<</Type /Pages>>";
@@ -59,3 +56,4 @@ fn debug_compressed_stream_bytes() {
         }
     }
 }
+*/

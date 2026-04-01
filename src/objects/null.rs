@@ -1,6 +1,6 @@
-use crate::{PdfError, PdfObject};
-use std::any::Any;
+use crate::PdfError;
 
+#[derive(Clone)]
 pub struct PdfNullObject {}
 
 impl PdfNullObject {
@@ -9,16 +9,12 @@ impl PdfNullObject {
     }
 }
 
-impl PdfObject for PdfNullObject {
-    fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+impl PdfNullObject {
+    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         Ok(vec![])
     }
 
-    fn is_indirect_by_default(&self) -> bool {
+    pub fn is_indirect_by_default(&self) -> bool {
         false
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }

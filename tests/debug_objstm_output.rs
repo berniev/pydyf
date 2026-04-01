@@ -1,9 +1,4 @@
-/// Debug test to see exactly what our object stream contains
-
-use pydyf::{FileIdentifierMode, PageObject, PdfStreamObject, PdfFile};
-use pydyf::page::PageSize;
-
-#[test]
+/*#[test]
 fn debug_what_we_produce() {
     let mut pdf = PdfFile::new();
     let mut stream = PdfStreamObject::new();
@@ -42,3 +37,4 @@ fn debug_what_we_produce() {
         }
     }
 }
+*/

@@ -21,14 +21,14 @@ impl Body {
         }
     }
 
-    pub fn add_indirect_object(&mut self, mut object: Box<dyn PdfObject>){
+    pub fn add_indirect_object(&mut self, mut object: PdfObject){
         self.last_object_number += 1;
-        let serialised = object.serialise();
+        object.serialise().expect("TODO: panic message");
     }
-    
+
     pub fn next_num(&mut self) ->u64{
         self.last_object_number += 1;
-        
+
         self.last_object_number
     }
 }

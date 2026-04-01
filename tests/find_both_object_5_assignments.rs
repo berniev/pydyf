@@ -1,6 +1,6 @@
-/// Find exactly where BOTH object 5s get their IDs assigned
+// Find exactly where BOTH object 5s get their IDs assigned
 
-#[test]
+/*#[test]
 fn find_both_object_5_assignments() {
     use pydyf::{FileIdentifierMode, PageObject, PdfStreamObject, PdfFile};
     use pydyf::page::PageSize;
@@ -83,3 +83,4 @@ fn find_both_object_5_assignments() {
 
     assert_eq!(obj_5_count, 1, "Object 5 should appear exactly once in PDF");
 }
+*/

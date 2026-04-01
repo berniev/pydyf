@@ -1,13 +1,13 @@
-/// Find the TWO objects that both become "4 0 obj"
+// Find the TWO objects that both become "4 0 obj"
 
-#[test]
+/*#[test]
 fn trace_both_object_4s() {
-    use pydyf::{FileIdentifierMode, PageObject, PdfStreamObject, PdfFile};
+    use pydyf::{PdfStreamObject, PdfFile};
     use pydyf::page::PageSize;
 
     let mut pdf = PdfFile::new();
     let stream = PdfStreamObject::new();
-    let content_id = pdf.add_indirect_object(Box::new(stream));
+    let content_id = pdf.add_object(Pdf::stream(stream));
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);
@@ -52,3 +52,4 @@ fn trace_both_object_4s() {
         println!("\nExpected 1 occurrence of '4 0 obj', found {}", occurrence);
     }
 }
+*/

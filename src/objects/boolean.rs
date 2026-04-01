@@ -1,7 +1,8 @@
-use crate::PdfObject;
-
 //--------------------------- PdfBooleanObject----------------------//
 
+use crate::PdfError;
+
+#[derive(Clone)]
 pub struct PdfBooleanObject {
     pub value: bool,
 }
@@ -14,12 +15,10 @@ impl PdfBooleanObject {
     pub fn set(&mut self, value: bool) {
         self.value = value;
     }
-}
 
-impl PdfObject for PdfBooleanObject {
-    fn serialise(&mut self) -> Vec<u8> {
+    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         let value = if self.value { "true" } else { "false" };
 
-        Vec::from(value)
+        Ok(Vec::from(value))
     }
 }

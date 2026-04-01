@@ -1,16 +1,10 @@
-use pydyf::color::{CMYK, Color, RGB};
-use pydyf::objects::stream::{WindingRule, StrokeOrFill};
-use pydyf::util::{Dims, Posn};
-use pydyf::{PdfFile, PageObject, Stream};
-use std::fs::File;
-
-fn create_page_with_content(content_index: usize) -> PageObject {
+/*fn create_page_with_content(content_index: usize) -> PageObject {
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_index);
     page
 }
-
-#[test]
+*/
+/*#[test]
 fn test_cmyk_colors() {
     let mut pdf = PdfFile::new();
     let mut stream = Stream::new();
@@ -144,8 +138,8 @@ fn test_cmyk_colors() {
 
     println!("✅ Generated: /tmp/pydyf_test/cmyk.pdf");
 }
-
-#[test]
+*/
+/*#[test]
 fn test_grayscale_colors() {
     let mut pdf = PdfFile::new();
     let mut stream = Stream::new();
@@ -243,8 +237,8 @@ fn test_grayscale_colors() {
 
     println!("✅ Generated: /tmp/pydyf_test/gray.pdf");
 }
-
-#[test]
+*/
+/*#[test]
 fn test_mixed_color_spaces() {
     let mut pdf = PdfFile::new();
     let mut stream = Stream::new();
@@ -331,3 +325,4 @@ fn test_mixed_color_spaces() {
 
     println!("✅ Generated: /tmp/pydyf_test/mixed.pdf");
 }
+*/

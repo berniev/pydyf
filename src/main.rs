@@ -3,17 +3,14 @@
 
 use pydyf::color::{Color, RGB};
 use pydyf::objects::stream::{StrokeOrFill, WindingRule};
-use pydyf::page::PageSize;
 use pydyf::util::{Dims, Posn};
-use pydyf::{FileIdentifierMode, PdfFile, PageObject, PdfStreamObject};
-use std::fs::File;
-use std::io::Write;
+use pydyf::{PdfStreamObject};
 
 fn main() {
     println!("PyDyf - PDF library for Rust");
     println!("Ported from Python pydyf library\n");
 
-    let mut pdf = PdfFile::new();
+    //let mut pdf = PdfFile::new();
 
     let mut stream = PdfStreamObject::new();
     stream.set_color_rgb(
@@ -29,7 +26,7 @@ fn main() {
     );
     stream.fill(WindingRule::EvenOdd);
 
-    let content_id = pdf.add_indirect_object(Box::new(stream));
+    /*let content_id = pdf.add_indirect_object(Box::new(stream));
 
     let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
@@ -44,5 +41,5 @@ fn main() {
     let mut file = File::create(path).expect("Failed to create file");
     file.write_all(&output).expect("Failed to write file");
 
-    println!("Created {} with {} objects", path, pdf.objects.len());
+    println!("Created {} with {} objects", path, pdf.objects.len());*/
 }

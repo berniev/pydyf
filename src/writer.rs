@@ -3,12 +3,13 @@ use std::collections::HashMap;
 use std::io::Write;
 
 use crate::cross_reference_table::CrossRefStream;
-use crate::cross_reference_table::{CrossRefEntry, ObjectStatus};
+use crate::cross_reference_table::CrossRefEntry;
+use crate::file_identifier::FileIdentifierMode;
 use crate::generation::Generation;
 use crate::objects::pdf_object::Pdf;
 use crate::objects::string::encode_pdf_string;
 use crate::{PdfDictionaryObject, PdfFile, PdfObject, PdfStreamObject};
-use crate::file_identifier::FileIdentifierMode;
+
 //------------------------------ PdfStream ------------------
 
 pub(crate) struct PdfStream<W: Write> {
@@ -27,6 +28,7 @@ impl<W: Write> PdfStream<W> {
 
     /// Write a String that may contain Latin-1 encoded binary data.
     /// Converts Latin-1 back to raw bytes to preserve binary data.
+    #[allow(dead_code)]
     fn write_line_latin1(&mut self, s: &str) -> std::io::Result<()> {
         let bytes: Vec<u8> = s.chars().map(|c| c as u8).collect();
         self.write_line(&bytes)
@@ -38,23 +40,22 @@ impl<W: Write> PdfStream<W> {
 pub(crate) struct PdfWriter<W: Write, S: WriteStrategy> {
     stream: PdfStream<W>,
     strategy: S,
-    id_mode: FileIdentifierMode,
+    _id_mode: FileIdentifierMode,
 }
 
 impl<W: Write, S: WriteStrategy> PdfWriter<W, S> {
-    pub fn new(output: W, strategy: S, id_mode: FileIdentifierMode) -> Self {
+    pub fn new(output: W, strategy: S, _id_mode: FileIdentifierMode) -> Self {
         Self {
             stream: PdfStream { output, pos: 0 },
             strategy,
-            id_mode,
+            _id_mode,
         }
     }
 
     pub fn perform(&mut self, pdf: &mut PdfFile) -> std::io::Result<()> {
         self.strategy.write_header(&mut self.stream)?;
         self.strategy.write_body(pdf, &mut self.stream)?;
-        self.strategy
-            .write_index(pdf, &mut self.stream, &self.id_mode)?;
+        //self.strategy.write_index(pdf, &mut self.stream, &self.id_mode)?;
         self.stream.write_line(b"startxref")?;
         self.stream
             .write_line(pdf.xref_position.unwrap_or(0).to_string().as_bytes())?;
@@ -74,6 +75,7 @@ pub(crate) trait WriteStrategy {
         stream: &mut PdfStream<W>,
     ) -> std::io::Result<()>;
 
+    #[allow(dead_code)]
     fn write_index<W: Write>(
         &self,
         pdf: &mut PdfFile,
@@ -84,6 +86,7 @@ pub(crate) trait WriteStrategy {
     //---------------------------- Helper Functions -----------------
 
     /// Formats two byte arrays into a PDF ID array string.
+    #[allow(dead_code)]
     fn format_id_array(first_id: &[u8], second_id: &[u8]) -> Vec<u8> {
         let s1 = encode_pdf_string(&String::from_utf8_lossy(first_id));
         let s2 = encode_pdf_string(&String::from_utf8_lossy(second_id));
@@ -91,20 +94,22 @@ pub(crate) trait WriteStrategy {
     }
 
     /// Computes MD5 hash of all non-free objects and returns both hex string and bytes.
-    fn compute_data_hash(objects: &[Box<dyn PdfObject>]) -> (String, Vec<u8>) {
-        let mut context = md5::Context::new();
-        for obj in objects {
-            if obj.metadata().status != ObjectStatus::Free {
+    #[allow(dead_code)]
+    fn compute_data_hash(_objects: &[PdfObject]) -> (String, Vec<u8>) {
+        let context = md5::Context::new();
+ /*       for obj in objects {
+            /*if obj.metadata().status != ObjectStatus::Free {
                 context.consume(obj.serialise());
-            }
+            }*/
         }
-        let hash_result = context.finalize().0;
+*/        let hash_result = context.finalize().0;
         let data_hash_hex: String = hash_result.iter().map(|b| format!("{:02x}", b)).collect();
         let data_hash_bytes = data_hash_hex.as_bytes().to_vec();
         (data_hash_hex, data_hash_bytes)
     }
 
     /// Determines the ID bytes to use based on the identifier mode.
+    #[allow(dead_code)]
     fn get_id_bytes<'a>(
         identifier_mode: &'a FileIdentifierMode,
         data_hash_bytes: &'a [u8],
@@ -117,8 +122,9 @@ pub(crate) trait WriteStrategy {
 
     /// Generates the fully formatted PDF /ID line based on the identifier mode.
     /// in trailer
+    #[allow(dead_code)]
     fn format_identifier(
-        objects: &[Box<dyn PdfObject>],
+        objects: &[PdfObject],
         identifier_mode: &FileIdentifierMode,
     ) -> Option<Vec<u8>> {
         match identifier_mode {
@@ -152,17 +158,17 @@ impl WriteStrategy for LegacyStrategy {
 
     fn write_body<W: Write>(
         &self,
-        pdf: &mut PdfFile,
-        stream: &mut PdfStream<W>,
+        _pdf: &mut PdfFile,
+        _stream: &mut PdfStream<W>,
     ) -> std::io::Result<()> {
         // Write all objects individually (uncompressed)
-        for obj in &mut pdf.objects {
+        /*for obj in &mut pdf.objects {
             if obj.metadata().status == ObjectStatus::Free {
                 continue;
             }
             obj.metadata_mut().offset = stream.pos;
             stream.write_line_latin1(&obj.indirect())?;
-        }
+        }*/
         Ok(())
     }
 
@@ -170,18 +176,18 @@ impl WriteStrategy for LegacyStrategy {
         &self,
         pdf: &mut PdfFile,
         stream: &mut PdfStream<W>,
-        id_mode: &FileIdentifierMode,
+        _id_mode: &FileIdentifierMode,
     ) -> std::io::Result<()> {
         pdf.xref_position = Some(stream.pos);
         stream.write_line(b"xref")?;
-        stream.write_line(format!("0 {}", pdf.object_count()).as_bytes())?;
+        //stream.write_line(format!("0 {}", pdf.object_count()).as_bytes())?;
 
         // Per PDF spec, object 0 is always free (head of free list)
         stream
             .write_line(format!("0000000000 {:05} f ", Generation::ROOT_GENERATION).as_bytes())?;
 
         // Write entries for actual objects (1 through N-1)
-        let xref_entries: Vec<String> = pdf
+        /*let xref_entries: Vec<String> = pdf
             .objects
             .iter()
             .map(|obj| obj.metadata().format_xref_entry())
@@ -189,41 +195,17 @@ impl WriteStrategy for LegacyStrategy {
 
         for entry in xref_entries {
             stream.write_line(entry.as_bytes())?;
-        }
+        }*/
 
-        // Write trailer
-        stream.write_line(b"trailer")?;
-        stream.write_line(b"<<")?;
-        stream.write_line(format!("/Size {}", pdf.object_count()).as_bytes())?;
-        stream.write_line(
-            format!(
-                "/Root {} 0 R",
-                pdf.catalog.metadata.object_identifier.unwrap()
-            )
-            .as_bytes(),
-        )?;
-
-        if !pdf.info.values.is_empty() {
-            stream.write_line(
-                &format!("/Info {} 0 R", pdf.info.metadata.object_identifier.unwrap()).into_bytes(),
-            )?;
-        }
-
-        if let Some(id_line) = Self::format_identifier(&pdf.objects, id_mode) {
-            stream.write_line(&id_line)?;
-        }
-
-        stream.write_line(b">>")?;
-
+        //Ok(pdf.trailer.write(&stream)?)
         Ok(())
     }
 }
-
 //------------------------ Compressed Strategy -----------------
 
-pub(crate) struct CompressedStrategy {
+pub struct CompressedStrategy {
     compression_map: RefCell<HashMap<usize, (usize, usize)>>, // (objid, (objstm_num, index))
-    objstm_info: RefCell<Option<(usize, usize)>>,             // (objstm_num, offset)
+    _objstm_info: RefCell<Option<(usize, usize)>>,             // (objstm_num, offset)
 }
 
 impl Default for CompressedStrategy {
@@ -236,7 +218,7 @@ impl CompressedStrategy {
     pub(crate) fn new() -> Self {
         Self {
             compression_map: RefCell::new(HashMap::new()),
-            objstm_info: RefCell::new(None),
+            _objstm_info: RefCell::new(None),
         }
     }
 
@@ -245,35 +227,35 @@ impl CompressedStrategy {
     /// Returns a map of (object_id -> (objstm_number, index_in_stream))
     fn write_body_compressed<W: Write>(
         &self,
-        pdf: &mut PdfFile, // <<=== todo bad!
-        stream: &mut PdfStream<W>,
+        _pdf: &mut PdfFile, // <<=== todo bad!
+        _stream: &mut PdfStream<W>,
     ) -> std::io::Result<HashMap<usize, (usize, usize)>> {
         // Track which objects are compressed: object_id -> (objstm_num, index)
-        let mut compression_map: HashMap<usize, (usize, usize)> = HashMap::new();
+        let compression_map: HashMap<usize, (usize, usize)> = HashMap::new();
 
         // Collect object data for compression decision
-        let catalog_id = pdf.catalog.metadata.object_identifier;
+        //let catalog_id = pdf.catalog.metadata.object_identifier;
 
-        let mut compressed_objects: Vec<(usize, String)> = Vec::new();
+        let compressed_objects: Vec<(usize, String)> = Vec::new();
 
         // First pass: write non-compressible objects and collect compressible ones
-        for obj in &mut pdf.objects {
+        /*for obj in &mut pdf.objects {
             if obj.metadata().status == ObjectStatus::Free {
                 continue; // not compressible
             }
 
             let obj_id = obj.metadata().object_identifier;
-            let is_catalog = obj_id == catalog_id;
+            //let is_catalog = obj_id == catalog_id;
             let is_object_zero = obj_id == Some(0);
 
-            if is_object_zero || is_catalog || !obj.is_compressible() {
+            /*if is_object_zero || is_catalog || !obj.is_compressible() {
                 obj.metadata_mut().offset = stream.pos; // don't compress
                 stream.write_line_latin1(&obj.indirect())?;
             } else {
                 // Save for compression
                 compressed_objects.push((obj_id.unwrap_or(0), obj.serialise()));
-            }
-        }
+            }*/
+        }*/
 
         // If no objects to compress, return empty map
         if compressed_objects.is_empty() {
@@ -287,15 +269,15 @@ impl CompressedStrategy {
         let mut current_offset = 0;
 
         // Allocate object ID for the object stream itself
-        let obj_stream_num = pdf.allocate_object_id();
+        //let obj_stream_num = pdf.allocate_object_id();
 
-        for (index, (obj_num, data)) in compressed_objects.iter().enumerate() {
+        for (_index, (obj_num, data)) in compressed_objects.iter().enumerate() {
             index_pairs.push(format!("{} {}", obj_num, current_offset));
             content_parts.push(data.clone());
             current_offset += data.len() + 1; // +1 for newline separator
 
             // Track this compressed object
-            compression_map.insert(*obj_num, (obj_stream_num, index));
+            //compression_map.insert(*obj_num, (obj_stream_num, index));
         }
 
         let index_section = index_pairs.join(" ");
@@ -315,18 +297,19 @@ impl CompressedStrategy {
         dict.add("N", Pdf::num(compressed_objects.len() as i64));
         dict.add("First", Pdf::num(first_offset as i64));
 
-        let mut obj_stream =
-            PdfStreamObject::new().compressed().with_data(full_content.into_bytes(), dict);
+        let _obj_stream = PdfStreamObject::new()
+            .compressed()
+            .with_data(full_content.into_bytes(), dict);
 
-        obj_stream.metadata_mut().object_identifier = Some(obj_stream_num);
+        /*obj_stream.metadata_mut().object_identifier = Some(obj_stream_num);
         let objstm_offset = stream.pos;
         obj_stream.metadata_mut().offset = objstm_offset;
 
         // Write the object stream
-        stream.write_line_latin1(&obj_stream.indirect())?;
+        stream.write_line_latin1(&obj_stream.indirect())?;*/
 
         // Store object stream info for xref
-        *self.objstm_info.borrow_mut() = Some((obj_stream_num, objstm_offset));
+        //*self.objstm_info.borrow_mut() = Some((obj_stream_num, objstm_offset));
 
         Ok(compression_map)
     }
@@ -360,12 +343,12 @@ impl WriteStrategy for CompressedStrategy {
         pdf.xref_position = Some(stream.pos);
 
         let mut xref_stream = CrossRefStream::new();
-        let mut entry_map: HashMap<usize, CrossRefEntry> = HashMap::new();
+        let entry_map: HashMap<usize, CrossRefEntry> = HashMap::new();
 
-        let compression_map = self.compression_map.borrow();
+        let _compression_map = self.compression_map.borrow();
 
         // Process all objects in pdf.objects
-        for obj in &pdf.objects {
+        /*for obj in &pdf.objects {
             let meta = obj.metadata();
             let obj_id = meta.object_identifier.unwrap_or(0);
 
@@ -382,10 +365,10 @@ impl WriteStrategy for CompressedStrategy {
                     compression_map.get(&obj_id).copied(),
                 ),
             );
-        }
+        }*/
 
         // Entry for object stream (if present)
-        if let Some((num, offset)) = *self.objstm_info.borrow() {
+        /*if let Some((num, offset)) = *self.objstm_info.borrow() {
             entry_map.insert(
                 num,
                 CrossRefEntry::Uncompressed {
@@ -393,18 +376,18 @@ impl WriteStrategy for CompressedStrategy {
                     generation: 0,
                 },
             );
-        }
+        }*/
 
         // Allocate object number for the xref stream and add its entry
-        let xref_stream_num = pdf.allocate_object_id();
-        let xref_stream_offset = stream.pos;
-        entry_map.insert(
+        //let xref_stream_num = pdf.allocate_object_id();
+        let _xref_stream_offset = stream.pos;
+        /*entry_map.insert(
             xref_stream_num,
             CrossRefEntry::Uncompressed {
                 byte_offset: xref_stream_offset,
                 generation: 0,
             },
-        );
+        );*/
 
         // Build xref_entries array in order: xref_entries[N] = entry for object N
         let max_obj_num = entry_map.keys().max().copied().unwrap_or(0);
@@ -418,21 +401,21 @@ impl WriteStrategy for CompressedStrategy {
                 });
             }
         }
-        let info_obj_id = if !pdf.info.values.is_empty() {
+        /*let info_obj_id = if !pdf.info.values.is_empty() {
             pdf.info.metadata.object_identifier
         } else {
             None
-        };
+        };*/
 
-        let xref_stream_bytes = xref_stream.build_stream_object(
+        /*let xref_stream_bytes = xref_stream.build_stream_object(
             xref_stream_num,
             pdf.catalog.metadata.object_identifier.unwrap(),
             info_obj_id,
-        );
+        );*/
 
-        stream.output.write_all(&xref_stream_bytes)?;
+        /*stream.output.write_all(&xref_stream_bytes)?;
         stream.output.write_all(b"\n")?;
-        stream.pos += xref_stream_bytes.len() + 1;
+        stream.pos += xref_stream_bytes.len() + 1;*/
 
         Ok(())
     }

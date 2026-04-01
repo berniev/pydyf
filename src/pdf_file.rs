@@ -57,9 +57,10 @@ so maybe for starters we:
     Typed objects are named, standalone PDF entities. Untyped objects are supporting data
     embedded in their parent.
 */
+
 use std::io::Write;
 
-use crate::cross_reference_table::{CrossRefTable, CrossReferenceEntry};
+use crate::cross_reference_table::{CrossRefTable, CrossReferenceEntry, Generation};
 use crate::file_identifier::FileIdentifierMode;
 use crate::fonts::Fonts;
 use crate::header::Header;
@@ -77,11 +78,11 @@ pub struct PdfFile {
     header: Header,
     body: Body,
     cross_reference_table: CrossRefTable,
-    trailer: Trailer,
+    pub _trailer: Trailer,
 
-    xref_position: Option<usize>,
+    pub xref_position: Option<usize>,
 
-    pages_root: PdfDictionaryObject, // catalog /Pages entry must point to this
+    _pages_root: PdfDictionaryObject, // catalog /Pages entry must point to this
 }
 
 impl PdfFile {
@@ -90,10 +91,10 @@ impl PdfFile {
             header: Header::new(),
             body: Body::new(),
             cross_reference_table: CrossRefTable::new(),
-            trailer: Trailer::new(),
+            _trailer: Trailer::new(),
 
             xref_position: None,
-            pages_root: make_page_tree(),
+            _pages_root: make_page_tree(),
         }
     }
 
@@ -104,13 +105,13 @@ impl PdfFile {
     }
 
     // all objects added here are to be indirect
-    pub fn add_object(&mut self, obj: Box<dyn PdfObject>) -> usize {
+    pub fn add_object(&mut self, _obj: PdfObject) -> usize {
         let object_number = self.body.next_num();
         self.cross_reference_table.add_entry(CrossReferenceEntry {
             object_number,
             object_status: Default::default(), // in use
             offset_or_next_free: 0,
-            generation: 0,
+            generation: Generation::Normal,
         });
 
 
@@ -119,7 +120,7 @@ impl PdfFile {
     }
 
     fn write_common(&mut self) {
-        let resources_number = self.add_font_resources();
+        let _resources_number = self.add_font_resources();
         self.initialize_catalog();
     }
 
@@ -145,19 +146,19 @@ impl PdfFile {
         let mut resources_dict = PdfDictionaryObject::new();
         resources_dict.add("Font", Pdf::dict(Fonts::get_standard_fonts_dict()));
 
-        self.indirect_pdf_objects.push(resources_dict.boxed());
+        //self.indirect_pdf_objects.push(resources_dict.boxed());
 
-        let resources_number = self.allocate_object_id();
-        resources_dict.metadata.object_identifier = Some(resources_number);
+        let resources_number = 0; // self.allocate_object_id();
+        //resources_dict.metadata.object_identifier = Some(resources_number);
 
         resources_number
     }
 
     pub fn initialize_catalog(&mut self) {
-        let pages_id = self.pages_root.metadata.object_identifier.unwrap();
+/*        let pages_id = self.pages_root.metadata.object_identifier.unwrap();
         self.catalog.add("Pages", pages_id);
 
         let catalog_copy = self.catalog.clone();
         self.indirect_pdf_objects.push(Box::new(catalog_copy));
-    }
+*/    }
 }

@@ -1,4 +1,5 @@
-use std::any::Any;
+use flate2::write::ZlibEncoder;
+use flate2::Compression;
 /// PDF content stream.
 ///
 /// Content streams define page content, eg:
@@ -55,21 +56,21 @@ use std::any::Any;
 ///   JPXDecode        no   1.5  image           Wwavelet-based JPEG2000 standard
 ///   Crypt            yes  1.5  data            Data encrypted by a security handler
 ///
+///
+
 use std::io::Write as IoWrite;
 
-use flate2::Compression;
-use flate2::write::ZlibEncoder;
-
-use crate::color::{CMYK, Color, ColorSpace, RGB};
+use crate::color::{Color, ColorSpace, CMYK, RGB};
 use crate::encoding::{ascii85_encode, f_to_pdf_num};
 use crate::error::{PdfError, PdfResult};
 use crate::objects::pdf_object::Pdf;
 use crate::objects::string::encode_pdf_string;
 pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, ToPdf, WindingRule};
-use crate::{PdfDictionaryObject, PdfObject};
+use crate::PdfDictionaryObject;
 
 //------------------------ PdfStreamObject -----------------------
 
+#[derive(Clone)]
 pub struct PdfStreamObject {
     pub dict: PdfDictionaryObject,
     pub content: Vec<u8>,
@@ -96,7 +97,7 @@ impl PdfStreamObject {
         }
     }
 
-    pub fn compressed(mut self) -> Self{
+    pub fn compressed(mut self) -> Self {
         self.compression_method = CompressionMethod::Flate;
 
         self
@@ -121,6 +122,32 @@ impl PdfStreamObject {
         let mut cmd_parts: Vec<String> = operands.iter().map(|n| n.to_pdf()).collect();
         cmd_parts.push(operator.to_string());
         self.add_content(cmd_parts.join(" ").into_bytes());
+    }
+
+    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+        let stream_bytes: Vec<u8> = match self.compression_method {
+            CompressionMethod::None => self.content.clone(),
+            CompressionMethod::Flate => {
+                self.dict.add("Filter", Pdf::name("FlateDecode"));
+                let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+                encoder.write_all(&self.content)?;
+                encoder.finish()?
+            }
+        };
+
+        self.dict.add("Length", Pdf::num(stream_bytes.len() as f64));
+
+        let mut vec = self.dict.serialise()?;
+        vec.push(b'\n');
+        vec.extend(b"stream\n");
+        vec.extend(&stream_bytes);
+        vec.extend(b"endstream\n");
+
+        Ok(vec)
+    }
+
+    pub fn is_indirect_by_default(&self) -> bool {
+        true
     }
 
     fn cmd(&mut self, cmd: char) {
@@ -540,37 +567,5 @@ impl PdfStreamObject {
         }
         self.set_color_space("Pattern", stroke);
         self.set_color_special(Some(pattern_name), stroke, &[]);
-    }
-}
-
-impl PdfObject for PdfStreamObject {
-    fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
-        let stream_bytes: Vec<u8> = match self.compression_method {
-            CompressionMethod::None => self.content.clone(),
-            CompressionMethod::Flate => {
-                self.dict.add("Filter", Pdf::name("FlateDecode"));
-                let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-                encoder.write_all(&self.content)?;
-                encoder.finish()?
-            }
-        };
-
-        self.dict.add("Length", Pdf::num(stream_bytes.len() as f64));
-
-        let mut vec = self.dict.serialise()?;
-        vec.push(b'\n');
-        vec.extend(b"stream\n");
-        vec.extend(&stream_bytes);
-        vec.extend(b"endstream\n");
-
-        Ok(vec)
-    }
-
-    fn is_indirect_by_default(&self) -> bool {
-        true
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }

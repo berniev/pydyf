@@ -5,9 +5,9 @@
 
 use crate::color::Color;
 use crate::color::RGB;
+use crate::objects::pdf_object::Pdf;
 use crate::util::{Posn, Rect};
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfNameObject, PdfNumberObject, PdfResult, PdfStringObject};
-
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfResult};
 //-------------------AnnotationFlags ----------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -41,7 +41,7 @@ impl AnnotationFlags {
     }
 }
 
-//-------------------Annotation Types ----------------------
+//------------------- Annotation Types ----------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BorderStyle {
@@ -64,7 +64,7 @@ impl BorderStyle {
     }
 }
 
-//-------------------Annotation Types ----------------------
+//------------------- Annotation ----------------------//
 
 /// Base trait for all PDF annotations.
 ///
@@ -93,8 +93,8 @@ pub trait Annotation {
     fn add_border_style_to_dict(&self, dict: &mut PdfDictionaryObject) {
         if let Some(style) = self.border_style() {
             let mut bs = PdfDictionaryObject::new();
-            bs.add_name("S", style.as_str());
-            dict.add_pdf_dict("BS", bs);
+            bs.add("S", Pdf::string(style.as_str()));
+            dict.add("BS", Pdf::dict(bs));
         }
     }
 
@@ -102,31 +102,31 @@ pub trait Annotation {
         let mut dict = PdfDictionaryObject::new();
 
         // Required entries
-        dict.add_name("Type", "Annot");
-        dict.add_name("Subtype", self.subtype());
-        dict.add_pdf_array("Rect", self.rect().as_pdf_array());
+        dict.add("Type", Pdf::string("Annot"));
+        dict.add("Subtype", Pdf::string(self.subtype()));
+        dict.add("Rect", Pdf::array(self.rect().as_pdf_array()));
 
         // Optional common entries
         let flags = self.flags();
         if flags.bits() != 0 {
-            dict.add_number("F", flags.bits() as i64);
+            dict.add("F", Pdf::num(flags.bits() as i64));
         }
 
         self.add_border_style_to_dict(&mut dict);
 
         if let Some(rgb) = self.color() {
-            dict.add_pdf_array("C", rgb.as_pdf_array());
+            dict.add("C", Pdf::array(rgb.as_pdf_array()));
         }
 
         if let Some(contents) = self.contents() {
-            dict.add_string("Contents", contents.to_string());
+            dict.add("Contents", Pdf::string(contents));
         }
 
         Ok(dict)
     }
 }
 
-//-------------------TextIcon ----------------------
+//------------------- TextIcon ----------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TextIcon {
@@ -153,7 +153,7 @@ impl TextIcon {
     }
 }
 
-//-------------------TextAnnotation ----------------------
+//------------------- TextAnnotation ----------------------//
 
 pub struct TextAnnotation {
     pub rect: Rect,
@@ -228,16 +228,16 @@ impl Annotation for TextAnnotation {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new().typed("Annot");
-        dict.add_name("Subtype", self.subtype());
-        dict.add_pdf_array("Rect", self.rect.as_pdf_array());
+        dict.add("Subtype", Pdf::name(self.subtype()));
+        dict.add("Rect", Pdf::array(self.rect.as_pdf_array()));
         if !self.flags.is_empty() {
-            dict.add_number("F", self.flags.bits() as i64);
+            dict.add("F", Pdf::num(self.flags.bits() as i64));
         }
         if let Some(rgb) = self.color {
-            dict.add_pdf_array("C", rgb.as_pdf_array());
+            dict.add("C", Pdf::array(rgb.as_pdf_array()));
         }
-        dict.add_string("Contents",self.contents.clone());
-        dict.add_name("Name", self.icon.as_str());
+        dict.add("Contents", Pdf::string(self.contents.as_str()));
+        dict.add("Name", Pdf::name(self.icon.as_str()));
 
         Ok(dict)
     }
@@ -312,12 +312,12 @@ impl Annotation for LinkAnnotation {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new().typed("Annot");
-        dict.add_name("Subtype", self.subtype());
-        dict.add_pdf_array("Rect", self.rect().as_pdf_array());
+        dict.add("Subtype", Pdf::name(self.subtype()));
+        dict.add("Rect", Pdf::array(self.rect().as_pdf_array()));
 
         let flags = self.flags();
         if flags.bits() != 0 {
-            dict.add_number("F", flags.bits() as i64);
+            dict.add("F", Pdf::num(flags.bits() as i64));
         }
 
         self.add_border_style_to_dict(&mut dict);
@@ -325,9 +325,9 @@ impl Annotation for LinkAnnotation {
         match &self.action {
             LinkAction::Uri(uri) => {
                 let mut action_dict = PdfDictionaryObject::new();
-                action_dict.add_name("S", "URI");
-                action_dict.add_string("URI", uri.clone());
-                dict.add_pdf_dict("A", action_dict);
+                action_dict.add("S", Pdf::name("URI"));
+                action_dict.add("URI", Pdf::string(uri));
+                dict.add("A", Pdf::dict(action_dict));
             }
             LinkAction::GoTo {
                 page,
@@ -335,17 +335,17 @@ impl Annotation for LinkAnnotation {
                 zoom,
             } => {
                 let mut dest = PdfArrayObject::new();
-                dest.push_number(*page as i64);
-                dest.push_name("XYZ");
-                dest.push_number(position.x);
-                dest.push_number(position.y);
+                dest.push(Pdf::num(*page as i64));
+                dest.push(Pdf::name("XYZ"));
+                dest.push(Pdf::num(position.x));
+                dest.push(Pdf::num(position.y));
                 if let Some(z) = zoom {
-                    dest.push_number(*z);
+                    dest.push(Pdf::num(*z));
                 } else {
-                    dest.push_name("null");
+                    dest.push(Pdf::name("null"));
                 }
                 
-                dict.add_pdf_array("Dest", dest);
+                dict.add("Dest", Pdf::array(dest));
             }
         }
 
@@ -353,7 +353,7 @@ impl Annotation for LinkAnnotation {
     }
 }
 
-//-------------------test ----------------------
+//------------------- test ----------------------//
 
 #[cfg(test)]
 mod tests {

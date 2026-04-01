@@ -1,17 +1,6 @@
-/// Integer Object:
-///     mathematical integers with an implementation specified interval centered at 0 and written
-///     as one or more decimal digits optionally preceded by a sign
-/// Numeric Object:
-///     either an integer object or a real (float) object
-/// Real Object:
-///     approximate mathematical real numbers, but with limited range and precision and written as
-///     one or more decimal digits with an optional sign and a leading, trailing, or embedded
-///     PERIOD (2Eh) (decimal point)
-///
-use crate::{PdfError, PdfObject};
-use std::any::Any;
-
 //---------------- PdfNumberObject -----------------
+
+use crate::PdfError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PdfNumberObject {
@@ -40,10 +29,8 @@ impl PdfNumberObject {
             NumberType::Real(f) => f,
         }
     }
-}
 
-impl PdfObject for PdfNumberObject {
-    fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         Ok(match self.value {
             NumberType::Integer(i) => i.to_string().into_bytes(),
             NumberType::Real(f) => {
@@ -55,13 +42,9 @@ impl PdfObject for PdfNumberObject {
             }
         })
     }
-
+    #[allow(dead_code)]
     fn is_indirect_by_default(&self) -> bool {
         false
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }
 

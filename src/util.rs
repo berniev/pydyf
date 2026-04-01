@@ -35,10 +35,10 @@ impl Posn {
         arr
     }
 
-    fn as_vec(&self) -> Vec<f64> {
+/*    fn as_vec(&self) -> Vec<f64> {
         vec![self.x.clone().into(), self.y.into()]
     }
-}
+*/}
 
 impl ToPdf for Posn {
     fn to_pdf(&self) -> String {
@@ -143,10 +143,10 @@ pub struct Matrix {
 }
 
 impl Matrix {
-    fn as_vec(&self) -> Vec<f64> {
+/*    fn as_vec(&self) -> Vec<f64> {
         vec![self.a, self.b, self.c, self.d, self.e, self.f]
     }
-
+*/
     pub fn as_pdf_array(&self) -> PdfArrayObject {
         let mut arr = PdfArrayObject::new();
         arr.push(Pdf::num(self.a));

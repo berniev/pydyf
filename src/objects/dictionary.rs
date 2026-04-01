@@ -18,12 +18,12 @@ use crate::objects::pdf_object::{Pdf};
 ///
 ///
 use crate::{PdfError, PdfNameObject, PdfObject};
-use std::any::Any;
 
 //--------------------------- PdfDictionaryObject ----------------------//
 
+#[derive(Clone)]
 pub struct PdfDictionaryObject {
-    pub(crate) values: Vec<(PdfNameObject, Box<dyn PdfObject>)>,
+    pub(crate) values: Vec<(PdfNameObject, PdfObject)>,
 }
 
 impl PdfDictionaryObject {
@@ -49,26 +49,23 @@ impl PdfDictionaryObject {
         self.values.iter().any(|(k, _)| k.value == key)
     }
 
-    pub fn get(&self, key: &str) -> Option<&Box<dyn PdfObject>> {
+    pub fn get(&self, key: &str) -> Option<&PdfObject> {
         self.values
             .iter()
             .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
     }
 
-    pub fn get_mut(&mut self, key: &str) -> Option<&mut Box<dyn PdfObject>> {
+    pub fn get_mut(&mut self, key: &str) -> Option<&mut PdfObject> {
         self.values
             .iter_mut()
             .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
     }
-    
-    pub fn add(&mut self, key: &str, object: Box<dyn PdfObject>) {
+
+    pub fn add(&mut self, key: &str, object: PdfObject) {
         // todo: check key is not duplicate
         self.values.push((PdfNameObject::new(key), object));
     }
-}
-
-impl PdfObject for PdfDictionaryObject {
-    fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         let mut arr = vec![];
         arr.extend(b"<<");
         for (pdf_name_obj, pdf_object) in &mut self.values {
@@ -81,12 +78,8 @@ impl PdfObject for PdfDictionaryObject {
         Ok(arr)
     }
 
-    fn is_indirect_by_default(&self) -> bool {
+    pub fn is_indirect_by_default(&self) -> bool {
         true
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }
 
@@ -101,13 +94,13 @@ mod tests {
         assert!(dict.is_empty());
         assert_eq!(dict.len(), 0);
 
-        dict.add("Key1", Pdf::name("Value1"));
+        dict.add("Key1", *Box::from(Pdf::name("Value1")));
         assert!(!dict.is_empty());
         assert_eq!(dict.len(), 1);
         assert!(dict.contains_key("Key1"));
         assert!(!dict.contains_key("Key2"));
 
-        dict.add("Key2", Pdf::name("Value2"));
+        dict.add("Key2", *Box::from(Pdf::name("Value2")));
         assert_eq!(dict.len(), 2);
         assert!(dict.contains_key("Key2"));
     }

@@ -10,11 +10,12 @@
 ///     EXAMPLE [ 549 3.14 false ( Ralph ) /SomeName ]
 ///
 use crate::{PdfError, PdfObject};
-use std::any::Any;
+
 //--------------------------- PdfArrayObject --------------------------//
 
+#[derive(Clone)]
 pub struct PdfArrayObject {
-    pub values: Vec<Box<dyn PdfObject>>,
+    pub values: Vec<PdfObject>,
 }
 
 impl PdfArrayObject {
@@ -22,17 +23,11 @@ impl PdfArrayObject {
         Self { values: vec![] }
     }
 
-    pub fn push(&mut self, value: Box<dyn PdfObject>) {
+    pub fn push(&mut self, value: PdfObject) {
         self.values.push(value);
     }
 
-    pub fn push_vec(&mut self, vect: Vec<Box<dyn PdfObject>>) {
-        self.values.extend(vect);
-    }
-}
-
-impl PdfObject for PdfArrayObject {
-    fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         let mut arr = vec![];
         arr.push(b'[');
         arr.push(b' ');
@@ -45,11 +40,8 @@ impl PdfObject for PdfArrayObject {
         Ok(arr)
     }
 
+    #[allow(dead_code)]
     fn is_indirect_by_default(&self) -> bool {
         false // there are mandated exceptions eg /Threads
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }

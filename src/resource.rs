@@ -7,9 +7,7 @@
 use std::any::Any;
 use std::rc::Rc;
 
-#[cfg(test)]
-use crate::PdfNameObject;
-use crate::{PdfObject, PdfResult};
+use crate::PdfResult;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
