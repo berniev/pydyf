@@ -3,6 +3,8 @@ use crate::{
     NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject,
     PdfNullObject, PdfStreamObject, PdfStringObject,
 };
+use crate::cross_reference_table::ObjectStatus;
+use crate::generation::Generation;
 //--------------------------- Pdf -------------------------//
 
 pub struct Pdf {}
@@ -51,7 +53,31 @@ impl Pdf {
 Is it referenced from more than one place? → indirect (shared fonts, images, etc.)
 Does anything need to refer to it by object number? → indirect (e.g. a page in the Kids array)
 Is it a stream? → indirect (spec mandates it)
-Everything else → direct*/
+Everything else → direct
+*/
+
+// Tracks where an object ended up after serialisation — not intrinsic to the object itself
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct SerialLocation {
+    pub offset: usize,
+    pub status: ObjectStatus, // free or inuse
+}
+
+// The PDF spec identity of an __ indirect __ object (§7.3.10)
+#[derive(Debug, Clone, PartialEq)]
+pub struct ObjectId {
+    pub number: usize,          // 0 is root. 1 is first object
+    pub generation: Generation, // for obj#0 is 65535, else is 0 for new objects
+}
+
+// Indirect is a wrapper, not a peer variant
+// Example: {id} {gen} obj {object} endobj
+#[allow(dead_code)]
+struct IndirectObject {
+    pub id: ObjectId,
+    pub location: Option<SerialLocation>,
+    //pub inner: PdfObjectType, // owns the direct object
+}
 
 //--------------------------- PdfObject -------------------------//
 

@@ -67,7 +67,7 @@
 /// Rotate    Integer     Opt    Inh
 use crate::objects::pdf_object::Pdf;
 pub use crate::page_size::PageSize;
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfObject};
+use crate::{PdfArrayObject, PdfDictionaryObject};
 
 //--------------------------- Page ---------------------------//
 
@@ -87,6 +87,8 @@ pub fn make_page_tree() -> PdfDictionaryObject {
 
 //--------------------------- add_page_to_tree -------------------------//
 
+#[allow(unused_variables)]
+#[allow(dead_code)]
 fn add_page_to_tree(mut page_dict: PdfDictionaryObject, mut tree_dict: PdfDictionaryObject) {
    page_dict.add("Parent", Pdf::num(0)); // indirect ref to tree
     if !page_dict.contains_key("Resources") && !tree_dict.contains_key("Resources") {}
