@@ -1,14 +1,17 @@
 //! Array Objects:
-
-///     An array object is a one-dimensional collection of pdf objects arranged sequentially. Unlike
-///     arrays in many other computer languages, PDF arrays may be heterogeneous; that is, an
-///     array’s elements may be any combination of numbers, strings, dictionaries, or any other pdf
-///     objects, including other arrays. An array may have zero elements.
+///
+/// An array object is a one-dimensional collection of pdf objects arranged sequentially.
+///
+/// Unlike arrays in many other computer languages, PDF arrays may be heterogeneous; that is, an
+/// array’s elements may be any combination of numbers, strings, dictionaries, or any other pdf
+/// objects, including other arrays. An array may have zero elements.
 ///
 /// Construction:
-///     An array shall be written as a sequence of objects enclosed in SQUARE BRACKETS.
-///     EXAMPLE [ 549 3.14 false ( Ralph ) /SomeName ]
 ///
+/// An array shall be written as a sequence of objects enclosed in SQUARE BRACKETS.
+/// EXAMPLE [ 549 3.14 false ( Ralph ) /SomeName ]
+///
+
 use crate::{PdfError, PdfObject};
 
 //--------------------------- PdfArrayObject --------------------------//

@@ -10,7 +10,6 @@
 
 use crate::PdfError;
 
-
 //--------------------------- PdfNameObject ----------------------//
 
 #[derive(Clone)]
@@ -24,6 +23,7 @@ impl PdfNameObject {
             value: value.to_string(),
         }
     }
+    
     pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         Ok(format!("/{}", self.value).into_bytes())
     }
