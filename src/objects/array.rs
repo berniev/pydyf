@@ -39,9 +39,4 @@ impl PdfArrayObject {
 
         Ok(arr)
     }
-
-    #[allow(dead_code)]
-    fn is_indirect_by_default(&self) -> bool {
-        false // there are mandated exceptions eg /Threads
-    }
 }

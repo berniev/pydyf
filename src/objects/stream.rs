@@ -1,5 +1,3 @@
-use flate2::write::ZlibEncoder;
-use flate2::Compression;
 /// PDF content stream.
 ///
 /// Content streams define page content, eg:
@@ -59,6 +57,8 @@ use flate2::Compression;
 ///
 
 use std::io::Write as IoWrite;
+use flate2::write::ZlibEncoder;
+use flate2::Compression;
 
 use crate::color::{Color, ColorSpace, CMYK, RGB};
 use crate::encoding::{ascii85_encode, f_to_pdf_num};
@@ -144,10 +144,6 @@ impl PdfStreamObject {
         vec.extend(b"endstream\n");
 
         Ok(vec)
-    }
-
-    pub fn is_indirect_by_default(&self) -> bool {
-        true
     }
 
     fn cmd(&mut self, cmd: char) {

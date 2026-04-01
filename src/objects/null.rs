@@ -13,8 +13,4 @@ impl PdfNullObject {
     pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         Ok(vec![])
     }
-
-    pub fn is_indirect_by_default(&self) -> bool {
-        false
-    }
 }

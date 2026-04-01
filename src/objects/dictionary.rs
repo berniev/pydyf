@@ -77,10 +77,6 @@ impl PdfDictionaryObject {
 
         Ok(arr)
     }
-
-    pub fn is_indirect_by_default(&self) -> bool {
-        true
-    }
 }
 
 #[cfg(test)]

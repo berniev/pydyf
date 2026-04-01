@@ -27,8 +27,4 @@ impl PdfNameObject {
     pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         Ok(format!("/{}", self.value).into_bytes())
     }
-
-    pub fn is_indirect_by_default(&self) -> bool {
-        false
-    }
 }

@@ -42,10 +42,6 @@ impl PdfNumberObject {
             }
         })
     }
-    #[allow(dead_code)]
-    fn is_indirect_by_default(&self) -> bool {
-        false
-    }
 }
 
 impl From<NumberType> for PdfNumberObject {

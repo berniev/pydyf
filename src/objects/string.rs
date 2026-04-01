@@ -17,10 +17,6 @@ impl PdfStringObject {
     pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         Ok(self.value.as_bytes().to_vec())
     }
-
-    pub fn is_indirect_by_default(&self) -> bool {
-        false
-    }
 }
 
 pub fn encode_pdf_string(string: &str) -> String {
