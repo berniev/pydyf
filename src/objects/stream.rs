@@ -74,6 +74,7 @@ use crate::PdfDictionaryObject;
 pub struct PdfStreamObject {
     pub dict: PdfDictionaryObject,
     pub content: Vec<u8>,
+    pub object_number: Option<u64>,
 
     pub compression_method: CompressionMethod,
 }
@@ -83,6 +84,7 @@ impl Default for PdfStreamObject {
         Self {
             dict: PdfDictionaryObject::new(),
             content: Vec::new(),
+            object_number: None,
 
             compression_method: CompressionMethod::None,
         }

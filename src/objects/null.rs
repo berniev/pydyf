@@ -1,11 +1,15 @@
 use crate::PdfError;
 
 #[derive(Clone)]
-pub struct PdfNullObject {}
+pub struct PdfNullObject {
+        pub object_number: Option<u64>,
+}
 
 impl PdfNullObject {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            object_number: None,
+        }
     }
 }
 

@@ -5,11 +5,15 @@ use crate::PdfError;
 #[derive(Clone)]
 pub struct PdfBooleanObject {
     pub value: bool,
+    pub object_number: Option<u64>,
 }
 
 impl PdfBooleanObject {
     pub fn new(value: bool) -> Self {
-        Self { value }
+        Self {
+            value,
+            object_number: None,
+        }
     }
 
     pub fn set(&mut self, value: bool) {

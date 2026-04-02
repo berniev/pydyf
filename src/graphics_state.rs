@@ -6,7 +6,7 @@ use crate::pdf_file::PdfFile;
 use crate::PdfDictionaryObject;
 
 pub struct GraphicsStateManager {
-    opacity_states: HashMap<u32, usize>, // opacity values (scaled to u32) to object numbers
+    opacity_states: HashMap<u32, u64>, // opacity values (scaled to u32) to object numbers
     resource_counter: u32,
     soft_masks: Vec<SoftMask>, // for transparent gradients
 }
@@ -44,7 +44,7 @@ impl GraphicsStateManager {
         let mut gs_dict = PdfDictionaryObject::new().typed("/ExtGState");
         gs_dict.add("CA", Pdf::num(alpha as f64)); // Stroke alpha
         gs_dict.add("ca", Pdf::num(alpha as f64)); // Fill alpha
-        let obj_num = pdf.add_object(Pdf::dict(gs_dict));
+        let obj_num = pdf.save_indirect_object(Pdf::dict(gs_dict));
 
         self.opacity_states.insert(opacity_key, obj_num);
 

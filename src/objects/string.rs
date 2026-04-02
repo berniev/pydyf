@@ -5,12 +5,14 @@ use crate::PdfError;
 #[derive(Clone)]
 pub struct PdfStringObject {
     value: String,
+    pub object_number: Option<u64>,
 }
 
 impl PdfStringObject {
     pub fn new(value: &str) -> Self {
         Self {
             value: value.to_string(),
+            object_number: None,
         }
     }
 

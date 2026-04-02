@@ -71,12 +71,14 @@ impl Default for CrossReferenceEntry {
 
 pub struct CrossRefTable {
     entries: Vec<CrossReferenceEntry>, // contiguous, ordered by object number
+    pub xref_position: usize,
 }
 
 impl CrossRefTable {
     pub fn new() -> Self {
         let mut table = CrossRefTable {
             entries: Vec::new(),
+            xref_position: 0,
         };
         table.add_entry(CrossReferenceEntry::default());
 

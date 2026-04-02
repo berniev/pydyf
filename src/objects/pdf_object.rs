@@ -1,10 +1,12 @@
+use crate::cross_reference_table::ObjectStatus;
+use crate::generation::Generation;
 use crate::objects::number::PdfNumberObject;
+use crate::objects::reference::PdfReferenceObject;
 use crate::{
     NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject,
     PdfNullObject, PdfStreamObject, PdfStringObject,
 };
-use crate::cross_reference_table::ObjectStatus;
-use crate::generation::Generation;
+
 //--------------------------- Pdf -------------------------//
 
 pub struct Pdf {}
@@ -39,6 +41,10 @@ impl Pdf {
             Some(v) => Pdf::num(v),
             None => Pdf::null(),
         }
+    }
+
+    pub fn reference(value: u64) -> PdfObject {
+        PdfObject::Reference(PdfReferenceObject::new(value))
     }
 
     pub fn stream(value: PdfStreamObject) -> PdfObject {
@@ -98,6 +104,7 @@ pub enum PdfObject {
     Name(PdfNameObject),
     Null(PdfNullObject),
     Number(PdfNumberObject),
+    Reference(PdfReferenceObject),
     Stream(PdfStreamObject),
     String(PdfStringObject),
 }
@@ -111,6 +118,7 @@ impl PdfObject {
             PdfObject::Name(na) => na.serialise(),
             PdfObject::Null(nu) => nu.serialise(),
             PdfObject::Number(m) => m.serialise(),
+            PdfObject::Reference(r) => r.serialise(),
             PdfObject::Stream(s) => s.serialise(),
             PdfObject::String(sg) => sg.serialise(),
         }
@@ -122,10 +130,57 @@ impl PdfObject {
             PdfObject::Boolean(_) => Indirect::Never,
             PdfObject::Dictionary(_) => Indirect::IfReferenced,
             PdfObject::Name(_) => Indirect::Never,
-            PdfObject::Number(_) => Indirect::Never,
             PdfObject::Null(_) => Indirect::Never,
+            PdfObject::Number(_) => Indirect::Never,
+            PdfObject::Reference(_) => Indirect::Never,
             PdfObject::Stream(_) => Indirect::Always,
             PdfObject::String(_) => Indirect::Never,
+        }
+    }
+
+    pub fn get_object_number(&self) -> Option<u64> {
+        match self {
+            PdfObject::Array(a) => a.object_number,
+            PdfObject::Boolean(b) => b.object_number,
+            PdfObject::Dictionary(d) => d.object_number,
+            PdfObject::Name(na) => na.object_number,
+            PdfObject::Null(nu) => nu.object_number,
+            PdfObject::Number(m) => m.object_number,
+            PdfObject::Reference(r) => r.object_number,
+            PdfObject::Stream(s) => s.object_number,
+            PdfObject::String(sg) => sg.object_number,
+        }
+    }
+
+    pub fn set_object_number(&mut self, object_number: u64) {
+        match self {
+            PdfObject::Array(a) => a.object_number = Some(object_number),
+            PdfObject::Boolean(b) => b.object_number = Some(object_number),
+            PdfObject::Stream(s) => s.object_number = Some(object_number),
+            PdfObject::String(sg) => sg.object_number = Some(object_number),
+            PdfObject::Null(nu) => nu.object_number = Some(object_number),
+            PdfObject::Number(m) => m.object_number = Some(object_number),
+            PdfObject::Dictionary(d) => d.object_number = Some(object_number),
+            PdfObject::Name(na) => na.object_number = Some(object_number),
+            PdfObject::Reference(r) => r.object_number = Some(object_number),
+        }
+    }
+
+    pub fn with_object_number(mut self, value: u64) -> PdfObject {
+        self.set_object_number(value);
+        self
+    }
+
+    pub fn serialise_wrapper(&mut self) -> Result<Vec<u8>, PdfError> {
+        if self.get_object_number().is_some() {
+            let mut vec = vec![];
+            vec.extend(b"obj\n");
+            vec.extend(self.serialise()?);
+            vec.extend(b"\nendobj\n");
+            // todo: add to xref table
+            Ok(vec)
+        } else {
+            Ok(self.serialise()?)
         }
     }
 }

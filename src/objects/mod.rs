@@ -12,3 +12,4 @@ pub mod string;
 
 mod object_type;
 pub mod number;
+mod reference;

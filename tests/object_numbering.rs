@@ -32,9 +32,9 @@ fn test_add_object_assigns_sequential_ids() {
     let mut pdf = PdfFile::new();
 
     // Add objects one by one and verify IDs are sequential starting from 1
-    let id1 = pdf.add_object(Pdf::stream(PdfStreamObject::new()));
-    let id2 = pdf.add_object(Pdf::stream(PdfStreamObject::new()));
-    let id3 = pdf.add_object(Pdf::stream(PdfStreamObject::new()));
+    let id1 = pdf.save_indirect_object(Pdf::stream(PdfStreamObject::new()));
+    let id2 = pdf.save_indirect_object(Pdf::stream(PdfStreamObject::new()));
+    let id3 = pdf.save_indirect_object(Pdf::stream(PdfStreamObject::new()));
 
     println!("Added object IDs: {}, {}, {}", id1, id2, id3);
 
@@ -57,7 +57,7 @@ fn test_all_object_assignments_use_consistent_numbering() {
     let mut pdf = PdfFile::new();
 
     // Add a page
-    pdf.add_object(Pdf::stream(PdfStreamObject::new()));
+    pdf.save_indirect_object(Pdf::stream(PdfStreamObject::new()));
 
     // Initialize everything
 /*    let resources_id = pdf.add_font_resources();
@@ -100,7 +100,7 @@ fn test_compressed_write_assigns_unique_objstm_number() {
     use std::collections::HashMap;
 
     let mut pdf = PdfFile::new();
-    pdf.add_object(Pdf::stream(PdfStreamObject::new()));
+    pdf.save_indirect_object(Pdf::stream(PdfStreamObject::new()));
 
     let mut output = Vec::new();
     pdf.write_compressed(&mut output, FileIdentifierMode::None).unwrap();
@@ -142,7 +142,7 @@ fn test_objstm_number_calculation() {
     use pydyf::{PdfFile, PdfStreamObject};
 
     let mut pdf = PdfFile::new();
-    pdf.add_object(Pdf::stream(PdfStreamObject::new()));
+    pdf.save_indirect_object(Pdf::stream(PdfStreamObject::new()));
 
     // Before write_compressed, find max object ID
  /*   let max_id_before = pdf.objects.iter()

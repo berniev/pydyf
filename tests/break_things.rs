@@ -343,7 +343,7 @@ fn test_overlapping_operations() {
     stream.fill(WindingRule::EvenOdd);
     stream.end_text();
 
-    let _content_index = pdf.add_object(Pdf::stream(stream));
+    let _content_index = pdf.save_indirect_object(Pdf::stream(stream));
 /*    let page = create_page_with_content(PageSize::A4, content_index);
     pdf.add_page(page);
 

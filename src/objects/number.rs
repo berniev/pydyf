@@ -5,11 +5,13 @@ use crate::{NumberType, PdfError};
 #[derive(Debug, Clone, PartialEq)]
 pub struct PdfNumberObject {
     pub value: NumberType,
+    pub object_number: Option<u64>,
 }
 
 impl PdfNumberObject {
     pub fn new(value: NumberType) -> Self {
-        Self { value }
+        Self { value ,
+        object_number: None}
     }
 
     pub fn set_value<T: Into<NumberType>>(&mut self, value: T) {

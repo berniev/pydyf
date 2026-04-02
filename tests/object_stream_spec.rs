@@ -47,7 +47,7 @@ fn spec_objstm_must_have_type() {
     let mut pdf = PdfFile::new();
     let mut stream = PdfStreamObject::new();
     stream.add_rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
-    pdf.add_object(Pdf::stream(stream));
+    pdf.save_indirect_object(Pdf::stream(stream));
 
     let mut output = Vec::new();
     pdf.write_compressed(&mut output, FileIdentifierMode::None).unwrap();
@@ -62,7 +62,7 @@ fn spec_objstm_must_have_n() {
     let mut pdf = PdfFile::new();
     let mut stream = PdfStreamObject::new();
     stream.add_rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
-    pdf.add_object(Pdf::stream(stream));
+    pdf.save_indirect_object(Pdf::stream(stream));
 
     let mut output = Vec::new();
     pdf.write_compressed(&mut output, FileIdentifierMode::None).unwrap();
@@ -84,7 +84,7 @@ fn spec_objstm_must_have_first() {
     let mut pdf = PdfFile::new();
     let mut stream = PdfStreamObject::new();
     stream.add_rectangle(Posn { x: 0.0, y: 0.0 }, Dims { height: 10.0, width: 10.0 });
-    pdf.add_object(Pdf::stream(stream));
+    pdf.save_indirect_object(Pdf::stream(stream));
 
     let mut output = Vec::new();
     pdf.write_compressed(&mut output, FileIdentifierMode::None).unwrap();

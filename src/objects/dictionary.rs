@@ -24,11 +24,13 @@ use crate::{PdfError, PdfNameObject, PdfObject};
 #[derive(Clone)]
 pub struct PdfDictionaryObject {
     pub(crate) values: Vec<(PdfNameObject, PdfObject)>,
+    pub object_number: Option<u64>,
 }
 
 impl PdfDictionaryObject {
     pub fn new() -> Self {
-        Self { values: vec![] }
+        Self { values: vec![] ,
+        object_number: None,}
     }
 
     pub(crate) fn typed(mut self, name: &str) -> Self {

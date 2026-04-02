@@ -57,9 +57,9 @@ impl<W: Write, S: WriteStrategy> PdfWriter<W, S> {
         self.strategy.write_body(pdf, &mut self.stream)?;
         //self.strategy.write_index(pdf, &mut self.stream, &self.id_mode)?;
         self.stream.write_line(b"startxref")?;
-        self.stream
+/*        self.stream
             .write_line(pdf.xref_position.unwrap_or(0).to_string().as_bytes())?;
-        self.stream.write_line(b"%%EOF")
+*/        self.stream.write_line(b"%%EOF")
     }
 }
 
@@ -174,12 +174,12 @@ impl WriteStrategy for LegacyStrategy {
 
     fn write_index<W: Write>(
         &self,
-        pdf: &mut PdfFile,
+        _pdf: &mut PdfFile,
         stream: &mut PdfStream<W>,
         _id_mode: &FileIdentifierMode,
     ) -> std::io::Result<()> {
-        pdf.xref_position = Some(stream.pos);
-        stream.write_line(b"xref")?;
+/*        pdf.xref_position = Some(stream.pos);
+*/        stream.write_line(b"xref")?;
         //stream.write_line(format!("0 {}", pdf.object_count()).as_bytes())?;
 
         // Per PDF spec, object 0 is always free (head of free list)
@@ -336,12 +336,12 @@ impl WriteStrategy for CompressedStrategy {
     /// Write cross-reference stream instead of traditional xref table (PDF 1.5+)
     fn write_index<W: Write>(
         &self,
-        pdf: &mut PdfFile,
+        _pdf: &mut PdfFile,
         stream: &mut PdfStream<W>,
         _id_mode: &FileIdentifierMode,
     ) -> std::io::Result<()> {
-        pdf.xref_position = Some(stream.pos);
-
+/*        pdf.xref_position = Some(stream.pos);
+*/
         let mut xref_stream = CrossRefStream::new();
         let entry_map: HashMap<usize, CrossRefEntry> = HashMap::new();
 

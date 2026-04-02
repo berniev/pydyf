@@ -57,10 +57,9 @@ so maybe for starters we:
     Typed objects are named, standalone PDF entities. Untyped objects are supporting data
     embedded in their parent.
 */
-
 use std::io::Write;
 
-use crate::cross_reference_table::{CrossRefTable, CrossReferenceEntry, Generation};
+use crate::body::Body;
 use crate::file_identifier::FileIdentifierMode;
 use crate::fonts::Fonts;
 use crate::header::Header;
@@ -70,31 +69,22 @@ use crate::pdf_version::PdfVersion;
 use crate::trailer::Trailer;
 use crate::writer::{CompressedStrategy, LegacyStrategy, PdfWriter};
 use crate::{PdfDictionaryObject, PdfObject};
-use crate::body::Body;
 
 //--------------------------- PDF -------------------------//
 
 pub struct PdfFile {
     header: Header,
     body: Body,
-    cross_reference_table: CrossRefTable,
+    pub catalog: PdfDictionaryObject,
     pub _trailer: Trailer,
-
-    pub xref_position: Option<usize>,
-
-    _pages_root: PdfDictionaryObject, // catalog /Pages entry must point to this
 }
-
 impl PdfFile {
     pub fn new() -> Self {
         PdfFile {
             header: Header::new(),
-            body: Body::new(),
-            cross_reference_table: CrossRefTable::new(),
+            body: Body::new(), // contains serialised objects
+            catalog: PdfDictionaryObject::new().typed("Catalog"),
             _trailer: Trailer::new(),
-
-            xref_position: None,
-            _pages_root: make_page_tree(),
         }
     }
 
@@ -104,17 +94,22 @@ impl PdfFile {
         self
     }
 
-    // all objects added here are to be indirect
-    pub fn add_object(&mut self, _obj: PdfObject) -> usize {
+    pub fn initialize_catalog(&mut self) {
+        let page_tree_dict = make_page_tree();
+        self.catalog.add(
+            "Pages",
+            Pdf::dict(page_tree_dict).with_object_number(self.body.next_num()),
+        );
+    }
+
+    pub fn get_catalog(&self) -> &PdfDictionaryObject {
+        &self.catalog
+    }
+
+    pub fn save_indirect_object(&mut self, _obj: PdfObject) -> u64 {
         let object_number = self.body.next_num();
-        self.cross_reference_table.add_entry(CrossReferenceEntry {
-            object_number,
-            object_status: Default::default(), // in use
-            offset_or_next_free: 0,
-            generation: Generation::Normal,
-        });
-        
-        0
+
+        object_number
     }
 
     fn write_common(&mut self) {
@@ -151,12 +146,4 @@ impl PdfFile {
 
         resources_number
     }
-
-    pub fn initialize_catalog(&mut self) {
-/*        let pages_id = self.pages_root.metadata.object_identifier.unwrap();
-        self.catalog.add("Pages", pages_id);
-
-        let catalog_copy = self.catalog.clone();
-        self.indirect_pdf_objects.push(Box::new(catalog_copy));
-*/    }
 }

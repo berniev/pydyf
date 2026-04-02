@@ -45,7 +45,6 @@ pub use metadata::{DocumentInfo, TrappedState, XmpMetadata};
 pub use objects::array::PdfArrayObject;
 pub use objects::boolean::PdfBooleanObject;
 pub use objects::dictionary::PdfDictionaryObject;
-pub use objects::indirect::PdfIndirectObject;
 pub use objects::name::PdfNameObject;
 pub use objects::null::PdfNullObject;
 pub use objects::number_type::NumberType;

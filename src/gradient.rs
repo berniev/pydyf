@@ -137,7 +137,7 @@ impl Gradient {
         };
         color_shading_dict.add("Coords", Pdf::array(make_coords()));
 
-        pdf.add_object(Pdf::dict(color_func));
+        pdf.save_indirect_object(Pdf::dict(color_func));
 
         //color_shading_dict.add("Function", Pdf::indirect(color_func_num));
 
@@ -164,7 +164,7 @@ impl Gradient {
                 vec![last.a().to_f64()],
                 0.0,
             );
-            pdf.add_object(Pdf::dict(alpha_func_dict)); // <== todo
+            pdf.save_indirect_object(Pdf::dict(alpha_func_dict)); // <== todo
 
             let mut alpha_shading_dict = PdfDictionaryObject::new();
             alpha_shading_dict.add("ShadingType", Pdf::num(shading_type as i64));
@@ -173,7 +173,7 @@ impl Gradient {
             //alpha_shading_dict.add("Function", Pdf::indirect(alpha_func_num));
             alpha_shading_dict.add("Extend", Pdf::array(make_extend()));
 
-            pdf.add_object(Pdf::dict(alpha_shading_dict)); // <== todo
+            pdf.save_indirect_object(Pdf::dict(alpha_shading_dict)); // <== todo
 
             //create_soft_mask_for_shading(pdf, alpha_shading_num, size.width, size.height);
 
@@ -184,7 +184,7 @@ impl Gradient {
         pattern_dict.add("PatternType", Pdf::num(2));
         //pattern_dict.add("Shading", Pdf::indirect(shading_num));
 
-        pdf.add_object(Pdf::dict(pattern_dict)); // <== todo
+        pdf.save_indirect_object(Pdf::dict(pattern_dict)); // <== todo
 
         Some((pattern_name, gs_name))
     }

@@ -26,7 +26,7 @@ fn test_objstm_has_type() {
     );
     stream.fill(WindingRule::EvenOdd);
 
-    let _content_id = pdf.add_object(Pdf::stream(stream));
+    let _content_id = pdf.save_indirect_object(Pdf::stream(stream));
 /*    let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
     page.set_media_box(PageSize::A4);
@@ -55,7 +55,7 @@ fn test_objstm_has_n() {
             width: 10.0,
         },
     );
-    let _content_id = pdf.add_object(Pdf::stream(stream));
+    let _content_id = pdf.save_indirect_object(Pdf::stream(stream));
 
 /*    let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
@@ -93,7 +93,7 @@ fn test_objstm_has_first() {
             width: 10.0,
         },
     );
-    let _content_id = pdf.add_object(Pdf::stream(stream));
+    let _content_id = pdf.save_indirect_object(Pdf::stream(stream));
 
 /*    let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
@@ -134,7 +134,7 @@ fn test_objstm_has_filter() {
             width: 10.0,
         },
     );
-    let _content_id = pdf.add_object(Pdf::stream(stream));
+    let _content_id = pdf.save_indirect_object(Pdf::stream(stream));
 
  /*   let mut page = PageObject::new(0usize.into());
     page.add_content(content_id);
