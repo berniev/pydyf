@@ -24,7 +24,7 @@ use crate::{PdfError, PdfNameObject, PdfObject};
 #[derive(Clone)]
 pub struct PdfDictionaryObject {
     pub(crate) values: Vec<(PdfNameObject, PdfObject)>,
-    pub object_number: Option<u64>,
+    pub(crate) object_number: Option<u64>,
 }
 
 impl PdfDictionaryObject {

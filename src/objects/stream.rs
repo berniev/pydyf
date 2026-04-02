@@ -1,3 +1,5 @@
+use flate2::Compression;
+use flate2::write::ZlibEncoder;
 /// PDF content stream.
 ///
 /// Content streams define page content, eg:
@@ -55,28 +57,25 @@
 ///   Crypt            yes  1.5  data            Data encrypted by a security handler
 ///
 ///
-
 use std::io::Write as IoWrite;
-use flate2::write::ZlibEncoder;
-use flate2::Compression;
 
-use crate::color::{Color, ColorSpace, CMYK, RGB};
+use crate::PdfDictionaryObject;
+use crate::color::{CMYK, Color, ColorSpace, RGB};
 use crate::encoding::{ascii85_encode, f_to_pdf_num};
 use crate::error::{PdfError, PdfResult};
 use crate::objects::pdf_object::PdfObj;
 use crate::objects::string::encode_pdf_string;
 pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, ToPdf, WindingRule};
-use crate::PdfDictionaryObject;
 
 //------------------------ PdfStreamObject -----------------------
 
 #[derive(Clone)]
 pub struct PdfStreamObject {
-    pub dict: PdfDictionaryObject,
-    pub content: Vec<u8>,
-    pub object_number: Option<u64>,
+    pub(crate) dict: PdfDictionaryObject,
+    pub(crate) content: Vec<u8>,
+    pub(crate) object_number: Option<u64>,
 
-    pub compression_method: CompressionMethod,
+    pub(crate) compression_method: CompressionMethod,
 }
 
 impl Default for PdfStreamObject {
@@ -137,7 +136,8 @@ impl PdfStreamObject {
             }
         };
 
-        self.dict.add("Length", PdfObj::num(stream_bytes.len() as f64));
+        self.dict
+            .add("Length", PdfObj::num(stream_bytes.len() as f64));
 
         let mut vec = self.dict.serialise()?;
         vec.push(b'\n');

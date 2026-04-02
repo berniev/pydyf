@@ -4,8 +4,8 @@ use crate::PdfError;
 
 #[derive(Clone)]
 pub struct PdfStringObject {
-    value: String,
-    pub object_number: Option<u64>,
+    pub(crate) value: String,
+    pub(crate) object_number: Option<u64>,
 }
 
 impl PdfStringObject {

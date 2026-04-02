@@ -4,8 +4,8 @@ use crate::PdfError;
 
 #[derive(Clone)]
 pub struct PdfBooleanObject {
-    pub value: bool,
-    pub object_number: Option<u64>,
+    pub(crate) value: bool,
+    pub(crate) object_number: Option<u64>,
 }
 
 impl PdfBooleanObject {

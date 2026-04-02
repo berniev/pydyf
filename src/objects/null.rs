@@ -2,7 +2,7 @@ use crate::PdfError;
 
 #[derive(Clone)]
 pub struct PdfNullObject {
-        pub object_number: Option<u64>,
+    pub(crate) object_number: Option<u64>,
 }
 
 impl PdfNullObject {

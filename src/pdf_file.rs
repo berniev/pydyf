@@ -33,10 +33,8 @@ startxref
 %%EOF
 ```
 */
-
 use std::io::Write;
 
-use crate::{PdfDictionaryObject, PdfArrayObject};
 use crate::cross_reference_table::CrossRefTable;
 use crate::file_identifier::FileIdentifierMode;
 use crate::fonts::Fonts;
@@ -45,13 +43,14 @@ use crate::objects::pdf_object::PdfObj;
 use crate::page::make_page_tree;
 use crate::pdf_version::PdfVersion;
 use crate::writer::{CompressedStrategy, LegacyStrategy, PdfWriter};
+use crate::{PdfArrayObject, PdfDictionaryObject};
 
 //--------------------------- PDF -------------------------//
 
 pub struct Pdf {
     header: Header,
     catalog_dict: PdfDictionaryObject,
-    page_tree_dict: PdfDictionaryObject,
+    root_page_tree_dict: PdfDictionaryObject,
     trailer_dict: PdfDictionaryObject,
     xref_table: CrossRefTable,
     last_object_number: u64,
@@ -63,12 +62,12 @@ impl Pdf {
         let mut pdf = Pdf {
             header: Header::new(),
             catalog_dict: PdfDictionaryObject::new().typed("Catalog"), // serialises into body
-            page_tree_dict: PdfDictionaryObject::new(),
+            root_page_tree_dict: PdfDictionaryObject::new(),
             trailer_dict: PdfDictionaryObject::new(), // not typed
             xref_table: CrossRefTable::new(), // buffers xref until body is complete, then appended
             last_object_number: 0,
         };
-        pdf.page_tree_dict = make_page_tree(pdf.next_object_number());
+        pdf.root_page_tree_dict = make_page_tree(pdf.next_object_number());
 
         pdf
     }
@@ -81,35 +80,39 @@ impl Pdf {
 
     pub fn encrypted(&mut self) -> &mut Self {
         let mut encryption_dict = PdfDictionaryObject::new(); // direct
-        encryption_dict
-            .add("Filter", PdfObj::name("Standard"));
+        encryption_dict.add("Filter", PdfObj::name("Standard"));
 
         self.trailer_dict
             .add("Encrypt", PdfObj::dict(encryption_dict));
-        
+
         let mut id_array = PdfArrayObject::new();
         id_array.push(PdfObj::string("1234567890"));
         id_array.push(PdfObj::string("0987654321"));
-        
-        self.trailer_dict
-            .add("ID", PdfObj::array(id_array));
+
+        self.trailer_dict.add("ID", PdfObj::array(id_array));
 
         self
     }
 
     //-------------------------------------------------------
 
-    pub fn get_catalog_dict(&mut self) -> &mut PdfDictionaryObject {
+    pub fn catalog_dict_ref(&mut self) -> &mut PdfDictionaryObject {
         &mut self.catalog_dict
     }
 
-    pub fn get_trailer_dict(&mut self) -> &mut PdfDictionaryObject {
+    pub fn trailer_dict_ref(&mut self) -> &mut PdfDictionaryObject {
         &mut self.trailer_dict
     }
 
-    pub fn get_xref_table_dict(&mut self) -> &mut CrossRefTable {
+    pub fn root_page_tree_dict_ref(&mut self) -> &mut PdfDictionaryObject {
+        &mut self.root_page_tree_dict
+    }
+
+    pub fn xref_table_ref(&mut self) -> &mut CrossRefTable {
         &mut self.xref_table
     }
+
+    //---------------------------------------------------------
 
     pub fn next_object_number(&mut self) -> u64 {
         self.last_object_number += 1;

@@ -7,15 +7,14 @@
 ///     similar to a dictionary that associates keys and values but the keys in a name tree are
 ///     strings and are ordered
 ///
-
 use crate::PdfError;
 
 //--------------------------- PdfNameObject ----------------------//
 
 #[derive(Clone)]
 pub struct PdfNameObject {
-    pub value: String,
-    pub object_number: Option<u64>,
+    pub(crate) value: String,
+    pub(crate) object_number: Option<u64>,
 }
 
 impl PdfNameObject {
@@ -25,7 +24,7 @@ impl PdfNameObject {
             object_number: None,
         }
     }
-    
+
     pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
         Ok(format!("/{}", self.value).into_bytes())
     }

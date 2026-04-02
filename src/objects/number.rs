@@ -4,14 +4,16 @@ use crate::{NumberType, PdfError};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PdfNumberObject {
-    pub value: NumberType,
-    pub object_number: Option<u64>,
+    pub(crate) value: NumberType,
+    pub(crate) object_number: Option<u64>,
 }
 
 impl PdfNumberObject {
     pub fn new(value: NumberType) -> Self {
-        Self { value ,
-        object_number: None}
+        Self {
+            value,
+            object_number: None,
+        }
     }
 
     pub fn set_value<T: Into<NumberType>>(&mut self, value: T) {
@@ -75,4 +77,3 @@ impl From<f32> for PdfNumberObject {
         Self::new(NumberType::Real(f as f64))
     }
 }
-

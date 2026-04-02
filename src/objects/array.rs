@@ -17,8 +17,8 @@ use crate::{PdfError, PdfObject};
 
 #[derive(Clone)]
 pub struct PdfArrayObject {
-    pub values: Vec<PdfObject>,
-    pub object_number: Option<u64>,
+    pub(crate) values: Vec<PdfObject>,
+    pub(crate) object_number: Option<u64>,
 }
 
 impl PdfArrayObject {
@@ -33,7 +33,7 @@ impl PdfArrayObject {
         self.object_number = Some(value);
         self
     }
-    
+
     pub fn push(&mut self, value: PdfObject) {
         self.values.push(value);
     }
