@@ -56,12 +56,6 @@ impl PdfObj {
         PdfObject::String(PdfStringObject::new(value))
     }
 }
-/*
-Is it referenced from more than one place? → indirect (shared fonts, images, etc.)
-Does anything need to refer to it by object number? → indirect (e.g. a page in the Kids array)
-Is it a stream? → indirect (spec mandates it)
-Everything else → direct
-*/
 
 // Tracks where an object ended up after serialisation — not intrinsic to the object itself
 #[derive(Debug, Clone, PartialEq, Default)]

@@ -1,5 +1,3 @@
-use flate2::Compression;
-use flate2::write::ZlibEncoder;
 /// PDF content stream.
 ///
 /// Content streams define page content, eg:
@@ -58,6 +56,8 @@ use flate2::write::ZlibEncoder;
 ///
 ///
 use std::io::Write as IoWrite;
+use flate2::Compression;
+use flate2::write::ZlibEncoder;
 
 use crate::PdfDictionaryObject;
 use crate::color::{CMYK, Color, ColorSpace, RGB};

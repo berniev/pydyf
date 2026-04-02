@@ -15,7 +15,7 @@ pub mod optional_content;
 pub mod outline;
 pub mod page;
 pub mod pattern;
-pub mod pdf_file;
+pub mod pdf;
 pub mod resource;
 pub mod resources;
 pub mod text;
@@ -59,7 +59,7 @@ pub use optional_content::{
 pub use outline::{DocumentOutline, OutlineItem, OutlineItemFlags};
 pub use page::PageSize;
 pub use pattern::{AxialShading, PaintType, PatternType, ShadingType, TilingPattern, TilingType};
-pub use pdf_file::{Pdf};
+pub use pdf::{Pdf};
 pub use resource::{Resource, ResourceCategory, ResourceManager};
 pub use resources::ResourceMap;
 pub use text::{StandardFont, WrapMode, wrap_text};

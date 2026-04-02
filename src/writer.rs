@@ -2,13 +2,12 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::Write;
 
-use crate::cross_reference_table::CrossRefStream;
 use crate::cross_reference_table::CrossRefEntry;
+use crate::cross_reference_table::CrossRefStream;
 use crate::file_identifier::FileIdentifierMode;
-use crate::generation::Generation;
 use crate::objects::pdf_object::PdfObj;
 use crate::objects::string::encode_pdf_string;
-use crate::{PdfDictionaryObject, Pdf, PdfObject, PdfStreamObject};
+use crate::{Pdf, PdfDictionaryObject, PdfObject, PdfStreamObject};
 
 //------------------------------ PdfStream ------------------
 
@@ -183,9 +182,9 @@ impl WriteStrategy for LegacyStrategy {
         //stream.write_line(format!("0 {}", pdf.object_count()).as_bytes())?;
 
         // Per PDF spec, object 0 is always free (head of free list)
-        stream
+ /*       stream
             .write_line(format!("0000000000 {:05} f ", Generation::ROOT_GENERATION).as_bytes())?;
-
+*/
         // Write entries for actual objects (1 through N-1)
         /*let xref_entries: Vec<String> = pdf
             .objects
@@ -342,8 +341,8 @@ impl WriteStrategy for CompressedStrategy {
     ) -> std::io::Result<()> {
 /*        pdf.xref_position = Some(stream.pos);
 */
-        let mut xref_stream = CrossRefStream::new();
-        let entry_map: HashMap<usize, CrossRefEntry> = HashMap::new();
+        let mut _xref_stream = CrossRefStream::new();
+        let _entry_map: HashMap<usize, CrossRefEntry> = HashMap::new();
 
         let _compression_map = self.compression_map.borrow();
 
@@ -389,23 +388,6 @@ impl WriteStrategy for CompressedStrategy {
             },
         );*/
 
-        // Build xref_entries array in order: xref_entries[N] = entry for object N
-        let max_obj_num = entry_map.keys().max().copied().unwrap_or(0);
-        for obj_num in 1..=max_obj_num {
-            if let Some(entry) = entry_map.get(&obj_num) {
-                xref_stream.add_entry(entry.clone());
-            } else {
-                xref_stream.add_entry(CrossRefEntry::FreeObject {
-                    next_free_obj: 0,
-                    generation: Generation::ROOT_GENERATION,
-                });
-            }
-        }
-        /*let info_obj_id = if !pdf.info.values.is_empty() {
-            pdf.info.metadata.object_identifier
-        } else {
-            None
-        };*/
 
         /*let xref_stream_bytes = xref_stream.build_stream_object(
             xref_stream_num,

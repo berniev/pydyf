@@ -65,7 +65,7 @@ impl Pdf {
             root_page_tree_dict: PdfDictionaryObject::new(),
             trailer_dict: PdfDictionaryObject::new(), // not typed
             xref_table: CrossRefTable::new(), // buffers xref until body is complete, then appended
-            last_object_number: 0,
+            last_object_number: 0, // 0 is in xref table as 'free'. is gen# 65535, else 0 for new
         };
         pdf.root_page_tree_dict = make_page_tree(pdf.next_object_number());
 
@@ -94,7 +94,7 @@ impl Pdf {
         self
     }
 
-    //-------------------------------------------------------
+    //--------------------------------------------------------------//
 
     pub fn catalog_dict_ref(&mut self) -> &mut PdfDictionaryObject {
         &mut self.catalog_dict

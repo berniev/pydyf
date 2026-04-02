@@ -154,7 +154,6 @@ pub enum CrossRefEntry {
 }
 
 impl CrossRefEntry {
-    /// Construct a CrossRefEntry from object metadata and optional compression info
     pub fn from_object_metadata(
         status: ObjectStatus,
         offset: usize,
@@ -162,9 +161,10 @@ impl CrossRefEntry {
         compression_info: Option<(usize, usize)>,
     ) -> Self {
         if status == ObjectStatus::Free {
+            let object_number = offset; // shut up
             CrossRefEntry::FreeObject {
                 next_free_obj: 0,
-                generation: Generation::ROOT_GENERATION,
+                generation: if object_number == 0 { Generation::ROOT_GENERATION } else { 0 },
             }
         } else if let Some((objstm_num, index)) = compression_info {
             CrossRefEntry::CompressedInObjstm {

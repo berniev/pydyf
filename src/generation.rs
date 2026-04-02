@@ -17,7 +17,7 @@ impl Generation {
 
     pub fn as_u16(&self) -> u16 {
         match self {
-            Generation::Root => Self::ROOT_GENERATION,
+            Generation::Root => 65535,
             Generation::Normal => 0,
         }
     }

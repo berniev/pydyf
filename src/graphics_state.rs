@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::objects::pdf_object::PdfObj;
 use crate::objects::stream::PdfStreamObject;
-use crate::pdf_file::Pdf;
+use crate::pdf::Pdf;
 use crate::PdfDictionaryObject;
 
 pub struct GraphicsStateManager {
