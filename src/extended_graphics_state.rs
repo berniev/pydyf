@@ -4,10 +4,7 @@
 //! transparency, blend modes, and rendering intent.
 
 use crate::objects::pdf_object::PdfObj;
-use crate::{
-    PdfDictionaryObject,
-    Resource, ResourceCategory,
-};
+use crate::{PdfDictionaryObject, Resource, ResourceCategory};
 use std::any::Any;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -184,7 +181,7 @@ impl ExtGState {
         }
 
         if let Some(ri) = self.rendering_intent {
-            dict.add("RI", PdfObj::name(ri.as_str()))   ;
+            dict.add("RI", PdfObj::name(ri.as_str()));
         }
 
         if let Some(op) = self.overprint_stroke {

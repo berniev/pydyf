@@ -79,7 +79,7 @@ impl Pdf {
     }
 
     pub fn encrypted(&mut self) -> &mut Self {
-        let mut encryption_dict = PdfDictionaryObject::new(); // direct
+        let mut encryption_dict = PdfDictionaryObject::new(); // not typed, direct
         encryption_dict.add("Filter", PdfObj::name("Standard"));
 
         self.trailer_dict

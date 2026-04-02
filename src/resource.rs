@@ -1,14 +1,15 @@
-//! Resource management system for PDF objects.
+//! Resource management for PDF objects.
 //!
 //! Resources are objects that can be referenced from content streams (fonts, images,
-//! patterns, graphics states, etc.). This module provides a unified framework for
-//! managing all resource types.
+//! patterns, graphics states, etc.).
 
 use std::any::Any;
 use std::rc::Rc;
 
 use crate::PdfResult;
 use std::collections::HashMap;
+
+//------------------------ ResourceCategory -----------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ResourceCategory {
@@ -33,24 +34,39 @@ impl ResourceCategory {
             ResourceCategory::Properties => "Properties",
         }
     }
+
+    fn category_prefix(category: ResourceCategory) -> &'static str {
+        match category {
+            ResourceCategory::Font => "F",
+            ResourceCategory::XObject => "Im",
+            ResourceCategory::ColorSpace => "CS",
+            ResourceCategory::Pattern => "P",
+            ResourceCategory::Shading => "Sh",
+            ResourceCategory::ExtGState => "GS",
+            ResourceCategory::Properties => "Pr",
+        }
+    }
 }
+
+//------------------------ Resource -----------------------//
 
 /// A resource that can be embedded in a PDF and referenced from content streams.
 ///
 /// Must be registered in the page's resource dictionary before they can be used in content streams.
 pub trait Resource: Any {
-    fn category(&self) -> ResourceCategory; // Font, XObject, Pattern, etc.
+    fn category(&self) -> ResourceCategory;
     fn resource_unique_id(&self) -> String;
 
     /// Get the resource name to use in content streams (e.g., "F1", "Im1", "GS1").
     /// If None, the ResourceManager will auto-generate a name.
     fn suggested_name(&self) -> Option<String> {
-        None
+        None // todo: ?
     }
 
-    /// Allows downcasting to concrete types
-    fn as_any(&self) -> &dyn Any;
+    fn as_any(&self) -> &dyn Any; // downcast to concrete types
 }
+
+//------------------------ ResourceManager -----------------------//
 
 /// Manages resource registration, deduplication, and name generation.
 ///
@@ -75,9 +91,8 @@ impl ResourceManager {
 
     /// Register a resource and get its (object_id, resource_name).
     ///
-    /// If the resource was already registered (based on resource_id), returns
-    /// the existing object_id and name. Otherwise, allocates a new object_id
-    /// and generates a name.
+    /// If the resource was already registered (based on resource_id), returns the existing 
+    /// object_id and name. Otherwise, allocates a new object_id and generates a name.
     pub fn register<F>(
         &mut self,
         resource: Rc<dyn Resource>,
@@ -137,21 +152,9 @@ impl ResourceManager {
 
     fn generate_unique_category_name(&mut self, category: ResourceCategory) -> String {
         let counter = self.name_counters.entry(category).or_insert(0);
-        let name = format!("{}{}", Self::category_prefix(category), counter);
+        let name = format!("{}{}", ResourceCategory::category_prefix(category), counter);
         *counter += 1;
         name
-    }
-
-    fn category_prefix(category: ResourceCategory) -> &'static str {
-        match category {
-            ResourceCategory::Font => "F",
-            ResourceCategory::XObject => "Im",
-            ResourceCategory::ColorSpace => "CS",
-            ResourceCategory::Pattern => "P",
-            ResourceCategory::Shading => "Sh",
-            ResourceCategory::ExtGState => "GS",
-            ResourceCategory::Properties => "Pr",
-        }
     }
 
     pub fn clear(&mut self) {
@@ -194,7 +197,7 @@ mod tests {
         fn resource_unique_id(&self) -> String {
             format!("font:{}", self.name)
         }
-        
+
         fn as_any(&self) -> &dyn Any {
             self
         }

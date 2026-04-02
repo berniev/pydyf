@@ -130,7 +130,7 @@ impl PdfObject {
     }
 
     // todo: add to body
-    // result of this gets added to body
+    // result gets added to body
     pub fn serialise_wrapper(&mut self) -> Result<Vec<u8>, PdfError> {
         if let Some(object_number) = self.get_object_number()
         {
