@@ -1,17 +1,7 @@
 use crate::objects::pdf_object::PdfObj;
 use crate::{PdfDictionaryObject, PdfError, PdfResult};
 use std::collections::HashMap;
-
-pub const STANDARD_RESOURCE_CATEGORIES: &[&str] = &[
-    "ColorSpace",
-    "ExtGState",
-    "Font",
-    "Pattern",
-    "Properties",
-    "Shading",
-    "XObject",
-    "ProcSet",
-];
+use crate::resource_category::STANDARD_RESOURCE_CATEGORIES;
 
 #[derive(Clone)]
 pub struct ResourceMap {

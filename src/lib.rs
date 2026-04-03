@@ -29,6 +29,7 @@ pub mod header;
 pub mod trailer;
 pub mod file_identifier;
 pub mod encryption;
+pub mod resource_category;
 
 // Re-export main types for user API convenience
 pub use action::{
@@ -60,7 +61,8 @@ pub use outline::{DocumentOutline, OutlineItem, OutlineItemFlags};
 pub use page::PageSize;
 pub use pattern::{AxialShading, PaintType, PatternType, ShadingType, TilingPattern, TilingType};
 pub use pdf::{Pdf};
-pub use resource::{Resource, ResourceCategory, ResourceManager};
+pub use resource::{Resource, ResourceManager};
 pub use resources::ResourceMap;
+pub use resource_category::ResourceCategory;
 pub use text::{StandardFont, WrapMode, wrap_text};
 pub use util::Rect;

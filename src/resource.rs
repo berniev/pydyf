@@ -8,45 +8,8 @@ use std::rc::Rc;
 
 use crate::PdfResult;
 use std::collections::HashMap;
-
+pub(crate) use crate::resource_category::ResourceCategory;
 //------------------------ ResourceCategory -----------------------//
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ResourceCategory {
-    Font,
-    XObject,
-    ColorSpace,
-    Pattern,
-    Shading,
-    ExtGState,
-    Properties,
-}
-
-impl ResourceCategory {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            ResourceCategory::Font => "Font",
-            ResourceCategory::XObject => "XObject",
-            ResourceCategory::ColorSpace => "ColorSpace",
-            ResourceCategory::Pattern => "Pattern",
-            ResourceCategory::Shading => "Shading",
-            ResourceCategory::ExtGState => "ExtGState",
-            ResourceCategory::Properties => "Properties",
-        }
-    }
-
-    fn category_prefix(category: ResourceCategory) -> &'static str {
-        match category {
-            ResourceCategory::Font => "F",
-            ResourceCategory::XObject => "Im",
-            ResourceCategory::ColorSpace => "CS",
-            ResourceCategory::Pattern => "P",
-            ResourceCategory::Shading => "Sh",
-            ResourceCategory::ExtGState => "GS",
-            ResourceCategory::Properties => "Pr",
-        }
-    }
-}
 
 //------------------------ Resource -----------------------//
 
