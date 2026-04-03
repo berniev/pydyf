@@ -57,7 +57,8 @@ pub struct Pdf {
 }
 
 impl Pdf {
-    //--------------------------- construction --------------------------//
+    //--------------------------- construction --------------------------
+
     pub fn new() -> Self {
         let mut pdf = Pdf {
             header: Header::new(),
@@ -94,7 +95,7 @@ impl Pdf {
         self
     }
 
-    //--------------------------------------------------------------//
+    //--------------------------------------------------------------
 
     pub fn catalog_dict_ref(&mut self) -> &mut PdfDictionaryObject {
         &mut self.catalog_dict
@@ -112,7 +113,7 @@ impl Pdf {
         &mut self.xref_table
     }
 
-    //---------------------------------------------------------
+    //------------------------------------------------------------
 
     pub fn next_object_number(&mut self) -> u64 {
         self.last_object_number += 1;

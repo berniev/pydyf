@@ -18,6 +18,12 @@ impl From<usize> for NumberType {
     }
 }
 
+impl From<u64> for NumberType {
+    fn from(i: u64) -> Self {
+        Self::Integer(i as i64)
+    }
+}
+
 impl From<i64> for NumberType {
     fn from(i: i64) -> Self {
         Self::Integer(i)
