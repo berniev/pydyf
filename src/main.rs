@@ -43,8 +43,7 @@ fn main() {
     let mut output = Vec::new();
 
     ///////////////////////////
-    pdf.write_legacy(&mut output, FileIdentifierMode::None)
-        .expect("Failed to write PDF");
+    pdf.serialise(&mut output, FileIdentifierMode::None);
     ///////////////////////////
 
     let path = "output.pdf";

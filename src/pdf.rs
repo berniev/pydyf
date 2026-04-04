@@ -42,7 +42,7 @@ use crate::header::Header;
 use crate::objects::pdf_object::PdfObj;
 use crate::page::make_page_tree;
 use crate::pdf_version::PdfVersion;
-use crate::writer::{CompressedStrategy, LegacyStrategy, PdfWriter};
+use crate::writer::write_legacy;
 use crate::{PdfArrayObject, PdfDictionaryObject};
 
 //--------------------------- PDF -------------------------//
@@ -122,36 +122,7 @@ impl Pdf {
     }
 
     // put it all together
-    pub fn serialise() {}
-
-    pub fn write_legacy<W: Write>(
-        &mut self,
-        output: W,
-        id_mode: FileIdentifierMode,
-    ) -> std::io::Result<()> {
-        self.add_font_resources();
-        let mut writer = PdfWriter::new(output, LegacyStrategy::default(), id_mode);
-
-        writer.perform(self)
-    }
-
-    pub fn write_compressed<W: Write>(
-        &mut self,
-        output: W,
-        id_mode: FileIdentifierMode,
-    ) -> std::io::Result<()> {
-        self.add_font_resources();
-        let mut writer = PdfWriter::new(output, CompressedStrategy::default(), id_mode);
-
-        writer.perform(self)
-    }
-
-    pub fn add_font_resources(&mut self) -> u64 {
-        let mut resources_dict = PdfDictionaryObject::new();
-        let next_num = self.next_object_number();
-        let fonts_dict = PdfDictionaryObject::new().with_object_number(next_num);
-        resources_dict.add("Font", PdfObj::dict(fonts_dict));
-
-        next_num
+    pub fn serialise<W: Write>(&mut self, output: W, id_mode: FileIdentifierMode) {
+        write_legacy(|| self.next_object_number(), output, id_mode).unwrap();
     }
 }

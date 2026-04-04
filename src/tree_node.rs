@@ -40,7 +40,7 @@ use crate::{PdfArrayObject, PdfDictionaryObject, PdfObject};
 ///  node.set_limits(1, 99);
 /// ```
 
-//------------------------ TreeNode -----------------------------//
+//------------------------ TreeKey -----------------------------//
 
 pub trait TreeKey: Sized {
     fn to_pdf_obj(self) -> PdfObject;
@@ -57,6 +57,8 @@ impl TreeKey for i64 {
     fn entry_key_name() -> &'static str { "Nums" }
 }
 
+//------------------------ TreeNode -----------------------------//
+
 pub struct TreeNode {
     pub(crate) dict: PdfDictionaryObject,
 }
@@ -70,15 +72,15 @@ impl TreeNode {
 
     pub fn set_kids(&mut self, kids: Vec<u64>) {
         let mut arr = PdfArrayObject::new();
-        for n in kids { arr.push(PdfObj::reference(n)); }
+        for kid in kids { arr.push(PdfObj::reference(kid)); }
         self.dict.add("Kids", PdfObj::array(arr));
     }
 
     pub fn set_entries<K: TreeKey>(&mut self, entries: Vec<(K, PdfObject)>) {
         let mut arr = PdfArrayObject::new();
-        for (k, v) in entries {
-            arr.push(k.to_pdf_obj());
-            arr.push(v);
+        for (key, val) in entries {
+            arr.push(key.to_pdf_obj());
+            arr.push(val);
         }
         self.dict.add(K::entry_key_name(), PdfObj::array(arr));
     }

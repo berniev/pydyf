@@ -7,9 +7,42 @@ use crate::cross_reference_table::CrossRefStream;
 use crate::file_identifier::FileIdentifierMode;
 use crate::objects::pdf_object::PdfObj;
 use crate::objects::string::encode_pdf_string;
-use crate::{Pdf, PdfDictionaryObject, PdfObject, PdfStreamObject};
+use crate::{PdfDictionaryObject, PdfObject, PdfStreamObject};
 
-//------------------------------ PdfStream ------------------
+//------------------------------ PdfWriter ------------------//
+
+pub fn add_font_resources(mut next_num_func: impl FnMut() -> u64) -> u64 {
+    let mut resources_dict = PdfDictionaryObject::new();
+    let next_num = next_num_func();
+    let fonts_dict = PdfDictionaryObject::new().with_object_number(next_num);
+    resources_dict.add("Font", PdfObj::dict(fonts_dict));
+
+    next_num
+}
+
+pub fn write_legacy<W: Write>(
+    mut next_num_func: impl FnMut() -> u64,
+    output: W,
+    id_mode: FileIdentifierMode,
+) -> std::io::Result<()> {
+    add_font_resources(||next_num_func());
+    let mut writer = PdfWriter::new(output, LegacyStrategy::default(), id_mode);
+
+    writer.perform(||next_num_func())
+}
+
+pub fn write_compressed<W: Write>(
+    mut next_num_func: impl FnMut() -> u64,
+    output: W,
+    id_mode: FileIdentifierMode,
+) -> std::io::Result<()> {
+    add_font_resources(||next_num_func());
+    let mut writer = PdfWriter::new(output, CompressedStrategy::default(), id_mode);
+
+    writer.perform(||next_num_func())
+}
+
+//------------------------------ PdfStream ------------------//
 
 pub(crate) struct PdfStream<W: Write> {
     output: W,
@@ -34,7 +67,7 @@ impl<W: Write> PdfStream<W> {
     }
 }
 
-//---------------------------- PdfWriter ------------------
+//---------------------------- PdfWriter ------------------//
 
 pub(crate) struct PdfWriter<W: Write, S: WriteStrategy> {
     stream: PdfStream<W>,
@@ -51,18 +84,19 @@ impl<W: Write, S: WriteStrategy> PdfWriter<W, S> {
         }
     }
 
-    pub fn perform(&mut self, pdf: &mut Pdf) -> std::io::Result<()> {
+    pub fn perform(&mut self, mut next_num_func: impl FnMut() -> u64) -> std::io::Result<()> {
         self.strategy.write_header(&mut self.stream)?;
-        self.strategy.write_body(pdf, &mut self.stream)?;
+        self.strategy.write_body(||next_num_func(), &mut self.stream)?;
         //self.strategy.write_index(pdf, &mut self.stream, &self.id_mode)?;
         self.stream.write_line(b"startxref")?;
-/*        self.stream
-            .write_line(pdf.xref_position.unwrap_or(0).to_string().as_bytes())?;
-*/        self.stream.write_line(b"%%EOF")
+        /*        self.stream
+                    .write_line(pdf.xref_position.unwrap_or(0).to_string().as_bytes())?;
+        */
+        self.stream.write_line(b"%%EOF")
     }
 }
 
-//---------------------------- WriteStrategy -----------------
+//---------------------------- WriteStrategy -----------------//
 
 pub(crate) trait WriteStrategy {
     const VERSION: &[u8];
@@ -70,19 +104,19 @@ pub(crate) trait WriteStrategy {
 
     fn write_body<W: Write>(
         &self,
-        pdf: &mut Pdf,
+        next_num_func: impl FnMut() -> u64,
         stream: &mut PdfStream<W>,
     ) -> std::io::Result<()>;
 
     #[allow(dead_code)]
     fn write_index<W: Write>(
         &self,
-        pdf: &mut Pdf,
+        next_num_func: impl FnMut() -> u64,
         stream: &mut PdfStream<W>,
         id_mode: &FileIdentifierMode,
     ) -> std::io::Result<()>;
 
-    //---------------------------- Helper Functions -----------------
+    //---------------------------- Helper Functions -----------------//
 
     /// Formats two byte arrays into a PDF ID array string.
     #[allow(dead_code)]
@@ -96,12 +130,13 @@ pub(crate) trait WriteStrategy {
     #[allow(dead_code)]
     fn compute_data_hash(_objects: &[PdfObject]) -> (String, Vec<u8>) {
         let context = md5::Context::new();
- /*       for obj in objects {
-            /*if obj.metadata().status != ObjectStatus::Free {
-                context.consume(obj.serialise());
-            }*/
-        }
-*/        let hash_result = context.finalize().0;
+        /*       for obj in objects {
+                    /*if obj.metadata().status != ObjectStatus::Free {
+                        context.consume(obj.serialise());
+                    }*/
+                }
+        */
+        let hash_result = context.finalize().0;
         let data_hash_hex: String = hash_result.iter().map(|b| format!("{:02x}", b)).collect();
         let data_hash_bytes = data_hash_hex.as_bytes().to_vec();
         (data_hash_hex, data_hash_bytes)
@@ -143,13 +178,13 @@ pub(crate) trait WriteStrategy {
         stream.write_line(b"%\xf0\x9f\x96\xa4") // Binary marker
     }
 }
-//------------------------------ Legacy Strategy -----------------
+//------------------------------ Legacy Strategy -----------------//
 
 #[derive(Default)]
 pub(crate) struct LegacyStrategy;
 
 impl WriteStrategy for LegacyStrategy {
-    const VERSION: &[u8] = b"1.4";
+    const VERSION: &[u8] = b"1.4"; // <<===== ahah!
 
     fn get_version(&self) -> &[u8] {
         Self::VERSION
@@ -157,7 +192,7 @@ impl WriteStrategy for LegacyStrategy {
 
     fn write_body<W: Write>(
         &self,
-        _pdf: &mut Pdf,
+        _next_num_func: impl FnMut() -> u64,
         _stream: &mut PdfStream<W>,
     ) -> std::io::Result<()> {
         // Write all objects individually (uncompressed)
@@ -173,18 +208,19 @@ impl WriteStrategy for LegacyStrategy {
 
     fn write_index<W: Write>(
         &self,
-        _pdf: &mut Pdf,
+        _next_number_func: impl FnMut() -> u64,
         stream: &mut PdfStream<W>,
         _id_mode: &FileIdentifierMode,
     ) -> std::io::Result<()> {
-/*        pdf.xref_position = Some(stream.pos);
-*/        stream.write_line(b"xref")?;
+        /*        pdf.xref_position = Some(stream.pos);
+        */
+        stream.write_line(b"xref")?;
         //stream.write_line(format!("0 {}", pdf.object_count()).as_bytes())?;
 
         // Per PDF spec, object 0 is always free (head of free list)
- /*       stream
-            .write_line(format!("0000000000 {:05} f ", Generation::ROOT_GENERATION).as_bytes())?;
-*/
+        /*       stream
+                    .write_line(format!("0000000000 {:05} f ", Generation::ROOT_GENERATION).as_bytes())?;
+        */
         // Write entries for actual objects (1 through N-1)
         /*let xref_entries: Vec<String> = pdf
             .objects
@@ -200,11 +236,11 @@ impl WriteStrategy for LegacyStrategy {
         Ok(())
     }
 }
-//------------------------ Compressed Strategy -----------------
+//------------------------ Compressed Strategy -----------------//
 
 pub struct CompressedStrategy {
     compression_map: RefCell<HashMap<usize, (usize, usize)>>, // (objid, (objstm_num, index))
-    _objstm_info: RefCell<Option<(usize, usize)>>,             // (objstm_num, offset)
+    _objstm_info: RefCell<Option<(usize, usize)>>,            // (objstm_num, offset)
 }
 
 impl Default for CompressedStrategy {
@@ -226,7 +262,7 @@ impl CompressedStrategy {
     /// Returns a map of (object_id -> (objstm_number, index_in_stream))
     fn write_body_compressed<W: Write>(
         &self,
-        _pdf: &mut Pdf, // <<=== todo bad!
+        _next_num_func: impl FnMut()->u64,
         _stream: &mut PdfStream<W>,
     ) -> std::io::Result<HashMap<usize, (usize, usize)>> {
         // Track which objects are compressed: object_id -> (objstm_num, index)
@@ -323,11 +359,11 @@ impl WriteStrategy for CompressedStrategy {
 
     fn write_body<W: Write>(
         &self,
-        pdf: &mut Pdf,
+        mut next_num_func: impl FnMut() -> u64,
         stream: &mut PdfStream<W>,
     ) -> std::io::Result<()> {
         // Call the compressed version and store the compression map
-        let map = self.write_body_compressed(pdf, stream)?;
+        let map = self.write_body_compressed(||next_num_func(), stream)?;
         *self.compression_map.borrow_mut() = map;
         Ok(())
     }
@@ -335,13 +371,13 @@ impl WriteStrategy for CompressedStrategy {
     /// Write cross-reference stream instead of traditional xref table (PDF 1.5+)
     fn write_index<W: Write>(
         &self,
-        _pdf: &mut Pdf,
+        _next_num_func: impl FnMut() -> u64,
         stream: &mut PdfStream<W>,
         _id_mode: &FileIdentifierMode,
     ) -> std::io::Result<()> {
-/*        pdf.xref_position = Some(stream.pos);
-*/
-        let mut _xref_stream = CrossRefStream::new();
+        /*        pdf.xref_position = Some(stream.pos);
+        */
+        let _xref_stream = CrossRefStream::new();
         let _entry_map: HashMap<usize, CrossRefEntry> = HashMap::new();
 
         let _compression_map = self.compression_map.borrow();
@@ -387,7 +423,6 @@ impl WriteStrategy for CompressedStrategy {
                 generation: 0,
             },
         );*/
-
 
         /*let xref_stream_bytes = xref_stream.build_stream_object(
             xref_stream_num,
