@@ -111,6 +111,10 @@ impl Pdf {
         &mut self.xref_table
     }
 
+    pub fn last_object_number(&self) -> u64 {
+        self.last_object_number
+    }
+
     pub fn next_object_number(&mut self) -> u64 {
         self.last_object_number += 1;
 
