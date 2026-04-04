@@ -9,7 +9,5 @@ pub mod number_type;
 pub mod pdf_object;
 pub mod stream;
 pub mod string;
-
-pub mod object_type;
 pub mod number;
 pub mod reference;
