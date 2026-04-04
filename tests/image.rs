@@ -21,7 +21,7 @@ fn test_inline_image() {
     let image_data = vec![255, 0, 0, 255, 0, 0, 0, 0, 255, 0, 0, 255];
     let compression = stream.compression_method();
     
-    let mut push = |vec:Vec<u8>| {stream.add_content(vec);};
+    let mut push = |vec:Vec<u8>| {stream.add(vec);};
 
     push(push_state());
     push(set_transformation_matrix(Matrix {

@@ -115,7 +115,7 @@ impl PdfStreamObject {
         self.compression_method
     }
 
-    pub fn add_content(&mut self, bytes: Vec<u8>) {
+    pub fn add(&mut self, bytes: Vec<u8>) {
         self.content.extend(bytes);
     }
 
