@@ -17,46 +17,50 @@ use flate2::write::ZlibEncoder;
 ///   A stream shall consist of a dictionary followed by zero or more bytes bracketed between the
 ///   keywords'stream' and 'endstream'.
 ///
-///   All streams shall be indirect objects (see 7.3.10, "Indirect Objects") and the stream
-///   dictionary shall be a direct object.
+///   All streams shall be indirect objects and the stream dictionary shall be a direct object.
 ///
 ///   Beginning with PDF 1.5, indirect objects may reside in object streams (see 7.5.7, "Object
 ///   Streams"). They are referred to in the same way; however, their definition shall not
 ///   include the keywords obj and endobj, and their generation number shall be zero.
 ///
+/// ```
+/// Stream Extent: Entries common to all stream --dictionaries--:
+/// ===========================================================================
+/// Entry         Type     Reqd Description
+/// ============  ==========  = ===============================================
+/// Length        int         R The length of the stream in bytes
+/// Filter        nam or arr  O A filter or sequence of filters to be applied
+/// DecodeParms   dic or arr  O Parameters for the filter(s) in Filter
+/// F             filespec    O A file specification for the stream data
+/// FFilter       nam or arr  O A filter or sequence of filters to file data
+/// FDecodeParms  dic or arr  O Parameters for the filter(s) in FFilter
+/// DL            int         O Non-negative len of the decoded stream in bytes
+/// ===========================================================================
+/// ```
 ///   Filter:
-///
-///   an optional part of the specification of a stream object, indicating how the data in the
+///   An optional part of the specification of a stream object, indicating how the data in the
 ///   stream should be decoded before it is used
-///
-/// * `stream` - Optional pre-existing stream content (sequence of operator calls)
-/// * `extra` - Optional extra dictionary entries
-///
-///   Stream Extent: Entries common to all stream dictionaries:
-///
-///   Length      integer              (Reqd) - The length of the stream in bytes.
-///   Filter      name or array        (Opt)  - A filter or sequence of filters to be applied.
-///   DecodeParms dictionary or array  (Opt)  - Parameters for the filter(s) in Filter.
-///   F           file specification   (Opt)  - A file specification for the stream data.
-///   FFilter     name or array        (Opt)  - A filter or sequence of filters to file data
-///   FDecodeParms dictionary or array (Opt)  - Parameters for the filter(s) in FFilter.
-///   DL          integer              (Opt)  - Non-negative length of the decoded stream in bytes.
-///
-///   Stream Filters:
-///
-///   Params   Ver  Data Type       Decode/Decompress
-///   ASCIIHexDecode   no        binary          ASCII hex
-///   ASCII85Decode    no        binary          ASCII base-85
-///   LZWDecode        yes       text or binary  LZE (Lempel-Ziv-Welch) algorithm
-///   FlateDecode      yes  1.2  text or binary  zlib/deflate compression
-///   RunLengthDecode  no        text or binary  byte-oriented run-length encoding algorithm
-///   CCITTFaxDecode   yes       image           CCITT facsimile standard. typ mono 1 bit/pixel
-///   JBIG2Decode      yes  1.4  image           JBig2 standard -> mono or approx
-///   DCTDecode        yes       image           Discrete Cosine Transform technique based on JPEG
-///   JPXDecode        no   1.5  image           Wwavelet-based JPEG2000 standard
-///   Crypt            yes  1.5  data            Data encrypted by a security handler
-///
-///
+/// ```
+/// Stream Filters:
+/// =============================================================================
+/// Name            P V Type    Decode/Decompress
+/// =============== = = ======= =================================================
+/// DCTDecode       y 5 image   Discrete Cosine Transform technique based on JPEG
+/// JPXDecode       n 5 image   Wwavelet-based JPEG2000 standard
+/// JBIG2Decode     y 4 image   JBig2 standard -> mono or approx
+/// ASCIIHexDecode  n   binary  ASCII hex
+/// ASCII85Decode   n   binary  ASCII base-85
+/// LZWDecode       y   txt/bin LZE (Lempel-Ziv-Welch) algorithm
+/// FlateDecode     y 2 txt/bin zlib/deflate compression
+/// RunLengthDecode n   txt/bin byte-oriented run-length encoding algorithm
+/// CCITTFaxDecode  y   image   CCITT facsimile standard. typ mono 1 bit/pixel
+/// JBIG2Decode     y 4 image   JBig2 standard -> mono or approx
+/// DCTDecode       y   image   Discrete Cosine Transform technique based on JPEG
+/// JPXDecode       n 5 image   Wwavelet-based JPEG2000 standard
+/// Crypt           y 5 data    Data encrypted by a security handler
+/// =============================================================================
+/// ```
+
 use std::io::Write as IoWrite;
 
 use crate::PdfDictionaryObject;
@@ -131,7 +135,9 @@ impl PdfStreamObject {
 
         let mut dict = self.dict.clone(); // else self must be mut, which it can't be
         dict.add("Length", stream_bytes.len() as f64);
+
         let mut vec = dict.serialise()?;
+
         vec.push(b'\n');
         vec.extend(b"stream\n");
         vec.extend(&stream_bytes);

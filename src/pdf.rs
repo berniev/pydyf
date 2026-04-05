@@ -9,7 +9,7 @@ use std::io::{Seek, Write};
 //--------------------------- Pdf -------------------------//
 
 pub struct Pdf {
-    header: Header,
+    pub header: Header,
     catalog_dict: PdfDictionaryObject,
     root_page_tree_dict: PdfDictionaryObject,
     xref_table: CrossRefTable,

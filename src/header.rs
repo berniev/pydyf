@@ -7,7 +7,7 @@ pub struct Header {
 impl Header {
     pub fn new() -> Self {
         Header {
-            version: Version::Auto,
+            version: Version::default(),
         }
     }
     
