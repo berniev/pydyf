@@ -1,10 +1,10 @@
+use rusty_pdf::PdfDictionaryObject;
 use rusty_pdf::color::{Color, RGB};
 use rusty_pdf::drawing_commands::DrawingCommands;
 use rusty_pdf::objects::pdf_object::PdfObj;
 use rusty_pdf::objects::stream::{StrokeOrFill, WindingRule};
 use rusty_pdf::page::*;
 use rusty_pdf::util::{Dims, Posn};
-use rusty_pdf::PdfDictionaryObject;
 use rusty_pdf::{Pdf, PdfStreamObject};
 
 fn main() {
@@ -35,17 +35,11 @@ fn main() {
     cmd.fill(WindingRule::EvenOdd);
 
     page_dict.add("Contents", PdfObj::stream(stream));
-    add_page_to_tree(&mut page_dict, pdf.root_page_tree_dict_ref()).expect("Add page to tree failed");
+    add_page_to_tree(&mut page_dict, pdf.root_page_tree_dict_ref())
+        .expect("Add page to tree failed");
 
-    ///////////////////////////
     let path = "output.pdf";
     pdf.finalise(path).expect("finalise failed");
-    ///////////////////////////
 
-
-    println!(
-        "Created {} with {} objects",
-        path,
-        pdf.next_object_number() - 1
-    );
+    println!("Created {path}:\n\n{}", std::fs::read_to_string(path).unwrap());
 }

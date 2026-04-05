@@ -16,5 +16,8 @@ impl Version {
             Version::V1_5 => "1.5",
         }
     }
-}
 
+    pub fn as_bytes(&self) -> &[u8] {
+        self.as_str().as_bytes()
+    }
+}
