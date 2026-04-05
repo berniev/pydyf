@@ -23,8 +23,9 @@ impl Header {
         let mut arr :Vec<u8> = vec![];
         arr.extend("%PDF-".to_string().as_bytes());
         arr.extend(self.version.as_str().as_bytes());
-        arr.extend("\r\nâãÏÓ\r\n".as_bytes());
-        
+        arr.extend("\r\n".as_bytes());
+        arr.extend("âãÏÓ\r\n".as_bytes());
+
         arr
     }
 }

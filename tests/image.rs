@@ -2,7 +2,7 @@ use pydyf::color::ColorSpace;
 use pydyf::drawing_commands::*;
 use pydyf::file_identifier::FileIdentifierMode;
 use pydyf::objects::pdf_object::PdfObj;
-use pydyf::page::{add_page_to_tree, make_page};
+use pydyf::page::{add_page_to_tree, make_page_dict};
 use pydyf::util::{Matrix, Posn};
 use pydyf::{PageSize, Pdf, Stream};
 use std::fs::File;
@@ -55,14 +55,13 @@ fn test_inline_image() {
     cmd.end_text();
 
     let mut pdf = Pdf::new();
-    let mut page_dict = make_page(pdf.next_object_number());
+    let mut page_dict = make_page_dict(pdf.next_object_number());
     page_dict.add("MediaBox", PdfObj::array(PageSize::A4.to_rect()));
     page_dict.add("Contents", PdfObj::stream(stream));
     add_page_to_tree(&mut page_dict, pdf.root_page_tree_dict_ref()).expect("fail");
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
-    let file = File::create("/tmp/pydyf_test/image.pdf").unwrap();
-    pdf.finalise(file, FileIdentifierMode::AutoMD5);
+    pdf.finalise("/tmp/pydyf_test/image.pdf");
 
     println!("✅ Generated: /tmp/pydyf_test/image.pdf");
 }

@@ -1,7 +1,23 @@
 use crate::objects::pdf_object::PdfObj;
+use crate::resource_category::STANDARD_RESOURCE_CATEGORIES;
 use crate::{PdfDictionaryObject, PdfError, PdfResult};
 use std::collections::HashMap;
-use crate::resource_category::STANDARD_RESOURCE_CATEGORIES;
+
+//--------------------------- Resources ---------------------------------//
+
+struct Resources {
+    resources_dict: PdfDictionaryObject,
+}
+
+impl Resources {
+    pub fn new() -> Self {
+        Self {
+            resources_dict: PdfDictionaryObject::new(),
+        }
+    }
+}
+
+//--------------------------- ResourcesMap -------------------------------//
 
 #[derive(Clone)]
 pub struct ResourceMap {
@@ -71,6 +87,8 @@ impl ResourceMap {
     }
 }
 
+//--------------------------- CategoryHandle -------------------------------//
+
 /// A "Base Structure" that captures context to provide a simple add(name, id) API.
 pub struct CategoryHandle<'a> {
     dictionary: &'a mut ResourceMap,
@@ -86,6 +104,8 @@ impl<'a> CategoryHandle<'a> {
         self.dictionary.category_count(&self.category)
     }
 }
+
+//--------------------------- Tests ---------------------------------//
 
 #[cfg(test)]
 mod tests {

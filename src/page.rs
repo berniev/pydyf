@@ -69,7 +69,7 @@ use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfObject};
 
 //--------------------------- Page ---------------------------//
 
-pub fn make_page(object_number: u64) -> PdfDictionaryObject {
+pub fn make_page_dict(object_number: u64) -> PdfDictionaryObject {
     PdfDictionaryObject::new()
         .typed("Page")
         .with_object_number(object_number)

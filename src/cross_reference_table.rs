@@ -71,7 +71,7 @@ impl Default for CrossReferenceEntry {
 
 pub struct CrossRefTable {
     entries: Vec<CrossReferenceEntry>, // contiguous, ordered by object number
-    pub xref_position: usize,
+    pub xref_position: u64,
 }
 
 impl CrossRefTable {

@@ -1,5 +1,5 @@
-use flate2::write::ZlibEncoder;
 use flate2::Compression;
+use flate2::write::ZlibEncoder;
 /// PDF content stream.
 ///
 /// Content streams define page content, eg:
@@ -59,10 +59,10 @@ use flate2::Compression;
 ///
 use std::io::Write as IoWrite;
 
+use crate::PdfDictionaryObject;
 use crate::error::PdfError;
 use crate::objects::pdf_object::PdfObj;
 pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, ToPdf, WindingRule};
-use crate::PdfDictionaryObject;
 
 //------------------------ PdfStreamObject -----------------------
 
@@ -98,7 +98,7 @@ impl PdfStreamObject {
 
     pub fn compressed(mut self) -> Self {
         self.compression_method = CompressionMethod::Flate;
-
+        self.dict.add("Filter", PdfObj::name("FlateDecode"));
         self
     }
 
@@ -119,21 +119,19 @@ impl PdfStreamObject {
         self.content.extend(bytes);
     }
 
-    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
         let stream_bytes: Vec<u8> = match self.compression_method {
             CompressionMethod::None => self.content.clone(),
             CompressionMethod::Flate => {
-                self.dict.add("Filter", PdfObj::name("FlateDecode"));
                 let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
                 encoder.write_all(&self.content)?;
                 encoder.finish()?
             }
         };
 
-        self.dict
-            .add("Length", PdfObj::num(stream_bytes.len() as f64));
-
-        let mut vec = self.dict.serialise()?;
+        let mut dict = self.dict.clone(); // else self must be mut, which it can't be
+        dict.add("Length", PdfObj::num(stream_bytes.len() as f64));
+        let mut vec = dict.serialise()?;
         vec.push(b'\n');
         vec.extend(b"stream\n");
         vec.extend(&stream_bytes);

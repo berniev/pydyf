@@ -155,7 +155,7 @@ pub enum PdfObject {
 }
 
 impl PdfObject {
-    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
         match self {
             PdfObject::Array(a) => a.serialise(),
             PdfObject::Boolean(b) => b.serialise(),

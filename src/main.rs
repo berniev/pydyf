@@ -1,14 +1,11 @@
-use pydyf::PdfDictionaryObject;
 use pydyf::color::{Color, RGB};
 use pydyf::drawing_commands::DrawingCommands;
-use pydyf::file_identifier::FileIdentifierMode;
 use pydyf::objects::pdf_object::PdfObj;
 use pydyf::objects::stream::{StrokeOrFill, WindingRule};
 use pydyf::page::*;
 use pydyf::util::{Dims, Posn};
+use pydyf::PdfDictionaryObject;
 use pydyf::{Pdf, PdfStreamObject};
-use std::fs::File;
-use std::io::Write;
 
 fn main() {
     println!("PyDyf - PDF library for Rust");
@@ -16,9 +13,9 @@ fn main() {
 
     let mut pdf = Pdf::new();
 
-    let mut page = make_page(pdf.next_object_number());
-    page.add("MediaBox", PdfObj::array(PageSize::A4.to_rect()));
-    page.add("Resources", PdfObj::dict(PdfDictionaryObject::new()));
+    let mut page_dict = make_page_dict(pdf.next_object_number());
+    page_dict.add("MediaBox", PdfObj::array(PageSize::A4.to_rect()));
+    page_dict.add("Resources", PdfObj::dict(PdfDictionaryObject::new()));
 
     let mut stream = PdfStreamObject::new();
 
@@ -37,18 +34,14 @@ fn main() {
     );
     cmd.fill(WindingRule::EvenOdd);
 
-    page.add("Contents", PdfObj::stream(stream));
-    add_page_to_tree(&mut page, pdf.root_page_tree_dict_ref()).expect("Add page to tree failed");
-
-    let mut output = Vec::new();
+    page_dict.add("Contents", PdfObj::stream(stream));
+    add_page_to_tree(&mut page_dict, pdf.root_page_tree_dict_ref()).expect("Add page to tree failed");
 
     ///////////////////////////
-    pdf.finalise(&mut output, FileIdentifierMode::None);
-    ///////////////////////////
-
     let path = "output.pdf";
-    let mut file = File::create(path).expect("Failed to create file");
-    file.write_all(&output).expect("Failed to write file");
+    pdf.finalise(path).expect("finalise failed");
+    ///////////////////////////
+
 
     println!(
         "Created {} with {} objects",

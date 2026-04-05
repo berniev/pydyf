@@ -34,7 +34,7 @@ impl PdfNumberObject {
         }
     }
 
-    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
         Ok(match self.value {
             NumberType::Integer(i) => i.to_string().into_bytes(),
             NumberType::Real(f) => {

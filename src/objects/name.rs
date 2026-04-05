@@ -25,7 +25,7 @@ impl PdfNameObject {
         }
     }
 
-    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+    pub fn serialise(& self) -> Result<Vec<u8>, PdfError> {
         Ok(format!("/{}", self.value).into_bytes())
     }
 }

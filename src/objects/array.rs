@@ -38,11 +38,11 @@ impl PdfArrayObject {
         self.values.push(value);
     }
 
-    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
         let mut arr = vec![];
         arr.push(b'[');
         arr.push(b' ');
-        for pdf_object in &mut self.values {
+        for pdf_object in &self.values {
             arr.extend(pdf_object.serialise()?);
             arr.push(b' ');
         }

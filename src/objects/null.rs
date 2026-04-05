@@ -14,7 +14,7 @@ impl PdfNullObject {
 }
 
 impl PdfNullObject {
-    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
         Ok(vec![])
     }
 }

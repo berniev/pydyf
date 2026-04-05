@@ -46,8 +46,7 @@ impl ResourceCategory {
     }
 }
 /*
-The operands supplied to operators in a content stream shall only be direct objects; indirect
-objects and object references shall not be permitted.
+The operands supplied to operators in a content stream shall only be direct objects.
 
 In some cases, an operator shall refer to a PDF object that is defined outside the content stream,
 such as a font dictionary or a stream containing image data. This shall be accomplished by defining
@@ -83,6 +82,7 @@ A resource dictionary shall be associated with a content stream in one of the fo
 
 In the context of a given content stream, the term current resource dictionary refers to the
 resource dictionary associated with the stream in one of the ways described above.
+
 Each key in a resource dictionary shall be the name of a resource type, as shown in Table 33. The
 corresponding values shall be as follows:
 • For resource type ProcSet, the value shall be an array of procedure set names
@@ -90,7 +90,7 @@ corresponding values shall be as follows:
   shall be the name of a specific resource, and the corresponding value shall be a PDF object
   associated with the name.
 
-Optional entries in a resource dictionary (none reqd)
+Resource Dictionary Entries (optional, * except for ProcSet)
 ==========  ==========  ============================================================================
 Key         Type        Value
 ==========  ==========  ============================================================================
@@ -103,8 +103,8 @@ Properties  Dictionary  Resource names to property list dictionaries for marked 
 Shading     Dictionary  Resource names to shading dictionaries
 XObject     Dictionary  Resource names to external objects
 
-ProcSet     Array       An array of predefined procedure set names
-==========  ==========  ============================================================================
+ProcSet*    Array       An array of predefined procedure set names
+====================================================================================================
 
 EXAMPLE 2 The following shows a resource dictionary containing procedure sets, fonts, and external
 objects. The procedure sets are specified by an array, as described in 14.2, "Procedure Sets". The

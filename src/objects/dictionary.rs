@@ -89,13 +89,14 @@ impl PdfDictionaryObject {
         // todo: check key is not duplicate
         self.values.push((PdfNameObject::new(key), object));
     }
-    pub fn serialise(&mut self) -> Result<Vec<u8>, PdfError> {
+    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
         let mut arr = vec![];
         arr.extend(b"<<");
-        for (pdf_name_obj, pdf_object) in &mut self.values {
+        for (pdf_name_obj, pdf_object) in & self.values {
             arr.extend(pdf_name_obj.serialise()?);
             arr.push(b' ');
             arr.extend(pdf_object.serialise()?);
+            arr.extend(b"\n");
         }
         arr.extend(b">>");
 
