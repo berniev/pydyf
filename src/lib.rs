@@ -34,6 +34,7 @@ pub mod resource_manager;
 pub mod drawing_commands;
 pub mod tree_node;
 pub mod cross_ref_stream;
+pub mod string_functions;
 
 // Re-export main types for user API convenience
 pub use action::{

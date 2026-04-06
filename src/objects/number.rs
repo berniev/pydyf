@@ -6,6 +6,7 @@ use crate::{NumberType, PdfError};
 pub struct PdfNumberObject {
     pub(crate) value: NumberType,
     pub(crate) object_number: Option<u64>,
+    pub(crate) generation_number: Option<u16>,
 }
 
 impl PdfNumberObject {
@@ -13,6 +14,7 @@ impl PdfNumberObject {
         Self {
             value,
             object_number: None,
+            generation_number: None,
         }
     }
 

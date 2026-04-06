@@ -83,6 +83,7 @@ pub struct PdfStreamObject {
     pub(crate) dict: PdfDictionaryObject,
     pub(crate) content: Vec<u8>,
     pub(crate) object_number: Option<u64>,
+    pub(crate) generation_number: Option<u16>,
 
     pub(crate) compression_method: CompressionMethod,
 }
@@ -94,6 +95,7 @@ impl PdfStreamObject {
             dict: PdfDictionaryObject::new(),
             content: Vec::new(),
             object_number: Some(object_number), // all streams objects are indirect
+            generation_number: None,
             compression_method: CompressionMethod::None,
         }
     }

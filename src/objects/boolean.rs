@@ -6,6 +6,7 @@ use crate::PdfError;
 pub struct PdfBooleanObject {
     pub(crate) value: bool,
     pub(crate) object_number: Option<u64>,
+    pub(crate) generation_number: Option<u16>,
 }
 
 impl PdfBooleanObject {
@@ -13,6 +14,7 @@ impl PdfBooleanObject {
         Self {
             value,
             object_number: None,
+            generation_number: None,
         }
     }
 

@@ -173,16 +173,15 @@ macro_rules! match_pdf_object {
 impl PdfObject {
     pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
         let ser = match_pdf_object!(self, x => x.serialise())?;
-        let num = self.get_object_number();
-        if num == None {
-
+        let object_number = self.get_object_number();
+        if object_number == None {
             return Ok(ser);
         }
 
         // todo: add obj num to xref table
         // indirect object
         let mut vec = vec![];
-        vec.extend(num.unwrap().to_string().as_bytes());
+        vec.extend(object_number.unwrap().to_string().as_bytes());
         vec.extend(b" 0 obj\n");
         vec.extend(ser);
         vec.extend(b"\nendobj\n");
@@ -196,6 +195,24 @@ impl PdfObject {
 
     pub fn set_object_number(&mut self, object_number: u64) {
         match_pdf_object!(self, x => x.object_number = Some(object_number));
+    }
+
+    pub fn get_generation_number(&self) -> Option<u16> {
+        match_pdf_object!(self, x => x.generation_number)
+    }
+
+    pub fn set_generation_number(&mut self, generation_number: u16) {
+        match_pdf_object!(self, x => x.generation_number = Some(generation_number));
+    }
+
+    pub fn with_object_number(mut self, value: u64) -> Self {
+        match_pdf_object!(&mut self, x => x.object_number = Some(value));
+        self
+    }
+
+    pub fn with_generation_number(mut self, value: u16) -> Self {
+        match_pdf_object!(&mut self, x => x.generation_number = Some(value));
+        self
     }
 }
 

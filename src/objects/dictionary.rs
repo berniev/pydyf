@@ -25,6 +25,7 @@ use crate::{PdfError, PdfNameObject, PdfObject};
 pub struct PdfDictionaryObject {
     pub(crate) values: Vec<(PdfNameObject, PdfObject)>,
     pub(crate) object_number: Option<u64>,
+    pub(crate) generation_number: Option<u16>,
 }
 
 impl PdfDictionaryObject {
@@ -32,6 +33,7 @@ impl PdfDictionaryObject {
         Self {
             values: vec![],
             object_number: None,
+            generation_number: None,
         }
     }
 

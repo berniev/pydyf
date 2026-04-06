@@ -6,8 +6,6 @@
 /// array’s elements may be any combination of numbers, strings, dictionaries, or any other pdf
 /// objects, including other arrays. An array may have zero elements.
 ///
-/// Construction:
-///
 /// An array shall be written as a sequence of objects enclosed in SQUARE BRACKETS.
 /// EXAMPLE [ 549 3.14 false ( Ralph ) /SomeName ]
 ///
@@ -19,6 +17,7 @@ use crate::{PdfError, PdfObject};
 pub struct PdfArrayObject {
     pub(crate) values: Vec<PdfObject>,
     pub(crate) object_number: Option<u64>,
+    pub(crate) generation_number: Option<u16>,
 }
 
 impl PdfArrayObject {
@@ -26,12 +25,8 @@ impl PdfArrayObject {
         Self {
             values: vec![],
             object_number: None,
+            generation_number: None,
         }
-    }
-
-    pub fn with_object_number(mut self, value: u64) -> Self {
-        self.object_number = Some(value);
-        self
     }
 
     pub fn push(&mut self, value: impl Into<PdfObject>) {

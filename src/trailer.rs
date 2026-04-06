@@ -13,8 +13,8 @@ Encrypt  Dictionary  Reqd*  If doc is encrypted. Specifies how the document is e
 */
 use crate::file_identifier::FileIdentifierMode;
 use crate::objects::pdf_object::PdfObj;
-use crate::objects::string::encode_pdf_string;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfObject};
+use crate::string_functions::encode_pdf_string;
 
 pub struct Trailer {
     dict: PdfDictionaryObject,

@@ -5,6 +5,7 @@ use crate::PdfError;
 pub struct PdfReferenceObject {
     host_type: HostType,
     pub object_number: Option<u64>,
+    pub generation_number: Option<u16>,
 }
 
 impl PdfReferenceObject {
@@ -14,6 +15,7 @@ impl PdfReferenceObject {
                 generation_number: 0,
             },
             object_number: Some(obj_num),
+            generation_number: None,
         }
     }
 
