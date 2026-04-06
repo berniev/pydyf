@@ -157,49 +157,45 @@ pub enum PdfObject {
 macro_rules! match_pdf_object {
     ($self:expr, $x:ident => $body:expr) => {
         match $self {
-            PdfObject::Array($x)      => $body,
-            PdfObject::Boolean($x)    => $body,
+            PdfObject::Array($x) => $body,
+            PdfObject::Boolean($x) => $body,
             PdfObject::Dictionary($x) => $body,
-            PdfObject::Name($x)       => $body,
-            PdfObject::Null($x)       => $body,
-            PdfObject::Number($x)     => $body,
-            PdfObject::Reference($x)  => $body,
-            PdfObject::Stream($x)     => $body,
-            PdfObject::String($x)     => $body,
+            PdfObject::Name($x) => $body,
+            PdfObject::Null($x) => $body,
+            PdfObject::Number($x) => $body,
+            PdfObject::Reference($x) => $body,
+            PdfObject::Stream($x) => $body,
+            PdfObject::String($x) => $body,
         }
     };
 }
 
 impl PdfObject {
     pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
-        match_pdf_object!(self, x => x.serialise())
+        let ser = match_pdf_object!(self, x => x.serialise())?;
+        let num = self.get_object_number();
+        if num == None {
+
+            return Ok(ser);
+        }
+
+        // todo: add obj num to xref table
+        // indirect object
+        let mut vec = vec![];
+        vec.extend(num.unwrap().to_string().as_bytes());
+        vec.extend(b" 0 obj\n");
+        vec.extend(ser);
+        vec.extend(b"\nendobj\n");
+
+        Ok(vec)
     }
 
     pub fn get_object_number(&self) -> Option<u64> {
-        match_pdf_object!(self, x => x.object_number);
-     }
+        match_pdf_object!(self, x => x.object_number)
+    }
 
     pub fn set_object_number(&mut self, object_number: u64) {
         match_pdf_object!(self, x => x.object_number = Some(object_number));
-    }
-
-    // todo: add to body
-    // result gets added to body
-    pub fn serialise_wrapper(&mut self) -> Result<Vec<u8>, PdfError> {
-        let ser = self.serialise();
-
-        if let Some(object_number) = self.get_object_number() {
-            let mut vec = vec![];
-            vec.extend(object_number.to_string().as_bytes());
-            vec.extend(b" 0 obj\n");
-            vec.extend(ser);
-            vec.extend(b"\nendobj\n");
-            // todo: add obj num to xref table
-
-            Ok(vec)
-        } else {
-            ser
-        }
     }
 }
 
@@ -274,31 +270,37 @@ impl From<u8> for PdfObject {
         PdfObject::from(NumberType::from(v))
     }
 }
+
 impl From<usize> for PdfObject {
     fn from(v: usize) -> Self {
         PdfObject::from(NumberType::from(v))
     }
 }
+
 impl From<u64> for PdfObject {
     fn from(v: u64) -> Self {
         PdfObject::from(NumberType::from(v))
     }
 }
+
 impl From<i32> for PdfObject {
     fn from(v: i32) -> Self {
         PdfObject::from(NumberType::from(v))
     }
 }
+
 impl From<i64> for PdfObject {
     fn from(v: i64) -> Self {
         PdfObject::from(NumberType::from(v))
     }
 }
+
 impl From<f32> for PdfObject {
     fn from(v: f32) -> Self {
         PdfObject::from(NumberType::from(v))
     }
 }
+
 impl From<f64> for PdfObject {
     fn from(v: f64) -> Self {
         PdfObject::from(NumberType::from(v))

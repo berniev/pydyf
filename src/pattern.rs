@@ -77,7 +77,7 @@ impl TilingPattern {
     }
 
     pub fn to_stream(&self) -> PdfStreamObject {
-        let mut stream = PdfStreamObject::new();
+        let mut stream = PdfStreamObject::new(999u64);
 
         stream.add(self.content.clone());
 
