@@ -65,7 +65,8 @@
 /// Rotate    Integer     Opt    Inh
 use crate::objects::pdf_object::PdfObj;
 pub use crate::page_size::PageSize;
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfObject};
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
+
 
 //--------------------------- Page ---------------------------//
 
@@ -77,9 +78,7 @@ pub fn make_page_dict(object_number: u64) -> PdfDictionaryObject {
 
 //--------------------------- PageTree -------------------------//
 
-pub fn make_page_tree_dict(
-    object_number: u64,
-) -> PdfDictionaryObject {
+pub fn make_page_tree_dict(object_number: u64) -> PdfDictionaryObject {
     let mut tree = PdfDictionaryObject::new()
         .typed("Pages")
         .with_object_number(object_number);
@@ -93,13 +92,16 @@ pub fn add_tree_to_tree(
     child_tree_dict: &PdfDictionaryObject,
     parent_tree_dict: &mut PdfDictionaryObject,
 ) -> Result<(), PdfError> {
-    if let Some(PdfObject::Array(kids)) = parent_tree_dict.get_mut("Kids") {
-        kids.push(PdfObj::reference(child_tree_dict.object_number.unwrap()));
-    } else {
+    if !parent_tree_dict.contains_key("Kids") {
         return Err(PdfError::StructureError(
             "Parent page tree must have a Kids array".to_string(),
         ));
     }
+    parent_tree_dict.push_to_array(
+        "Kids",
+        PdfObj::reference(child_tree_dict.object_number.unwrap()),
+    );
+    
     Ok(())
 }
 
@@ -129,9 +131,7 @@ pub fn add_page_to_tree(
     let new_count = tree_dict.get_integer("Count").unwrap_or(0) + 1;
     tree_dict.update("Count", PdfObj::num(new_count));
 
-    if let Some(PdfObject::Array(kids)) = tree_dict.get_mut("Kids") {
-        kids.push(PdfObj::reference(page_dict.object_number.unwrap()));
-    }
+    tree_dict.push_to_array("Kids", PdfObj::reference(page_dict.object_number.unwrap()));
 
     Ok(())
 }

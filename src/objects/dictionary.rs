@@ -66,6 +66,21 @@ impl PdfDictionaryObject {
             .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
     }
 
+    fn get_mut(&mut self, key: &str) -> Option<&mut PdfObject> {
+        self.values
+            .iter_mut()
+            .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
+    }
+
+        pub fn push_to_array(&mut self, key: &str, object: impl Into<PdfObject>) -> bool {
+            if let Some(PdfObject::Array(arr)) = self.get_mut(key) {
+                arr.push(object);
+                true
+            } else {
+                false
+            }
+        }
+
     pub fn get_integer(&self, key: &str) -> Option<i64> {
         match self.get(key) {
             Some(PdfObject::Number(n)) => Some(n.as_int()),
@@ -79,12 +94,6 @@ impl PdfDictionaryObject {
         } else {
             self.values.push((PdfNameObject::new(key), object));
         }
-    }
-
-    pub fn get_mut(&mut self, key: &str) -> Option<&mut PdfObject> {
-        self.values
-            .iter_mut()
-            .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
     }
 
     pub fn add(&mut self, key: &str, object: impl Into<PdfObject>){
