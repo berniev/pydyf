@@ -13,7 +13,7 @@ pub mod metadata;
 pub mod objects;
 pub mod optional_content;
 pub mod outline;
-pub mod page;
+pub mod page_ops;
 pub mod pattern;
 pub mod pdf;
 pub mod resource;
@@ -35,6 +35,7 @@ pub mod drawing_commands;
 pub mod tree_node;
 pub mod cross_ref_stream;
 pub mod string_functions;
+pub mod object_ops;
 
 // Re-export main types for user API convenience
 pub use action::{
@@ -64,7 +65,7 @@ pub use optional_content::{
     LayerOrder, OptionalContentConfig, OptionalContentGroup, VisibilityInitialState,
 };
 pub use outline::{DocumentOutline, OutlineItem, OutlineItemFlags};
-pub use page::PageSize;
+pub use page_ops::PageSize;
 pub use pattern::{AxialShading, PaintType, PatternType, ShadingType, TilingPattern, TilingType};
 pub use pdf::{Pdf};
 pub use resource::{Resource};

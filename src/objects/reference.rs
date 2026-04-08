@@ -1,5 +1,14 @@
-use crate::objects::indirect::HostType;
 use crate::PdfError;
+
+//--------------------------- HostType --------------------------//
+
+#[derive(Clone)]
+pub enum HostType {
+    Standard { generation_number: u16 }, // offset from start of file
+    ObjectStream { stream_obj_num: usize }, // v1.5+, obj num of containing ObjStm
+}
+
+//--------------------------- PdfReferenceObject -------------------------//
 
 #[derive(Clone)]
 pub struct PdfReferenceObject {
@@ -19,12 +28,11 @@ impl PdfReferenceObject {
         }
     }
 
-    pub fn serialise(&self) ->  Result<Vec<u8>, PdfError> {
+    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
         let gen_num = match &self.host_type {
             HostType::Standard { generation_number } => *generation_number,
             HostType::ObjectStream { .. } => 0,
         };
-
         let mut vec: Vec<u8> = vec![];
         vec.extend(self.object_number.unwrap().to_string().into_bytes());
         vec.push(b' ');

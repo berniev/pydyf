@@ -1,5 +1,4 @@
 use crate::{NumberType, PdfError};
-
 //---------------- PdfNumberObject -----------------
 
 #[derive(Debug, Clone, PartialEq)]
@@ -36,17 +35,22 @@ impl PdfNumberObject {
         }
     }
 
-    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
-        Ok(match self.value {
-            NumberType::Integer(i) => i.to_string().into_bytes(),
+    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
+        let mut arr = vec![];
+        arr = match self.value {
+            NumberType::Integer(i) => Vec::from(&*i.to_string().into_bytes()),
             NumberType::Real(f) => {
-                format!("{:.4}", f) // use a reasonable precisio
-                    .trim_end_matches('0')
-                    .trim_end_matches('.')
-                    .to_string()
-                    .into_bytes()
+                Vec::from(
+                    &*format!("{:.4}", f) // use a reasonable precision
+                        .trim_end_matches('0')
+                        .trim_end_matches('.')
+                        .to_string()
+                        .into_bytes(),
+                )
             }
-        })
+        };
+
+        Ok(arr)
     }
 }
 

@@ -1,7 +1,6 @@
 pub mod array;
 pub mod boolean;
 pub mod dictionary;
-pub mod indirect;
 pub mod object_status;
 pub mod name;
 pub mod null;

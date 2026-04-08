@@ -1,5 +1,9 @@
-use flate2::Compression;
+use crate::error::PdfError;
+use crate::objects::pdf_object::PdfObj;
+pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, ToPdf, WindingRule};
+use crate::PdfDictionaryObject;
 use flate2::write::ZlibEncoder;
+use flate2::Compression;
 /// PDF content stream
 ///
 /// Content streams most commonly define page content, e.g.
@@ -10,11 +14,11 @@ use flate2::write::ZlibEncoder;
 /// - Transformations: matrices, state management
 /// but have other uses as well.
 ///
-/// A stream object is a (potentially very long) sequence of bytes. Objects with potentially large 
+/// A stream object is a (potentially very long) sequence of bytes. Objects with potentially large
 /// amounts of data, such as images and page descriptions, shall be represented as streams.
 ///
-/// A stream shall be an indirect object and consist of a direct dictionary object (known as the 
-/// Stream Extent) followed by zero or more bytes bracketed between the keywords'stream' and 
+/// A stream shall be an indirect object and consist of a direct dictionary object (known as the
+/// Stream Extent) followed by zero or more bytes bracketed between the keywords'stream' and
 /// 'endstream'.
 /// ```
 ///     5 0 obj          ← object number + generation number
@@ -36,14 +40,14 @@ use flate2::write::ZlibEncoder;
 /// DL            int         O Non-negative len of the decoded stream in bytes
 /// Filter        nam or arr  O A filter or sequence of filters to be applied
 /// DecodeParms   dic or arr  O Parameters for the filter(s) in Filter
-/// 
+///
 /// F             filespec    O A file specification for the stream data
 /// FFilter       nam or arr  O A filter or sequence of filters to file data
 /// FDecodeParms  dic or arr  O Parameters for the filter(s) in FFilter
 /// ===========================================================================
 /// ```
 /// Stream Filters:
-/// Indicate how the data in the stream should be decoded before it is used. Used in "Filter" and 
+/// Indicate how the data in the stream should be decoded before it is used. Used in "Filter" and
 /// "FFilter" dict entries.
 /// ```
 /// Stream Filters:
@@ -65,16 +69,11 @@ use flate2::write::ZlibEncoder;
 /// Crypt           y 5 data    Data encrypted by a security handler
 /// =============================================================================
 /// ```
-/// Beginning with PDF 1.5, indirect objects may reside in object streams. 
-/// They are referred to in the same way; however, their definition shall not include the keywords 
+/// Beginning with PDF 1.5, indirect objects may reside in object streams.
+/// They are referred to in the same way; however, their definition shall not include the keywords
 /// obj and endobj, and their generation number shall be zero.
 ///
 use std::io::Write as IoWrite;
-
-use crate::PdfDictionaryObject;
-use crate::error::PdfError;
-use crate::objects::pdf_object::PdfObj;
-pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, ToPdf, WindingRule};
 
 //------------------------ PdfStreamObject -----------------------
 
@@ -102,7 +101,8 @@ impl PdfStreamObject {
 
     pub fn compressed(mut self) -> Self {
         self.compression_method = CompressionMethod::Flate;
-        self.dict.add("Filter", PdfObj::make_name_obj("FlateDecode"));
+        self.dict
+            .add("Filter", PdfObj::make_name_obj("FlateDecode"));
         self
     }
 
@@ -123,7 +123,7 @@ impl PdfStreamObject {
         self.content.extend(bytes);
     }
 
-    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
         let stream_bytes: Vec<u8> = match self.compression_method {
             CompressionMethod::None => self.content.clone(),
             CompressionMethod::Flate => {
@@ -136,11 +136,10 @@ impl PdfStreamObject {
         let mut dict = self.dict.clone(); // else self must be mut, which it can't be
         dict.add("Length", stream_bytes.len() as f64);
 
-        let mut vec = dict.serialise()?; // direct object
-
+        let mut vec = vec![];
         vec.push(b'\n');
         vec.extend(b"stream\n");
-        vec.extend(&stream_bytes);
+        vec.extend(stream_bytes);
         vec.extend(b"endstream\n");
 
         Ok(vec)

@@ -18,7 +18,6 @@ use crate::objects::pdf_object::PdfObj;
 ///
 ///
 use crate::{PdfError, PdfNameObject, PdfObject};
-
 //--------------------------- PdfDictionaryObject ----------------------//
 
 #[derive(Clone)]
@@ -26,6 +25,7 @@ pub struct PdfDictionaryObject {
     pub(crate) values: Vec<(PdfNameObject, PdfObject)>,
     pub(crate) object_number: Option<u64>,
     pub(crate) generation_number: Option<u16>,
+    pub(crate) children: Vec<Box<PdfDictionaryObject>>, // for page tree
 }
 
 impl PdfDictionaryObject {
@@ -34,6 +34,7 @@ impl PdfDictionaryObject {
             values: vec![],
             object_number: None,
             generation_number: None,
+            children: vec![],
         }
     }
 
@@ -57,7 +58,7 @@ impl PdfDictionaryObject {
     }
 
     pub fn contains_key(&self, key: &str) -> bool {
-        self.values.iter().any(|(k, _)| k.value == key)
+        self.get(key).is_some()
     }
 
     pub fn get(&self, key: &str) -> Option<&PdfObject> {
@@ -72,6 +73,21 @@ impl PdfDictionaryObject {
             .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
     }
 
+    // special case for page tree
+    pub fn add_kid_to_page_tree(
+        &mut self,
+        kid_obj: Box<PdfDictionaryObject>,
+    ) -> Result<(), PdfError> {
+        let reference = PdfObj::make_reference_obj(kid_obj.object_number.unwrap());
+        self.children.push(kid_obj);
+
+        if let Some(PdfObject::Array(arr)) = self.get_mut("Kids") {
+            arr.push(reference);
+            Ok(())
+        } else {
+            Err(PdfError::StructureError("Missing `Kids` array".to_string()))
+        }
+    }
     pub fn push_to_array(
         &mut self,
         key: &str,
@@ -95,7 +111,7 @@ impl PdfDictionaryObject {
         }
     }
 
-    pub fn update(&mut self, key: &str, object: impl Into<PdfObject>) {
+    pub fn update_or_add(&mut self, key: &str, object: impl Into<PdfObject>) {
         if let Some((_, value)) = self.values.iter_mut().find(|(k, _)| k.value == key) {
             *value = object.into();
         } else {
@@ -110,21 +126,24 @@ impl PdfDictionaryObject {
         self.values.push((PdfNameObject::new(key), object.into()));
     }
 
-    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
         let mut arr = vec![];
         arr.extend(b"<<");
         for (pdf_name_obj, pdf_object) in &self.values {
-            arr.extend(pdf_name_obj.serialise()?);
+            arr.extend(pdf_name_obj.encode()?);
             arr.push(b' ');
-            arr.extend(pdf_object.serialise()?);
+            arr.extend(pdf_object.encode()?);
             arr.extend(b"\n");
         }
         arr.extend(b">>");
 
+        for child in &self.children {
+            arr.extend(child.encode()?); // indirect objects
+        }
+
         Ok(arr)
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;

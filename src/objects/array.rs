@@ -1,4 +1,5 @@
 //! Array Objects:
+
 ///
 /// An array object is a one-dimensional collection of pdf objects arranged sequentially.
 ///
@@ -33,12 +34,12 @@ impl PdfArrayObject {
         self.values.push(value.into());
     }
 
-    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
         let mut arr = vec![];
         arr.push(b'[');
         arr.push(b' ');
         for pdf_object in &self.values {
-            arr.extend(pdf_object.serialise()?);
+            arr.extend(pdf_object.encode()?);
             arr.push(b' ');
         }
         arr.push(b']');

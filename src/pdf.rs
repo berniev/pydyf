@@ -1,33 +1,38 @@
 use crate::cross_reference_table::CrossRefTable;
 use crate::header::Header;
-use crate::page::make_page_tree_dict;
+use crate::object_ops::ObjectOps;
+use crate::page_ops::PageOps;
+//use crate::trailer::Trailer;
 use crate::version::Version;
-use crate::trailer::Trailer;
 use crate::{PdfDictionaryObject, PdfError};
+use std::cell::RefCell;
 use std::fs::File;
-use std::io::{Seek, Write};
+use std::rc::Rc;
 //--------------------------- Pdf -------------------------//
 
 pub struct Pdf {
     pub header: Header,
     catalog_dict: PdfDictionaryObject,
     root_page_tree_dict: PdfDictionaryObject,
-    xref_table: CrossRefTable,
-    last_object_number: u64,
+    pub xref_table: CrossRefTable,
+    //object_ops: Rc<RefCell<ObjectOps>>,
+    page_ops: PageOps,
 }
 
 impl Pdf {
-    //--------------------------- construction --------------------------
-
     pub fn new() -> Self {
+        let object_ops = Rc::new(RefCell::new(ObjectOps::new()));
+        let page_ops = PageOps::new(Rc::clone(&object_ops));
+
         let mut pdf = Pdf {
             header: Header::new(),
             catalog_dict: PdfDictionaryObject::new().typed("Catalog"), // serialises into body
             root_page_tree_dict: PdfDictionaryObject::new(),
             xref_table: CrossRefTable::new(), // buffers xref until body is complete, then appended
-            last_object_number: 0, // 0 is in xref table as 'free'. is gen# 65535, else 0 for new
+            //object_ops,
+            page_ops,
         };
-        pdf.root_page_tree_dict = make_page_tree_dict(pdf.next_object_number());
+        pdf.root_page_tree_dict = pdf.page_ops.new_tree();
 
         pdf
     }
@@ -37,9 +42,7 @@ impl Pdf {
 
         self
     }
-
-    //--------------------------- gets -----------------------------------
-
+    
     pub fn catalog_dict_ref(&mut self) -> &mut PdfDictionaryObject {
         &mut self.catalog_dict
     }
@@ -52,32 +55,15 @@ impl Pdf {
         &mut self.xref_table
     }
 
-    pub fn last_object_number(&self) -> u64 {
-        self.last_object_number
-    }
-
-    pub fn next_object_number(&mut self) -> u64 {
-        self.last_object_number += 1;
-
-        self.last_object_number
-    }
-
-    //------------------------------ finalise ----------------------------------
-
     pub fn finalise(&mut self, path: &str) -> Result<(), PdfError> {
         let mut file = File::create(path)?;
 
-        file.write(&*self.header.serialise()).map_err(|e| PdfError::Io(e))?;
+        self.header.serialise(&mut self.xref_table, &mut file)?;
+        //let osiz = self.object_ops.borrow_mut().last_object_number();
+        //let onum = self.root_page_tree_dict_ref().object_number.unwrap();
+        //let trailer = Trailer::new().with_size(osiz).with_root(onum);
 
-        // writer.write_data(self.catalog_dict.serialise());
-
-        let posn = file.stream_position()?;
-        let trailer = Trailer::new()
-            .with_size(self.last_object_number + 1)
-            .with_root(self.root_page_tree_dict_ref().object_number.unwrap());
-
-        let trailer_bytes = trailer.serialise(posn)?;
-        file.write(&trailer_bytes).map_err(PdfError::Io)?;
+        //trailer.serialise(&mut self.xref_table, &mut file)?;
 
         Ok(())
     }

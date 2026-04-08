@@ -307,6 +307,6 @@ mod tests {
         let xmp = XmpMetadata::from_packet("<xml>test</xml>".to_string());
         let stream = xmp.to_stream().unwrap();
 
-        assert!(!stream.serialise().expect("REASON").is_empty());
+        assert!(!stream.encode().expect("REASON").is_empty());
     }
 }

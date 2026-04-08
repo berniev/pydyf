@@ -66,7 +66,7 @@ pub struct SerialLocation {
 }
 
 */
-use crate::cross_reference_table::ObjectStatus;
+use crate::cross_reference_table::{CrossRefTable, CrossReferenceEntry, ObjectStatus};
 use crate::generation::Generation;
 use crate::objects::number::PdfNumberObject;
 use crate::objects::reference::PdfReferenceObject;
@@ -75,7 +75,8 @@ use crate::{
     PdfNullObject, PdfStreamObject, PdfStringObject,
 };
 use std::cmp::PartialEq;
-
+use std::fs::File;
+use std::io::{Seek, Write};
 //--------------------------- PdfObject -------------------------//
 
 #[derive(Clone)]
@@ -108,22 +109,29 @@ macro_rules! match_pdf_object {
 }
 
 impl PdfObject {
-    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
-        let ser = match_pdf_object!(self, x => x.serialise())?;
+    pub fn serialise(&self, xref: &mut CrossRefTable, file: &mut File) -> Result<(), PdfError> {
         let object_number = self.get_object_number();
         if object_number == None {
-            return Ok(ser);
+            return Ok(()); // direct object (no object number)
         }
 
-        // todo: add obj num to xref table
         // indirect object
         let mut vec = vec![];
         vec.extend(object_number.unwrap().to_string().as_bytes());
         vec.extend(b" 0 obj\n");
-        vec.extend(ser);
+        vec.extend(match_pdf_object!(self, x => x.encode())?);
         vec.extend(b"\nendobj\n");
+        file.write_all(&*vec)?;
 
-        Ok(vec)
+        let xref_ent = CrossReferenceEntry::new(
+            object_number.unwrap(),
+            file.stream_position()?,
+            ObjectStatus::InUse,
+            Generation::Root,
+        );
+        xref.add_entry(xref_ent);
+
+        Ok(())
     }
 
     //------------------ constructor helpers --------------------------
@@ -139,6 +147,10 @@ impl PdfObject {
     }
 
     //------------------ getters and setters --------------------------
+
+    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
+        match_pdf_object!(&self, x => x.encode())
+    }
 
     pub fn get_object_number(&self) -> Option<u64> {
         match_pdf_object!(self, x => x.object_number)
@@ -271,28 +283,11 @@ impl From<f64> for PdfObject {
 
 pub struct PdfObj {}
 
+// Dictionary, Array, Stream, Number, Boolean are now automatically converted to PdfObject
 impl PdfObj {
-    /*pub fn array(value: PdfArrayObject) -> PdfObject {
-            PdfObject::Array(value)
-        }
-
-        pub fn bool(value: bool) -> PdfObject {
-            PdfObject::Boolean(PdfBooleanObject::new(value))
-        }
-
-        pub fn dict(value: PdfDictionaryObject) -> PdfObject {
-            PdfObject::Dictionary(value)
-        }
-
-
-    pub fn stream(value: PdfStreamObject) -> PdfObject {
-        PdfObject::Stream(value)
+    pub fn make_reference_obj(value: u64) -> PdfObject {
+        PdfObject::Reference(PdfReferenceObject::new(value))
     }
-      */
-
-        pub fn make_reference_obj(value: u64) -> PdfObject {
-            PdfObject::Reference(PdfReferenceObject::new(value))
-        }
 
     pub fn make_null_obj() -> PdfObject {
         PdfObject::Null(PdfNullObject::new())
@@ -309,6 +304,7 @@ impl PdfObj {
         }
     }
 
+    // name and string are ambiguous so have to stay
     pub fn make_name_obj(value: &str) -> PdfObject {
         PdfObject::Name(PdfNameObject::new(value))
     }

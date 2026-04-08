@@ -13,8 +13,8 @@ Encrypt  Dictionary  Reqd*  If doc is encrypted. Specifies how the document is e
 */
 use crate::file_identifier::FileIdentifierMode;
 use crate::objects::pdf_object::PdfObj;
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfObject};
 use crate::string_functions::encode_pdf_string;
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfObject};
 
 pub struct Trailer {
     dict: PdfDictionaryObject,
@@ -54,12 +54,9 @@ impl Trailer {
         self
     }
 
-    pub fn serialise(&self, xref_offset: u64) -> Result<Vec<u8>, PdfError> {
-        let mut bytes = self.dict.serialise()?;
-        bytes.extend(b"\nstartxref\n");
-        bytes.extend(xref_offset.to_string().as_bytes());
-        bytes.extend(b"\n%%EOF\n");
-        
+    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
+        let bytes = self.dict.encode()?;
+
         Ok(bytes)
     }
 

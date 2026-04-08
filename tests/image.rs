@@ -1,6 +1,6 @@
 use rusty_pdf::color::ColorSpace;
 use rusty_pdf::drawing_commands::*;
-use rusty_pdf::page::{add_page_to_tree, make_page_dict};
+use rusty_pdf::page_ops::{add_page_to_tree, make_page_dict};
 use rusty_pdf::util::{Matrix, Posn};
 use rusty_pdf::{PageSize, Pdf, Stream};
 

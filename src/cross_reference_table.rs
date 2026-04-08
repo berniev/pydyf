@@ -72,6 +72,11 @@ pub struct CrossRefTable {
     pub xref_position: u64,
 }
 
+/*        bytes.extend(b"\nstartxref\n");
+        bytes.extend(xref.xref_position.to_string().as_bytes());
+        bytes.extend(b"\n%%EOF\n");
+*/
+
 impl CrossRefTable {
     pub fn new() -> Self {
         let mut table = CrossRefTable {

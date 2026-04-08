@@ -22,7 +22,7 @@ impl PdfBooleanObject {
         self.value = value;
     }
 
-    pub fn serialise(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
         let value = if self.value { "true" } else { "false" };
 
         Ok(Vec::from(value))
