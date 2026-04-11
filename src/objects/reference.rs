@@ -1,14 +1,10 @@
 use crate::PdfError;
 
-//--------------------------- HostType --------------------------//
-
 #[derive(Clone)]
 pub enum HostType {
     Standard { generation_number: u16 }, // offset from start of file
     ObjectStream { stream_obj_num: usize }, // v1.5+, obj num of containing ObjStm
 }
-
-//--------------------------- PdfReferenceObject -------------------------//
 
 #[derive(Clone)]
 pub struct PdfReferenceObject {
@@ -26,6 +22,16 @@ impl PdfReferenceObject {
             object_number: Some(obj_num),
             generation_number: None,
         }
+    }
+
+    pub fn with_object_number(mut self, value: u64) -> Self {
+        self.object_number = Some(value);
+        self
+    }
+
+    pub fn with_generation_number(mut self, value: u16) -> Self {
+        self.generation_number = Some(value); 
+        self
     }
 
     pub fn encode(&self) -> Result<Vec<u8>, PdfError> {

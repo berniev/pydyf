@@ -20,7 +20,6 @@ use crate::objects::pdf_object::PdfObj;
 ///
 use crate::{PdfError, PdfNameObject, PdfObject};
 use crate::cross_reference_table::CrossRefTable;
-//--------------------------- PdfDictionaryObject ----------------------//
 
 #[derive(Clone)]
 pub struct PdfDictionaryObject {

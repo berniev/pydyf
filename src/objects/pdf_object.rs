@@ -141,18 +141,6 @@ impl PdfObject {
         Ok(())
     }
 
-    //------------------ constructor helpers --------------------------
-
-    pub fn with_object_number(mut self, value: u64) -> Self {
-        match_pdf_object!(&mut self, x => x.object_number = Some(value));
-        self
-    }
-
-    pub fn with_generation_number(mut self, value: u16) -> Self {
-        match_pdf_object!(&mut self, x => x.generation_number = Some(value));
-        self
-    }
-
     /// Encode this object as it should appear when used as a value inside a dictionary or array.
     /// If it's an indirect object, emit a reference (N 0 R); otherwise encode inline.
     pub fn encode_as_value(&self) -> Result<Vec<u8>, PdfError> {
@@ -171,22 +159,8 @@ impl PdfObject {
         match_pdf_object!(&self, x => x.encode())
     }
 
-    //------------------ getters and setters --------------------------
-
     pub fn get_object_number(&self) -> Option<u64> {
         match_pdf_object!(self, x => x.object_number)
-    }
-
-    pub fn set_object_number(&mut self, object_number: u64) {
-        match_pdf_object!(self, x => x.object_number = Some(object_number));
-    }
-
-    pub fn get_generation_number(&self) -> Option<u16> {
-        match_pdf_object!(self, x => x.generation_number)
-    }
-
-    pub fn set_generation_number(&mut self, generation_number: u16) {
-        match_pdf_object!(self, x => x.generation_number = Some(generation_number));
     }
 }
 

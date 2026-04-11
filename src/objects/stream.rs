@@ -75,8 +75,6 @@ use flate2::write::ZlibEncoder;
 ///
 use std::io::Write as IoWrite;
 
-//------------------------ PdfStreamObject -----------------------
-
 #[derive(Clone)]
 pub struct PdfStreamObject {
     pub(crate) dict: PdfDictionaryObject,
@@ -88,7 +86,6 @@ pub struct PdfStreamObject {
 }
 
 impl PdfStreamObject {
-    //-------------------------- Constructors --------------------------
     pub fn new() -> Self {
         Self {
             dict: PdfDictionaryObject::new(),
@@ -122,9 +119,7 @@ impl PdfStreamObject {
 
         self
     }
-
-    //----------------------------------------------------------------
-
+    
     pub fn compression_method(&self) -> CompressionMethod {
         self.compression_method
     }

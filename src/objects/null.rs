@@ -13,6 +13,17 @@ impl PdfNullObject {
             generation_number: None,
         }
     }
+    
+    pub fn with_object_number(mut self, value: u64) -> Self {
+        self.object_number = Some(value);
+        self
+    }
+
+    pub fn with_generation_number(mut self, value: u16) -> Self {
+        self.generation_number = Some(value); 
+        self
+    }
+
 }
 
 impl PdfNullObject {
