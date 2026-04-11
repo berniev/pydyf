@@ -5,11 +5,10 @@ use crate::objects::pdf_object::PdfObj;
 use crate::page_ops::PageOps;
 use crate::trailer::Trailer;
 use crate::version::Version;
-use crate::{GraphicsOps, PdfDictionaryObject, PdfError, PdfObject, PdfStreamObject};
+use crate::{GraphicsOps, PdfDictionaryObject, PdfError, PdfObject};
 use std::cell::RefCell;
 use std::fs::File;
 use std::rc::Rc;
-use crate::drawing_commands::DrawingCommands;
 //--------------------------- Pdf -------------------------//
 
 pub struct Pdf {

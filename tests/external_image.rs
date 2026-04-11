@@ -29,7 +29,7 @@ fn test_external_image_from_file() {
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     img.save("/tmp/pydyf_test/gradient.png").unwrap();
 
-    let mut stream = Stream::new(1);
+    let mut stream = Stream::new().with_object_number(1);
 
     let mut cmd = DrawingCommands::new();
     cmd.push();

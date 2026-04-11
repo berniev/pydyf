@@ -89,14 +89,24 @@ pub struct PdfStreamObject {
 
 impl PdfStreamObject {
     //-------------------------- Constructors --------------------------
-    pub fn new(object_number: u64) -> Self {
+    pub fn new() -> Self {
         Self {
             dict: PdfDictionaryObject::new(),
             content: Vec::new(),
-            object_number: Some(object_number), // all streams objects are indirect
+            object_number: None, // all streams objects are indirect
             generation_number: None,
             compression_method: CompressionMethod::None,
         }
+    }
+
+    pub fn with_object_number(mut self, value: u64) -> Self {
+        self.object_number = Some(value);
+        self
+    }
+
+    pub fn with_generation_number(mut self, value: u16) -> Self {
+        self.generation_number = Some(value); 
+        self
     }
 
     pub fn compressed(mut self) -> Self {
@@ -152,7 +162,7 @@ mod tests {
 
     #[test]
     fn encode_empty_stream() {
-        let stream = PdfStreamObject::new(1);
+        let stream = PdfStreamObject::new().with_object_number(1);
         let output = String::from_utf8(stream.encode().unwrap()).unwrap();
         assert!(output.contains("/Length 0"));
         assert!(output.contains("stream\n"));
@@ -161,7 +171,11 @@ mod tests {
 
     #[test]
     fn encode_stream_with_content() {
-        let mut stream = PdfStreamObject::new(1);
+        let mut stream = PdfStreamObject::new().with_object_number(1);
+        stream.add(b"some data".to_vec());
+        let output = String::from_utf8(stream.encode().unwrap()).unwrap();
+        assert!(output.contains("/Length 9"));
+        assert!(output.contains("stream\nsome data\nendstream\n"));
         stream.add(b"BT /F1 12 Tf ET".to_vec());
         let output = String::from_utf8(stream.encode().unwrap()).unwrap();
         assert!(output.contains("/Length 15"));
@@ -170,7 +184,7 @@ mod tests {
 
     #[test]
     fn encode_stream_length_matches_content() {
-        let mut stream = PdfStreamObject::new(1);
+        let mut stream = PdfStreamObject::new().with_object_number(1);
         let content = b"q 1 0 0 1 100 200 cm Q";
         stream.add(content.to_vec());
         let output = String::from_utf8(stream.encode().unwrap()).unwrap();
@@ -179,7 +193,7 @@ mod tests {
 
     #[test]
         fn encode_compressed_stream_has_filter() {
-        let stream = PdfStreamObject::new(1).compressed();
+        let stream = PdfStreamObject::new().with_object_number(1).compressed();
         let encoded = stream.encode().unwrap();
         let contains = |needle: &[u8]| encoded.windows(needle.len()).any(|w| w == needle);
         assert!(contains(b"/Filter /FlateDecode"));
@@ -190,7 +204,7 @@ mod tests {
 
     #[test]
     fn encode_stream_with_dict_entries() {
-        let mut stream = PdfStreamObject::new(1);
+        let mut stream = PdfStreamObject::new().with_object_number(1);
         stream.dict.add("Type", PdfObj::make_name_obj("XObject"));
         stream.add(b"some data".to_vec());
         let output = String::from_utf8(stream.encode().unwrap()).unwrap();

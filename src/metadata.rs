@@ -229,8 +229,9 @@ impl XmpMetadata {
         let mut dict = PdfDictionaryObject::new().typed("Metadata");
         dict.add("SubType", PdfObj::make_name_obj("XML"));
 
-        let stream =
-            PdfStreamObject::new(1u64).with_data(self.xmp_packet.as_bytes().to_vec(), dict);
+        let stream = PdfStreamObject::new()
+            .with_object_number(1u64)
+            .with_data(self.xmp_packet.as_bytes().to_vec(), dict);
 
         Ok(stream)
     }

@@ -13,7 +13,7 @@ fn main() {
     page_dict.add("MediaBox", PageSize::A4.to_rect());
     page_dict.add("Resources", PdfDictionaryObject::new());
 
-    let mut stream = PdfStreamObject::new(pdf.object_ops.borrow_mut().next_object_number());
+    let stream = PdfStreamObject::new().with_object_number(pdf.object_ops.borrow_mut().next_object_number());
 
     let mut cmd = DrawingCommands::new();
 

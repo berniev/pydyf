@@ -271,7 +271,7 @@ fn test_compressed_empty() {
 #[test]
 fn test_extreme_font_sizes() {
     let pdf = Pdf::new();
-    let mut stream = PdfStreamObject::new(pdf.object_ops.borrow_mut().next_object_number());
+    PdfStreamObject::new().with_object_number(pdf.object_ops.borrow_mut().next_object_number());
     let mut cmd = DrawingCommands::new();
 
     cmd.set_color_rgb(
