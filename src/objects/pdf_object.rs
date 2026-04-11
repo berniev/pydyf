@@ -74,7 +74,6 @@ use crate::{
     NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject,
     PdfNullObject, PdfStreamObject, PdfStringObject,
 };
-use std::cmp::PartialEq;
 use std::fs::File;
 use std::io::{Seek, Write};
 //--------------------------- PdfObject -------------------------//
@@ -305,18 +304,4 @@ impl PdfObj {
     pub fn make_string_obj(value: &str) -> PdfObject {
         PdfObject::String(PdfStringObject::new(value))
     }
-}
-
-// Tracks where an object ended up after serialisation — not intrinsic to the object itself
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct SerialLocation {
-    pub offset: usize,
-    pub status: ObjectStatus, // free or inuse
-}
-
-// The PDF spec identity of an __ indirect __ object (§7.3.10)
-#[derive(Debug, Clone, PartialEq)]
-pub struct ObjectId {
-    pub number: usize,          // 0 is root. 1 is first object
-    pub generation: Generation, // for obj#0 is 65535, else is 0 for new objects
 }
