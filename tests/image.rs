@@ -1,6 +1,5 @@
 use rusty_pdf::color::ColorSpace;
 use rusty_pdf::drawing_commands::*;
-use rusty_pdf::page_ops::{add_page_to_tree, make_page_dict};
 use rusty_pdf::util::{Matrix, Posn};
 use rusty_pdf::{PageSize, Pdf, Stream};
 
@@ -8,12 +7,12 @@ use rusty_pdf::{PageSize, Pdf, Stream};
 fn test_inline_image() {
     let image_data = vec![255, 0, 0, 255, 0, 0, 0, 0, 255, 0, 0, 255];
 
-    let mut stream = Stream::new();
+    let mut stream = Stream::new(1);
     let compression = stream.compression_method();
 
     let mut cmd = DrawingCommands::new(&mut stream);
 
-    cmd.push_state();
+    cmd.push();
     cmd.set_transformation_matrix(Matrix {
         a: 100.0,
         b: 0.0,
@@ -22,8 +21,8 @@ fn test_inline_image() {
         e: 50.0,
         f: 500.0,
     });
-    cmd.inline_image(2, 2, ColorSpace::RGB, 8, &image_data, compression);
-    cmd.pop_state();
+    cmd.add_inline_image(2, 2, ColorSpace::RGB, 8, &image_data, compression);
+    cmd.pop();
 
     // Title
     cmd.begin_text();
@@ -52,10 +51,10 @@ fn test_inline_image() {
     cmd.end_text();
 
     let mut pdf = Pdf::new();
-    let mut page_dict = make_page_dict(pdf.next_object_number());
+    let mut page_dict = pdf.page_ops.new_page();
     page_dict.add("MediaBox", PageSize::A4.to_rect());
     page_dict.add("Contents", stream);
-    add_page_to_tree(&mut page_dict, pdf.root_page_tree_dict_ref()).expect("fail");
+    pdf.page_ops.add_page_to_tree(page_dict, &mut pdf.root_page_tree_dict).expect("fail");
 
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     pdf.finalise("/tmp/pydyf_test/image.pdf").expect("bang");

@@ -164,6 +164,7 @@ impl PdfDictionaryObject {
 mod tests {
     use super::*;
     use crate::objects::pdf_object::PdfObj;
+    use crate::PdfBooleanObject;
 
     #[test]
     fn test_dictionary_methods() {
@@ -180,5 +181,47 @@ mod tests {
         dict.add("Key2", *Box::from(PdfObj::make_name_obj("Value2")));
         assert_eq!(dict.len(), 2);
         assert!(dict.contains_key("Key2"));
+    }
+
+    #[test]
+    fn encode_empty_dictionary() {
+        let dict = PdfDictionaryObject::new();
+        assert_eq!(dict.encode().unwrap(), b"<<\n>>\n");
+    }
+
+    #[test]
+    fn encode_single_entry() {
+        let mut dict = PdfDictionaryObject::new();
+        dict.add("Type", PdfObj::make_name_obj("Catalog"));
+        let output = String::from_utf8(dict.encode().unwrap()).unwrap();
+        assert!(output.starts_with("<<\n"));
+        assert!(output.contains("/Type /Catalog"));
+        assert!(output.ends_with(">>\n"));
+    }
+
+    #[test]
+    fn encode_multiple_entries() {
+        let mut dict = PdfDictionaryObject::new();
+        dict.add("Type", PdfObj::make_name_obj("Page"));
+        dict.add("Count", PdfObj::make_num_obj(3i64));
+        let output = String::from_utf8(dict.encode().unwrap()).unwrap();
+        assert!(output.contains("/Type /Page"));
+        assert!(output.contains("/Count 3"));
+    }
+
+    #[test]
+    fn encode_with_boolean_value() {
+        let mut dict = PdfDictionaryObject::new();
+        dict.add("Visible", PdfBooleanObject::new(true));
+        let output = String::from_utf8(dict.encode().unwrap()).unwrap();
+        assert!(output.contains("/Visible true"));
+    }
+
+    #[test]
+    fn encode_with_indirect_reference() {
+        let mut dict = PdfDictionaryObject::new();
+        dict.add("Pages", PdfObj::make_reference_obj(2));
+        let output = String::from_utf8(dict.encode().unwrap()).unwrap();
+        assert!(output.contains("/Pages 2 0 R"));
     }
 }

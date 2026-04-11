@@ -4,10 +4,11 @@ use crate::objects::stream::PdfStreamObject;
 use crate::pdf::Pdf;
 use std::collections::HashMap;
 
-pub struct GraphicsStateManager {
+pub struct GraphicsOps {
     opacity_states: HashMap<u32, u64>, // opacity values (scaled to u32) to object numbers
     resource_counter: u32,
     soft_masks: Vec<SoftMask>, // for transparent gradients
+    drawing_commands: DrawingCommands,
 }
 
 /// for transparency effects.
@@ -16,16 +17,17 @@ pub struct SoftMask {
     pub shading_object_number: usize,
 }
 
-impl GraphicsStateManager {
+impl GraphicsOps {
     pub fn new() -> Self {
-        GraphicsStateManager {
+        GraphicsOps {
             opacity_states: HashMap::new(),
             resource_counter: 0,
             soft_masks: Vec::new(),
+            drawing_commands: DrawingCommands::new(),
         }
     }
 
-    pub fn get_or_create_opacity_state(&mut self, _pdf: &mut Pdf, alpha: f32) -> String {
+    pub fn get_or_create_opacity_state(&mut self, alpha: f32) -> String {
         let opacity_key = (alpha * 1000.0) as u32; // by 1000 to avoid float precision issues
         if let Some(&obj_num) = self.opacity_states.get(&opacity_key) {
             // use existing resource name. Find the index of this object num to reconstruct the name
@@ -43,14 +45,14 @@ impl GraphicsStateManager {
         let mut gs_dict = PdfDictionaryObject::new().typed("/ExtGState");
         gs_dict.add("CA", alpha as f64); // Stroke alpha
         gs_dict.add("ca", alpha as f64); // Fill alpha
-        //let obj_num = pdf.save_indirect_object(Pdf::dict(gs_dict));
+        let obj_num = pdf.save_indirect_object(Pdf::dict(gs_dict));
 
-        //self.opacity_states.insert(opacity_key, obj_num);
+        self.opacity_states.insert(opacity_key, obj_num);
 
         resource_name
     }
 
-    pub fn apply_opacity(&mut self, stream: &mut PdfStreamObject, pdf: &mut Pdf, alpha: f32) {
+    pub fn apply_opacity(&mut self, stream: &mut PdfStreamObject, alpha: f32) {
         let resource_name = self.get_or_create_opacity_state(pdf, alpha);
         let mut cmd = DrawingCommands::new(stream);
         cmd.set_state(&resource_name);
@@ -93,38 +95,32 @@ impl GraphicsStateManager {
     }
 }
 
-impl Default for GraphicsStateManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_opacity_state_creation() {
-        let mut pdf = Pdf::new();
-        let mut gs_manager = GraphicsStateManager::new();
+        let pdf = Pdf::new();
+        let mut gs_manager = pdf.graphics_ops;
 
-        let name1 = gs_manager.get_or_create_opacity_state(&mut pdf, 0.5);
+        let name1 = gs_manager.get_or_create_opacity_state(0.5);
         assert_eq!(name1, "GS0");
 
-        let name2 = gs_manager.get_or_create_opacity_state(&mut pdf, 0.5);
+        let name2 = gs_manager.get_or_create_opacity_state(0.5);
         assert_eq!(name2, "GS0"); // Should reuse same state
 
-        let name3 = gs_manager.get_or_create_opacity_state(&mut pdf, 0.75);
+        let name3 = gs_manager.get_or_create_opacity_state(0.75);
         assert_eq!(name3, "GS1"); // Different opacity
     }
 
     #[test]
     fn test_extgstate_dict() {
         let mut pdf = Pdf::new();
-        let mut gs_manager = GraphicsStateManager::new();
+        let mut gs_manager = pdf.graphics_ops;
 
-        gs_manager.get_or_create_opacity_state(&mut pdf, 0.5);
-        gs_manager.get_or_create_opacity_state(&mut pdf, 0.75);
+        gs_manager.get_or_create_opacity_state(0.5);
+        gs_manager.get_or_create_opacity_state(0.75);
 
         let dict = gs_manager.get_extgstate_dict();
         assert_eq!(dict.len(), 2);

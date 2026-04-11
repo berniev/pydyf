@@ -5,10 +5,11 @@ use crate::objects::pdf_object::PdfObj;
 use crate::page_ops::PageOps;
 use crate::trailer::Trailer;
 use crate::version::Version;
-use crate::{PdfDictionaryObject, PdfError, PdfObject};
+use crate::{GraphicsOps, PdfDictionaryObject, PdfError, PdfObject, PdfStreamObject};
 use std::cell::RefCell;
 use std::fs::File;
 use std::rc::Rc;
+use crate::drawing_commands::DrawingCommands;
 //--------------------------- Pdf -------------------------//
 
 pub struct Pdf {
@@ -18,6 +19,7 @@ pub struct Pdf {
     pub xref_table: CrossRefTable,
     pub object_ops: Rc<RefCell<ObjectOps>>,
     pub page_ops: PageOps,
+    pub graphics_ops: GraphicsOps,
 }
 
 impl Pdf {
@@ -32,6 +34,7 @@ impl Pdf {
             xref_table: CrossRefTable::new(), // buffers xref until body is complete, then appended
             object_ops,
             page_ops,
+            graphics_ops: GraphicsOps::new(),
         };
         pdf.root_page_tree_dict = pdf.page_ops.new_tree();
 

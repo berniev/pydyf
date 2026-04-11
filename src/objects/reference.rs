@@ -42,3 +42,26 @@ impl PdfReferenceObject {
         Ok(vec)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encode_reference() {
+        let obj = PdfReferenceObject::new(5);
+        assert_eq!(obj.encode().unwrap(), b"5 0 R ");
+    }
+
+    #[test]
+    fn encode_reference_object_one() {
+        let obj = PdfReferenceObject::new(1);
+        assert_eq!(obj.encode().unwrap(), b"1 0 R ");
+    }
+
+    #[test]
+    fn encode_reference_large_number() {
+        let obj = PdfReferenceObject::new(999);
+        assert_eq!(obj.encode().unwrap(), b"999 0 R ");
+    }
+}

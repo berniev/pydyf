@@ -28,3 +28,27 @@ impl PdfBooleanObject {
         Ok(Vec::from(value))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encode_true() {
+        let obj = PdfBooleanObject::new(true);
+        assert_eq!(obj.encode().unwrap(), b"true");
+    }
+
+    #[test]
+    fn encode_false() {
+        let obj = PdfBooleanObject::new(false);
+        assert_eq!(obj.encode().unwrap(), b"false");
+    }
+
+    #[test]
+    fn encode_after_set() {
+        let mut obj = PdfBooleanObject::new(true);
+        obj.set(false);
+        assert_eq!(obj.encode().unwrap(), b"false");
+    }
+}

@@ -20,3 +20,14 @@ impl PdfNullObject {
         Ok(vec![])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encode_null() {
+        let obj = PdfNullObject::new();
+        assert_eq!(obj.encode().unwrap(), b"");
+    }
+}

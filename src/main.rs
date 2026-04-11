@@ -21,7 +21,7 @@ fn main() {
         RGB::new(Color::new(0.0), Color::new(0.5), Color::new(1.0)),
         StrokeOrFill::Fill,
     );
-    cmd.rectangle(
+    cmd.add_rectangle(
         Posn { x: 100.0, y: 100.0 },
         Dims {
             height: 200.0,

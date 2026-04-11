@@ -14,7 +14,7 @@ pub mod file_identifier;
 pub mod fonts;
 pub mod generation;
 pub mod gradient;
-pub mod graphics_state;
+pub mod graphics_ops;
 pub mod header;
 pub mod metadata;
 pub mod object_ops;
@@ -48,7 +48,7 @@ pub use annotation::{
 pub use error::{PdfError, PdfResult};
 pub use extended_graphics_state::{BlendMode, ExtGState, RenderingIntent};
 pub use gradient::ColorStop;
-pub use graphics_state::GraphicsStateManager;
+pub use graphics_ops::GraphicsOps;
 pub use metadata::{DocumentInfo, TrappedState, XmpMetadata};
 pub use objects::array::PdfArrayObject;
 pub use objects::boolean::PdfBooleanObject;

@@ -145,3 +145,56 @@ impl PdfStreamObject {
         Ok(vec)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encode_empty_stream() {
+        let stream = PdfStreamObject::new(1);
+        let output = String::from_utf8(stream.encode().unwrap()).unwrap();
+        assert!(output.contains("/Length 0"));
+        assert!(output.contains("stream\n"));
+        assert!(output.contains("\nendstream\n"));
+    }
+
+    #[test]
+    fn encode_stream_with_content() {
+        let mut stream = PdfStreamObject::new(1);
+        stream.add(b"BT /F1 12 Tf ET".to_vec());
+        let output = String::from_utf8(stream.encode().unwrap()).unwrap();
+        assert!(output.contains("/Length 15"));
+        assert!(output.contains("stream\nBT /F1 12 Tf ET\nendstream\n"));
+    }
+
+    #[test]
+    fn encode_stream_length_matches_content() {
+        let mut stream = PdfStreamObject::new(1);
+        let content = b"q 1 0 0 1 100 200 cm Q";
+        stream.add(content.to_vec());
+        let output = String::from_utf8(stream.encode().unwrap()).unwrap();
+        assert!(output.contains(&format!("/Length {}", content.len())));
+    }
+
+    #[test]
+        fn encode_compressed_stream_has_filter() {
+        let stream = PdfStreamObject::new(1).compressed();
+        let encoded = stream.encode().unwrap();
+        let contains = |needle: &[u8]| encoded.windows(needle.len()).any(|w| w == needle);
+        assert!(contains(b"/Filter /FlateDecode"));
+        assert!(contains(b"stream\n"));
+        assert!(contains(b"\nendstream\n"));
+    }
+
+
+    #[test]
+    fn encode_stream_with_dict_entries() {
+        let mut stream = PdfStreamObject::new(1);
+        stream.dict.add("Type", PdfObj::make_name_obj("XObject"));
+        stream.add(b"some data".to_vec());
+        let output = String::from_utf8(stream.encode().unwrap()).unwrap();
+        assert!(output.contains("/Type /XObject"));
+        assert!(output.contains("/Length 9"));
+    }
+}

@@ -31,3 +31,26 @@ impl PdfNameObject {
         Ok(format!("/{}", self.value).into_bytes())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encode_simple_name() {
+        let obj = PdfNameObject::new("Type");
+        assert_eq!(obj.encode().unwrap(), b"/Type");
+    }
+
+    #[test]
+    fn encode_longer_name() {
+        let obj = PdfNameObject::new("FlateDecode");
+        assert_eq!(obj.encode().unwrap(), b"/FlateDecode");
+    }
+
+    #[test]
+    fn encode_empty_name() {
+        let obj = PdfNameObject::new("");
+        assert_eq!(obj.encode().unwrap(), b"/");
+    }
+}

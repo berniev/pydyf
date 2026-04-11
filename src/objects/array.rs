@@ -47,3 +47,49 @@ impl PdfArrayObject {
         Ok(arr)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::objects::boolean::PdfBooleanObject;
+    use crate::objects::name::PdfNameObject;
+    use crate::objects::number::PdfNumberObject;
+    use crate::objects::reference::PdfReferenceObject;
+    use crate::NumberType;
+
+    #[test]
+    fn encode_empty_array() {
+        let arr = PdfArrayObject::new();
+        assert_eq!(arr.encode().unwrap(), b"[ ]");
+    }
+
+    #[test]
+    fn encode_single_element() {
+        let mut arr = PdfArrayObject::new();
+        arr.push(PdfNumberObject::new(NumberType::Integer(42)));
+        assert_eq!(arr.encode().unwrap(), b"[ 42 ]");
+    }
+
+    #[test]
+    fn encode_mixed_elements() {
+        let mut arr = PdfArrayObject::new();
+        arr.push(PdfNumberObject::new(NumberType::Integer(549)));
+        arr.push(PdfNumberObject::new(NumberType::Real(3.14)));
+        arr.push(PdfBooleanObject::new(false));
+        assert_eq!(arr.encode().unwrap(), b"[ 549 3.14 false ]");
+    }
+
+    #[test]
+    fn encode_with_name() {
+        let mut arr = PdfArrayObject::new();
+        arr.push(PdfNameObject::new("SomeName"));
+        assert_eq!(arr.encode().unwrap(), b"[ /SomeName ]");
+    }
+
+    #[test]
+    fn encode_with_indirect_reference() {
+        let mut arr = PdfArrayObject::new();
+        arr.push(PdfReferenceObject::new(10));
+        assert_eq!(arr.encode().unwrap(), b"[ 10 0 R  ]");
+    }
+}

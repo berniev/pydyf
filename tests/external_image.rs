@@ -29,10 +29,10 @@ fn test_external_image_from_file() {
     std::fs::create_dir_all("/tmp/pydyf_test").unwrap();
     img.save("/tmp/pydyf_test/gradient.png").unwrap();
 
-    let mut stream = Stream::new();
+    let mut stream = Stream::new(1);
 
     let mut cmd = DrawingCommands::new(&mut stream);
-    cmd.push_state();
+    cmd.push();
     cmd.set_transformation_matrix(Matrix {
         a: 200.0,
         b: 0.0,
@@ -41,8 +41,8 @@ fn test_external_image_from_file() {
         e: 50.0,
         f: 500.0,
     });
-    cmd.inline_image_from_file("/tmp/pydyf_test/gradient.png", CompressionMethod::None);
-    cmd.pop_state();
+    cmd.add_inline_image_from_file("/tmp/pydyf_test/gradient.png", CompressionMethod::None);
+    cmd.pop();
 
     // Title
     cmd.begin_text();

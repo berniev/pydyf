@@ -46,7 +46,7 @@ impl ResourceCategory {
     }
 }
 /*
-The operands supplied to operators in a content stream shall only be direct objects.
+The operands supplied to operators in a content stream shall be direct objects.
 
 In some cases, an operator shall refer to a PDF object that is defined outside the content stream,
 such as a font dictionary or a stream containing image data. This shall be accomplished by defining
@@ -69,8 +69,7 @@ text operator can use this name to refer to the font.
 A resource dictionary shall be associated with a content stream in one of the following ways:
 • For a content stream that is the value of a page’s Contents entry (or is an element of an array
   that is the value of that entry), the resource dictionary shall be designated by the page
-  dictionary’s Resources or is inherited, as described under 7.7.3.4, "Inheritance of Page
-  Attributes," from some ancestor node of the page object.
+  dictionary’s Resources or is inherited from some ancestor node of the page object.
 • For other content streams, a conforming writer shall include a Resources entry in the stream's
   dictionary specifying the resource dictionary which contains all the resources used by that
   content stream. This shall apply to content streams that define form XObjects, patterns, Type 3
@@ -83,7 +82,7 @@ A resource dictionary shall be associated with a content stream in one of the fo
 In the context of a given content stream, the term current resource dictionary refers to the
 resource dictionary associated with the stream in one of the ways described above.
 
-Each key in a resource dictionary shall be the name of a resource type, as shown in Table 33. The
+Each key in a resource dictionary shall be the name of a resource type. The
 corresponding values shall be as follows:
 • For resource type ProcSet, the value shall be an array of procedure set names
 • For all other resource types, the value shall be a subdictionary. Each key in the subdictionary
@@ -92,7 +91,7 @@ corresponding values shall be as follows:
 
 Resource Dictionary Entries (optional, * except for ProcSet)
 ==========  ==========  ============================================================================
-Key         Type        Value
+Resource    Type        Value
 ==========  ==========  ============================================================================
 ColorSpace  Dictionary  Maps each resource name to either the name of a device-dependent colour
                         space or an array describing a colour space
