@@ -1,12 +1,3 @@
-//! PDF metadata framework (XMP and document information).
-//!
-//! Provides structures for embedding metadata in PDF documents, including
-//! both the legacy Info dictionary and modern XMP metadata streams.
-/// Document information dictionary (legacy PDF metadata).
-///
-/// This is the traditional way of storing document metadata in PDF,
-/// predating XMP. Still widely supported and used.
-///
 use crate::objects::pdf_object::PdfObj;
 use crate::{PdfDictionaryObject, PdfResult, PdfStreamObject};
 

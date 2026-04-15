@@ -13,7 +13,6 @@ pub mod extended_graphics_state;
 pub mod file_identifier;
 pub mod fonts;
 pub mod generation;
-pub mod gradient;
 pub mod graphics_ops;
 pub mod header;
 pub mod metadata;
@@ -27,8 +26,7 @@ pub mod pattern;
 pub mod pdf;
 pub mod resource;
 pub mod resource_category;
-pub mod resource_ops;
-pub mod resources;
+pub mod resources_ops;
 pub mod string_functions;
 pub mod text;
 pub mod trailer;
@@ -36,6 +34,10 @@ pub mod tree_node;
 pub mod util;
 pub mod version;
 pub mod writer;
+pub mod file_specification;
+pub mod function;
+pub mod shading;
+pub mod soft_mask;
 
 // Re-export main types for user API convenience
 pub use action::{
@@ -47,7 +49,6 @@ pub use annotation::{
 };
 pub use error::{PdfError, PdfResult};
 pub use extended_graphics_state::{BlendMode, ExtGState, RenderingIntent};
-pub use gradient::ColorStop;
 pub use graphics_ops::GraphicsOps;
 pub use metadata::{DocumentInfo, TrappedState, XmpMetadata};
 pub use objects::array::PdfArrayObject;
@@ -66,10 +67,10 @@ pub use optional_content::{
 };
 pub use outline::{DocumentOutline, OutlineItem, OutlineItemFlags};
 pub use page_ops::PageSize;
-pub use pattern::{AxialShading, PaintType, PatternType, ShadingType, TilingPattern, TilingType};
+pub use pattern::{PaintType, PatternType, TilingPattern, TilingType};
 pub use pdf::Pdf;
 pub use resource::Resource;
 pub use resource_category::ResourceCategory;
-pub use resources::ResourceMap;
+pub use resources_ops::ResourcesDict;
 pub use text::{StandardFont, WrapMode, wrap_text};
 pub use util::Rectangle;

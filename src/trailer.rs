@@ -69,7 +69,6 @@ impl Trailer {
     }
 
     /// Formats two byte arrays into a PDF ID array string.
-    #[allow(dead_code)]
     fn format_id_array(first_id: &[u8], second_id: &[u8]) -> Vec<u8> {
         let s1 = encode_pdf_string(&String::from_utf8_lossy(first_id));
         let s2 = encode_pdf_string(&String::from_utf8_lossy(second_id));
@@ -77,7 +76,6 @@ impl Trailer {
     }
 
     /// Computes MD5 hash of all non-free objects and returns both hex string and bytes.
-    #[allow(dead_code)]
     fn compute_data_hash(_objects: &[PdfObject]) -> (String, Vec<u8>) {
         let context = md5::Context::new();
         /*       for obj in objects {
@@ -92,8 +90,6 @@ impl Trailer {
         (data_hash_hex, data_hash_bytes)
     }
 
-    /// Determines the ID bytes to use based on the identifier mode.
-    #[allow(dead_code)]
     fn get_id_bytes<'a>(
         identifier_mode: &'a FileIdentifierMode,
         data_hash_bytes: &'a [u8],
@@ -104,7 +100,6 @@ impl Trailer {
         }
     }
 
-    /// Generates the fully formatted PDF /ID line based on the identifier mode.
     #[allow(dead_code)]
     fn format_identifier(
         objects: &[PdfObject],

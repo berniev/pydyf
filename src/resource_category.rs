@@ -18,6 +18,7 @@ pub enum ResourceCategory {
     Properties,
     Shading,
     XObject,
+    ProcSet
 }
 
 impl ResourceCategory {
@@ -30,11 +31,12 @@ impl ResourceCategory {
             ResourceCategory::Properties => "Properties",
             ResourceCategory::Shading => "Shading",
             ResourceCategory::XObject => "XObject",
+            ResourceCategory::ProcSet => "ProcSet",
         }
     }
 
-    pub fn category_prefix(category: ResourceCategory) -> &'static str {
-        match category {
+    pub fn prefix(&self) -> &'static str {
+        match self {
             ResourceCategory::ColorSpace => "CS",
             ResourceCategory::ExtGState => "GS",
             ResourceCategory::Font => "F",
@@ -42,6 +44,7 @@ impl ResourceCategory {
             ResourceCategory::Properties => "Pr",
             ResourceCategory::Shading => "Sh",
             ResourceCategory::XObject => "Im",
+            ResourceCategory::ProcSet => "PS",
         }
     }
 }
@@ -91,7 +94,7 @@ corresponding values shall be as follows:
 
 Resource Dictionary Entries (optional, * except for ProcSet)
 ==========  ==========  ============================================================================
-Resource    Type        Value
+Name        Type        Value
 ==========  ==========  ============================================================================
 ColorSpace  Dictionary  Maps each resource name to either the name of a device-dependent colour
                         space or an array describing a colour space

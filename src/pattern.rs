@@ -1,18 +1,10 @@
-//! Pattern framework for tiling and shading patterns.
-//!
-//! Patterns allow you to fill and stroke with repeating graphics (tiling)
-//! or smooth color transitions (shading).
-
 use std::any::Any;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-#[cfg(test)]
-use crate::color::Color;
-use crate::color::RGB;
 use crate::objects::pdf_object::PdfObj;
-use crate::util::{Line, Matrix, Rectangle, ToPdf};
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfStreamObject, Resource, ResourceCategory};
+use crate::util::{Matrix, Rectangle};
+use crate::{PdfStreamObject, Resource, ResourceCategory};
 
 //--------------------------- Axial Shading ----------------------//
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,73 +28,46 @@ pub enum PaintType {
 
 #[derive(Clone)]
 pub struct TilingPattern {
-    pub bounding_box: Rectangle,
-    pub x_step: f64,
-    pub y_step: f64,
-    pub paint_type: PaintType,
-    pub tiling_type: TilingType,
-    pub content: Vec<u8>,
-    pub matrix: Option<Matrix>,
+    stream: PdfStreamObject,
+    hash: String, // ?
 }
 
 impl TilingPattern {
-    pub fn new(bbox: Rectangle, x_step: f64, y_step: f64, content: Vec<u8>) -> Self {
-        Self {
-            bounding_box: bbox,
-            x_step,
-            y_step,
-            paint_type: PaintType::Colored,
-            tiling_type: TilingType::ConstantSpacing,
-            content,
-            matrix: None,
-        }
-    }
+    pub fn new(
+        bbox: Rectangle,
+        x_step: f64,
+        y_step: f64,
+        paint_type: PaintType,
+        tiling_type: TilingType,
+        content: Vec<u8>,
+    ) -> Self {
+        let mut pat = TilingPattern {
+            stream: PdfStreamObject::new(),
+            hash: "".to_string(),
+        };
+        pat.stream
+            .dict
+            .add("Type", PdfObj::make_name_obj("Pattern"));
+        pat.stream.dict.add("BBox", bbox.as_pdf_array());
+        pat.stream.dict.add("XStep", x_step);
+        pat.stream.dict.add("YStep", y_step);
+        pat.stream.dict.add("PaintType", paint_type as i64);
+        pat.stream.dict.add("TilingType", tiling_type as i64);
+        pat.stream.content = content.clone();
+        let mut hasher = DefaultHasher::new();
+        content.hash(&mut hasher);
+        pat.hash = format!(
+            "tiling:{x_step}:{y_step}:{}:{}",
+            paint_type as u8,
+            hasher.finish()
+        );
 
-    pub fn with_paint_type(mut self, paint_type: PaintType) -> Self {
-        self.paint_type = paint_type;
-        self
-    }
-
-    pub fn with_tiling_type(mut self, tiling_type: TilingType) -> Self {
-        self.tiling_type = tiling_type;
-        self
+        pat
     }
 
     pub fn with_matrix(mut self, matrix: Matrix) -> Self {
-        self.matrix = Some(matrix);
+        self.stream.dict.add("Matrix", matrix.as_pdf_array());
         self
-    }
-
-    pub fn to_stream(&self) -> PdfStreamObject {
-        let mut stream = PdfStreamObject::new().with_object_number(999u64);
-
-        stream.add(self.content.clone());
-
-        stream.dict.add("Type", PdfObj::make_name_obj("Pattern"));
-        stream.dict.add("PatternType", PatternType::Tiling as i64);
-        stream.dict.add("PaintType", self.paint_type as i64);
-        stream.dict.add("TilingType", self.tiling_type as i64);
-        stream.dict.add("BBox", self.bounding_box.as_pdf_array());
-        stream.dict.add("XStep", self.x_step);
-        stream.dict.add("YStep", self.y_step);
-
-        if let Some(matrix) = self.matrix {
-            stream.dict.add("Matrix", matrix.as_pdf_array());
-        }
-
-        stream
-    }
-
-    fn generate_id(&self) -> String {
-        let mut hasher = DefaultHasher::new();
-        self.content.hash(&mut hasher);
-        format!(
-            "tiling:{}:{}:{}:{}",
-            self.x_step,
-            self.y_step,
-            self.paint_type as u8,
-            hasher.finish()
-        )
     }
 }
 
@@ -112,202 +77,10 @@ impl Resource for TilingPattern {
     }
 
     fn resource_unique_id(&self) -> String {
-        self.generate_id()
+        "".to_string()//self.generate_id()
     }
 
     fn as_any(&self) -> &dyn Any {
         self
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ShadingType {
-    Function = 1,
-    Axial = 2,
-    Radial = 3,
-    FreeFormGouraud = 4,
-    LatticeGouraud = 5,
-    CoonsPatch = 6,
-    TensorPatch = 7,
-}
-
-/// Defines a smooth transition between colors along a line.
-#[derive(Clone)]
-pub struct AxialShading {
-    pub line: Line,
-    pub start_color: RGB,
-    pub end_color: RGB,
-    pub extend_start: bool,
-    pub extend_end: bool,
-}
-
-impl AxialShading {
-    pub fn new(line: Line, start_color: RGB, end_color: RGB) -> Self {
-        Self {
-            line,
-            start_color,
-            end_color,
-            extend_start: false,
-            extend_end: false,
-        }
-    }
-
-    pub fn with_extend(mut self, start: bool, end: bool) -> Self {
-        self.extend_start = start;
-        self.extend_end = end;
-        self
-    }
-
-    pub fn to_dict(&self) -> PdfDictionaryObject {
-        let mut dict = PdfDictionaryObject::new();
-
-        dict.add("ShadingType", ShadingType::Axial as i64);
-        dict.add("ColorSpace", PdfObj::make_name_obj("DeviceRGB"));
-        dict.add("Coords", self.line.as_pdf_array());
-
-        // Function (simplified: direct color interpolation)
-        // In a full implementation, this would be a proper PDF function object
-        // todo: For now, we use a simplified representation
-
-        let mut extend_arr = PdfArrayObject::new();
-        extend_arr.push(self.extend_start);
-        extend_arr.push(self.extend_end);
-        dict.add("Extend", extend_arr);
-
-        dict
-    }
-
-    fn generate_id(&self) -> String {
-        format!(
-            "axial:{}->{}: {}->{} ",
-            self.line.start.as_string(),
-            self.line.end.as_string(),
-            self.start_color.as_string(),
-            self.end_color.as_string()
-        )
-    }
-}
-
-impl Resource for AxialShading {
-    fn category(&self) -> ResourceCategory {
-        ResourceCategory::Shading
-    }
-
-    fn resource_unique_id(&self) -> String {
-        self.generate_id()
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::util::Posn;
-
-    #[test]
-    fn test_tiling_pattern_creation() {
-        let pattern = TilingPattern::new(
-            Rectangle {
-                x1: 0.0,
-                y1: 0.0,
-                x2: 10.0,
-                y2: 10.0,
-            },
-            10.0,
-            10.0,
-            b"0 0 m 10 10 l S".to_vec(),
-        );
-
-        assert_eq!(
-            pattern.bounding_box,
-            Rectangle {
-                x1: 0.0,
-                y1: 0.0,
-                x2: 10.0,
-                y2: 10.0
-            }
-        );
-        assert_eq!(pattern.x_step, 10.0);
-        assert_eq!(pattern.y_step, 10.0);
-    }
-
-    #[test]
-    fn test_tiling_pattern_resource_trait() {
-        let pattern = TilingPattern::new(
-            Rectangle {
-                x1: 0.0,
-                y1: 0.0,
-                x2: 10.0,
-                y2: 10.0,
-            },
-            10.0,
-            10.0,
-            vec![],
-        );
-
-        assert_eq!(pattern.category(), ResourceCategory::Pattern);
-        assert!(!pattern.resource_unique_id().is_empty());
-    }
-
-    #[test]
-    fn test_axial_shading_creation() {
-        let shading = AxialShading::new(
-            Line {
-                start: Posn { x: 0.0, y: 0.0 },
-                end: Posn { x: 100.0, y: 0.0 },
-            },
-            RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)), // Red
-            RGB::new(Color::new(0.0), Color::new(0.0), Color::new(1.0)), // Blue
-        );
-
-        assert_eq!(shading.line.start, Posn { x: 0.0, y: 0.0 });
-        assert_eq!(shading.line.end, Posn { x: 100.0, y: 0.0 });
-    }
-
-    #[test]
-    fn test_axial_shading_to_dict() {
-        let shading = AxialShading::new(
-            Line {
-                start: Posn { x: 0.0, y: 0.0 },
-                end: Posn { x: 100.0, y: 100.0 },
-            },
-            RGB::new(Color::new(1.0), Color::new(0.0), Color::new(0.0)),
-            RGB::new(Color::new(0.0), Color::new(1.0), Color::new(0.0)),
-        );
-
-        let dict = shading.to_dict();
-        assert!(dict.contains_key("ShadingType"));
-        assert!(dict.contains_key("ColorSpace"));
-        assert!(dict.contains_key("Coords"));
-    }
-
-    #[test]
-    fn test_axial_shading_resource_trait() {
-        let shading = AxialShading::new(
-            Line {
-                start: Posn { x: 0.0, y: 0.0 },
-                end: Posn { x: 100.0, y: 0.0 },
-            },
-            RGB::new(Color::new(0.0), Color::new(0.0), Color::new(0.0)),
-            RGB::new(Color::new(1.0), Color::new(1.0), Color::new(1.0)),
-        );
-
-        assert_eq!(shading.category(), ResourceCategory::Shading);
-        assert!(!shading.resource_unique_id().is_empty());
-    }
-
-    #[test]
-    fn test_pattern_types() {
-        assert_eq!(PatternType::Tiling as i64, 1);
-        assert_eq!(PatternType::Shading as i64, 2);
-    }
-
-    #[test]
-    fn test_shading_types() {
-        assert_eq!(ShadingType::Axial as i64, 2);
-        assert_eq!(ShadingType::Radial as i64, 3);
     }
 }

@@ -10,8 +10,9 @@ pub enum PdfError {
     InvalidObjectReference(usize),
     CompressionError(String),
     CrossRef(CrossRefError),
-    InvalidFont(String),
     InvalidColorChannel { color: Color },
+    InvalidFont(String),
+    InvalidFunctionSpecification,
     InvalidRGB { rgb: RGB },
     InvalidRGBA { rgb: RGBA },
     InvalidCMYK { cmyk: CMYK },
@@ -67,6 +68,7 @@ impl fmt::Display for PdfError {
             PdfError::SerializeError(msg) => write!(f, "Serialization error: {}", msg),
             PdfError::StreamError(msg) => write!(f, "Stream error: {}", msg),
             PdfError::CrossRef(err) => write!(f, "Cross-reference table error: {:?}", err),
+            PdfError::InvalidFunctionSpecification => write!(f, "Invalid function specification"),
         }
     }
 }

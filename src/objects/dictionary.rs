@@ -1,4 +1,4 @@
-use std::fs::File;
+use crate::cross_reference_table::CrossRefTable;
 use crate::objects::pdf_object::PdfObj;
 /// Spec:
 /// Dictionary:
@@ -19,7 +19,7 @@ use crate::objects::pdf_object::PdfObj;
 ///
 ///
 use crate::{PdfError, PdfNameObject, PdfObject};
-use crate::cross_reference_table::CrossRefTable;
+use std::fs::File;
 
 #[derive(Clone)]
 pub struct PdfDictionaryObject {
@@ -51,7 +51,7 @@ impl PdfDictionaryObject {
     }
 
     pub fn with_generation_number(mut self, value: u16) -> Self {
-        self.generation_number = Some(value); 
+        self.generation_number = Some(value);
         self
     }
 
@@ -71,6 +71,13 @@ impl PdfDictionaryObject {
         self.values
             .iter()
             .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
+    }
+
+    pub fn get_dict(&self, key: &str) -> Option<&PdfDictionaryObject> {
+        match self.get(key) {
+            Some(PdfObject::Dictionary(d)) => Some(d),
+            _ => None,
+        }
     }
 
     fn get_mut(&mut self, key: &str) -> Option<&mut PdfObject> {
@@ -94,6 +101,7 @@ impl PdfDictionaryObject {
             Err(PdfError::StructureError("Missing `Kids` array".to_string()))
         }
     }
+
     pub fn push_to_array(
         &mut self,
         key: &str,
@@ -127,7 +135,7 @@ impl PdfDictionaryObject {
 
     pub fn add(&mut self, key: &str, object: impl Into<PdfObject>) {
         if self.contains_key(key) {
-            PdfError::StructureError(format!("add: Duplicate key {} in dictionary", key));
+            panic!("add: Duplicate key {} in dictionary",key);
         }
         self.values.push((PdfNameObject::new(key), object.into()));
     }
@@ -167,8 +175,8 @@ impl PdfDictionaryObject {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::objects::pdf_object::PdfObj;
     use crate::PdfBooleanObject;
+    use crate::objects::pdf_object::PdfObj;
 
     #[test]
     fn test_dictionary_methods() {

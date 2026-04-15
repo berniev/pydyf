@@ -96,6 +96,12 @@ impl PdfStreamObject {
         }
     }
 
+    pub fn with_dict_and_content(mut self, dict: PdfDictionaryObject, content: Vec<u8>) -> Self {
+        self.dict = dict;
+        self.content = content;
+        self
+    }
+
     pub fn with_object_number(mut self, value: u64) -> Self {
         self.object_number = Some(value);
         self
