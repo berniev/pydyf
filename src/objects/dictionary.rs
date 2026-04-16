@@ -39,7 +39,7 @@ impl PdfDictionaryObject {
         }
     }
 
-    pub(crate) fn typed(mut self, name: &str) -> Result<Self,PdfError>  {
+    pub(crate) fn typed(mut self, name: &str) -> Result<Self, PdfError> {
         self.add("Type", PdfObj::make_name_obj(name))?;
 
         Ok(self)
@@ -71,13 +71,6 @@ impl PdfDictionaryObject {
         self.values
             .iter()
             .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
-    }
-
-    pub fn get_dict(&self, key: &str) -> Option<&PdfDictionaryObject> {
-        match self.get(key) {
-            Some(PdfObject::Dictionary(d)) => Some(d),
-            _ => None,
-        }
     }
 
     fn get_mut(&mut self, key: &str) -> Option<&mut PdfObject> {
@@ -125,6 +118,27 @@ impl PdfDictionaryObject {
         }
     }
 
+    pub fn get_string(&self, key: &str) -> Option<&str> {
+        match self.get(key) {
+            Some(PdfObject::String(s)) => Some(&s.value),
+            _ => None,
+        }
+    }
+
+    pub fn get_name(&self, key: &str) -> Option<&str> {
+        match self.get(key) {
+            Some(PdfObject::Name(n)) => Some(&n.value),
+            _ => None,
+        }
+    }
+
+    pub fn get_dict(&self, key: &str) -> Option<&PdfDictionaryObject> {
+        match self.get(key) {
+            Some(PdfObject::Dictionary(d)) => Some(d),
+            _ => None,
+        }
+    }
+    
     pub fn update_or_add(&mut self, key: &str, object: impl Into<PdfObject>) {
         if let Some((_, value)) = self.values.iter_mut().find(|(k, _)| k.value == key) {
             *value = object.into();
@@ -189,13 +203,15 @@ mod tests {
         assert!(dict.is_empty());
         assert_eq!(dict.len(), 0);
 
-        dict.add("Key1", *Box::from(PdfObj::make_name_obj("Value1"))).expect("fail");
+        dict.add("Key1", *Box::from(PdfObj::make_name_obj("Value1")))
+            .expect("fail");
         assert!(!dict.is_empty());
         assert_eq!(dict.len(), 1);
         assert!(dict.contains_key("Key1"));
         assert!(!dict.contains_key("Key2"));
 
-        dict.add("Key2", *Box::from(PdfObj::make_name_obj("Value2"))).expect("fail");
+        dict.add("Key2", *Box::from(PdfObj::make_name_obj("Value2")))
+            .expect("fail");
         assert_eq!(dict.len(), 2);
         assert!(dict.contains_key("Key2"));
     }
@@ -209,7 +225,8 @@ mod tests {
     #[test]
     fn encode_single_entry() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Type", PdfObj::make_name_obj("Catalog")).expect("fail");
+        dict.add("Type", PdfObj::make_name_obj("Catalog"))
+            .expect("fail");
         let output = String::from_utf8(dict.encode().unwrap()).unwrap();
         assert!(output.starts_with("<<\n"));
         assert!(output.contains("/Type /Catalog"));
@@ -219,7 +236,8 @@ mod tests {
     #[test]
     fn encode_multiple_entries() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Type", PdfObj::make_name_obj("Page")).expect("fail");
+        dict.add("Type", PdfObj::make_name_obj("Page"))
+            .expect("fail");
         dict.add("Count", PdfObj::make_num_obj(3i64)).expect("fail");
         let output = String::from_utf8(dict.encode().unwrap()).unwrap();
         assert!(output.contains("/Type /Page"));
@@ -229,7 +247,8 @@ mod tests {
     #[test]
     fn encode_with_boolean_value() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Visible", PdfBooleanObject::new(true)).expect("fail");
+        dict.add("Visible", PdfBooleanObject::new(true))
+            .expect("fail");
         let output = String::from_utf8(dict.encode().unwrap()).unwrap();
         assert!(output.contains("/Visible true"));
     }
@@ -237,7 +256,8 @@ mod tests {
     #[test]
     fn encode_with_indirect_reference() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Pages", PdfObj::make_reference_obj(2)).expect("fail");
+        dict.add("Pages", PdfObj::make_reference_obj(2))
+            .expect("fail");
         let output = String::from_utf8(dict.encode().unwrap()).unwrap();
         assert!(output.contains("/Pages 2 0 R"));
     }

@@ -21,7 +21,7 @@ impl XmpMetadata {
 <rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/">"#,
         );
 
-        if let Some(ref title) = info.get("Title") {
+        if let Some(ref title) = info.dictionary.get_string("Title") {
             xmp.push_str(&format!(
                 r#"
   <dc:title>
@@ -33,7 +33,7 @@ impl XmpMetadata {
             ));
         }
 
-        if let Some(ref author) = info.author {
+        if let Some(ref author) = info.dictionary.get_string("Author") {
             xmp.push_str(&format!(
                 r#"
   <dc:creator>
@@ -45,7 +45,7 @@ impl XmpMetadata {
             ));
         }
 
-        if let Some(ref subject) = info.subject {
+        if let Some(ref subject) = info.dictionary.get_string("Subject") {
             xmp.push_str(&format!(
                 r#"
   <dc:description>

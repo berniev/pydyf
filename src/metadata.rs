@@ -1,5 +1,5 @@
 use crate::objects::pdf_object::PdfObj;
-use crate::{PdfDictionaryObject, PdfError, PdfResult, PdfStreamObject};
+use crate::{PdfDictionaryObject, PdfError};
 
 //--------------------------TrappedState-------------------------------//
 
