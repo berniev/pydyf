@@ -203,9 +203,14 @@ impl PdfObject {
     }
 
     pub fn get_object_number(&self) -> Option<u64> {
-        match_pdf_object!(self, x => x.object_number)
-    }
-}
+        match self {
+            PdfObject::Array(x) => x.object_number,
+            PdfObject::Dictionary(x) => x.object_number,
+            PdfObject::Stream(x) => x.object_number,
+            PdfObject::Reference(x) => x.object_number,
+            _ => None,
+        }
+    }}
 
 //--------------------------- From impl -------------------------//
 

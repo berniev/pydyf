@@ -3,27 +3,13 @@ use crate::{NumberType, PdfError};
 #[derive(Debug, Clone, PartialEq)]
 pub struct PdfNumberObject {
     pub(crate) value: NumberType,
-    pub(crate) object_number: Option<u64>,
-    pub(crate) generation_number: Option<u16>,
 }
 
 impl PdfNumberObject {
     pub fn new(value: NumberType) -> Self {
         Self {
             value,
-            object_number: None,
-            generation_number: None,
         }
-    }
-
-    pub fn with_object_number(mut self, value: u64) -> Self {
-        self.object_number = Some(value);
-        self
-    }
-
-    pub fn with_generation_number(mut self, value: u16) -> Self {
-        self.generation_number = Some(value); 
-        self
     }
 
     pub fn set_value<T: Into<NumberType>>(&mut self, value: T) {

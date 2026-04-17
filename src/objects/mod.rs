@@ -10,3 +10,4 @@ pub mod pdf_object;
 pub mod reference;
 pub mod stream;
 pub mod string;
+pub mod assign_object_number;

@@ -74,6 +74,7 @@ use flate2::write::ZlibEncoder;
 /// obj and endobj, and their generation number shall be zero.
 ///
 use std::io::Write as IoWrite;
+use crate::objects::assign_object_number::AssignObjectNumber;
 
 #[derive(Clone)]
 pub struct PdfStreamObject {
@@ -158,6 +159,12 @@ impl PdfStreamObject {
         vec.extend(b"\nendstream\n");
 
         Ok(vec)
+    }
+}
+
+impl AssignObjectNumber for PdfStreamObject {
+    fn set_object_number(&mut self, value: u64) {
+        self.object_number = Some(value);
     }
 }
 

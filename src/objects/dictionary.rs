@@ -20,6 +20,7 @@ use crate::objects::pdf_object::PdfObj;
 ///
 use crate::{PdfError, PdfNameObject, PdfObject};
 use std::fs::File;
+use crate::objects::assign_object_number::AssignObjectNumber;
 
 #[derive(Clone)]
 pub struct PdfDictionaryObject {
@@ -204,6 +205,13 @@ impl PdfDictionaryObject {
         Ok(arr)
     }
 }
+
+impl AssignObjectNumber for PdfDictionaryObject {
+    fn set_object_number(&mut self, value: u64) {
+        self.object_number = Some(value);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

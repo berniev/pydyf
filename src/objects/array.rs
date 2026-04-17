@@ -1,5 +1,6 @@
 //! Array Objects:
 
+use crate::objects::assign_object_number::AssignObjectNumber;
 ///
 /// An array object is a one-dimensional collection of pdf objects arranged sequentially.
 ///
@@ -34,7 +35,7 @@ impl PdfArrayObject {
     }
 
     pub fn with_generation_number(mut self, value: u16) -> Self {
-        self.generation_number = Some(value); 
+        self.generation_number = Some(value);
         self
     }
 
@@ -56,14 +57,20 @@ impl PdfArrayObject {
     }
 }
 
+impl AssignObjectNumber for PdfArrayObject {
+    fn set_object_number(&mut self, value: u64) {
+        self.object_number = Some(value);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::NumberType;
     use crate::objects::boolean::PdfBooleanObject;
     use crate::objects::name::PdfNameObject;
     use crate::objects::number::PdfNumberObject;
     use crate::objects::reference::PdfReferenceObject;
-    use crate::NumberType;
 
     #[test]
     fn encode_empty_array() {

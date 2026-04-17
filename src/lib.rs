@@ -53,6 +53,7 @@ pub use extended_graphics_state::{BlendMode, ExtGState, RenderingIntent};
 pub use graphics_ops::GraphicsOps;
 pub use metadata::{Metadata, TrappedState};
 pub use objects::array::PdfArrayObject;
+pub use objects::assign_object_number::AssignObjectNumber;
 pub use objects::boolean::PdfBooleanObject;
 pub use objects::dictionary::PdfDictionaryObject;
 pub use objects::name::PdfNameObject;

@@ -3,27 +3,13 @@ use crate::PdfError;
 #[derive(Clone)]
 pub struct PdfBooleanObject {
     pub(crate) value: bool,
-    pub(crate) object_number: Option<u64>,
-    pub(crate) generation_number: Option<u16>,
 }
 
 impl PdfBooleanObject {
     pub fn new(value: bool) -> Self {
         Self {
             value,
-            object_number: None,
-            generation_number: None,
         }
-    }
-
-    pub fn with_object_number(mut self, value: u64) -> Self {
-        self.object_number = Some(value);
-        self
-    }
-
-    pub fn with_generation_number(mut self, value: u16) -> Self {
-        self.generation_number = Some(value);
-        self
     }
 
     pub fn set(&mut self, value: bool) {

@@ -12,27 +12,13 @@ use crate::PdfError;
 #[derive(Clone)]
 pub struct PdfNameObject {
     pub(crate) value: String,
-    pub(crate) object_number: Option<u64>,
-    pub(crate) generation_number: Option<u16>,
 }
 
 impl PdfNameObject {
     pub fn new(value: &str) -> Self {
         Self {
             value: value.to_string(),
-            object_number: None,
-            generation_number: None,
         }
-    }
-
-    pub fn with_object_number(mut self, value: u64) -> Self {
-        self.object_number = Some(value);
-        self
-    }
-
-    pub fn with_generation_number(mut self, value: u16) -> Self {
-        self.generation_number = Some(value); 
-        self
     }
 
     pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
