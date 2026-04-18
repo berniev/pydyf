@@ -85,7 +85,15 @@ pub struct PageOps {
 }
 
 impl PageOps {
-    fn make_tree(obj_ops: &Rc<RefCell<ObjectOps>>) -> Result<PdfDictionaryObject, PdfError> {
+    pub fn new(obj_ops: Rc<RefCell<ObjectOps>>) -> Result<Self, PdfError> {
+        let root_page_tree_dict = Self::make_tree_dict(&obj_ops)?;
+        Ok(PageOps {
+            obj_ops,
+            root_page_tree_dict,
+        })
+    }
+
+    fn make_tree_dict(obj_ops: &Rc<RefCell<ObjectOps>>) -> Result<PdfDictionaryObject, PdfError> {
         let mut tree = PdfDictionaryObject::new()
             .typed("Pages")?
             .with_object_number(obj_ops.borrow_mut().next_object_number());
@@ -94,15 +102,7 @@ impl PageOps {
         Ok(tree)
     }
 
-    pub fn new(obj_ops: Rc<RefCell<ObjectOps>>) -> Result<Self, PdfError> {
-        let root_page_tree_dict = Self::make_tree(&obj_ops)?;
-        Ok(PageOps {
-            obj_ops,
-            root_page_tree_dict,
-        })
-    }
-
-    pub fn new_page(&self, page_size: PageSize) -> Result<PdfDictionaryObject, PdfError> {
+    pub fn new_page_dict(&self, page_size: PageSize, content: Vec<u8> ) -> Result<PdfDictionaryObject, PdfError> {
         let mut dict = PdfDictionaryObject::new()
             .typed("Page")?
             .with_object_number(self.obj_ops.borrow_mut().next_object_number());
@@ -111,11 +111,14 @@ impl PageOps {
         dict.add("Resources", PdfDictionaryObject::new())
             .expect("failure:");
 
+        let stream = self.obj_ops.borrow_mut().new_stream().with_data(content);
+        dict.add("Contents", stream)?;
+
         Ok(dict)
     }
 
-    pub fn new_tree(&self) -> Result<PdfDictionaryObject, PdfError> {
-        Self::make_tree(&self.obj_ops)
+    pub fn new_tree_dict(&self) -> Result<PdfDictionaryObject, PdfError> {
+        Self::make_tree_dict(&self.obj_ops)
     }
 
     pub fn root_page_tree_dict_mut_ref(&mut self) -> &mut PdfDictionaryObject {
@@ -126,11 +129,11 @@ impl PageOps {
         self.root_page_tree_dict.serialise(xref, file)
     }
 
-    pub fn add_page_to_root(&mut self, page_dict: PdfDictionaryObject) -> Result<(), PdfError> {
-        Self::add_page_to_tree(page_dict, &mut self.root_page_tree_dict)
+    pub fn add_page_dict_to_root(&mut self, page_dict: PdfDictionaryObject) -> Result<(), PdfError> {
+        Self::add_page_dict_to_tree_dict(page_dict, &mut self.root_page_tree_dict)
     }
 
-    pub fn add_page_to_tree(
+    pub fn add_page_dict_to_tree_dict(
         mut page_dict: PdfDictionaryObject,
         tree_dict: &mut PdfDictionaryObject,
     ) -> Result<(), PdfError> {
@@ -160,7 +163,7 @@ fn either_dict_has(
     Ok(())
 }
 
-pub fn add_tree_to_tree(
+pub fn add_tree_dict_to_tree_dict(
     child_tree_dict: &PdfDictionaryObject,
     parent_tree_dict: &mut PdfDictionaryObject,
 ) -> Result<(), PdfError> {

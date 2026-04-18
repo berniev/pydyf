@@ -4,6 +4,7 @@ use crate::objects::pdf_object::PdfObj;
 pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, ToPdf, WindingRule};
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
+use std::io::Write as IoWrite;
 /// PDF content stream
 ///
 /// Content streams most commonly define page content, e.g.
@@ -73,8 +74,6 @@ use flate2::write::ZlibEncoder;
 /// They are referred to in the same way; however, their definition shall not include the keywords
 /// obj and endobj, and their generation number shall be zero.
 ///
-use std::io::Write as IoWrite;
-use crate::objects::assign_object_number::AssignObjectNumber;
 
 #[derive(Clone)]
 pub struct PdfStreamObject {
@@ -87,7 +86,7 @@ pub struct PdfStreamObject {
 }
 
 impl PdfStreamObject {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             dict: PdfDictionaryObject::new(),
             content: Vec::new(),
@@ -104,7 +103,7 @@ impl PdfStreamObject {
         self
     }
 
-    pub fn with_object_number(mut self, value: u64) -> Self {
+    pub(crate) fn with_object_number(mut self, value: u64) -> Self {
         self.object_number = Some(value);
 
         self
@@ -124,9 +123,8 @@ impl PdfStreamObject {
         Ok(self)
     }
 
-    pub fn with_data(mut self, data: Vec<u8>, dict: PdfDictionaryObject) -> Self {
+    pub fn with_data(mut self, data: Vec<u8>) -> Self {
         self.content = data;
-        self.dict = dict;
 
         self
     }
@@ -159,12 +157,6 @@ impl PdfStreamObject {
         vec.extend(b"\nendstream\n");
 
         Ok(vec)
-    }
-}
-
-impl AssignObjectNumber for PdfStreamObject {
-    fn set_object_number(&mut self, value: u64) {
-        self.object_number = Some(value);
     }
 }
 

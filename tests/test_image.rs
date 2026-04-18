@@ -7,7 +7,6 @@ use rusty_pdf::{PageSize, Pdf, Stream};
 fn test_inline_image() {
     let image_data = vec![255, 0, 0, 255, 0, 0, 0, 0, 255, 0, 0, 255];
 
-    let mut stream = Stream::new().with_object_number(1);
     let compression = stream.compression_method();
 
     let mut cmd = DrawingCommands::new();

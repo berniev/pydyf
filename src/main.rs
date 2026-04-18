@@ -1,7 +1,7 @@
 use rusty_pdf::color::RGB;
 use rusty_pdf::drawing_commands::DrawingCommands;
 use rusty_pdf::util::{Dims, Posn, StrokeOrFill, WindingRule};
-use rusty_pdf::{PageSize, Pdf, PdfDictionaryObject, PdfStreamObject};
+use rusty_pdf::{PageSize, Pdf};
 
 fn main() {
     println!("rusty_pdf - PDF library for Rust");
@@ -30,19 +30,24 @@ fn main() {
     );
     cmd.fill(WindingRule::EvenOdd);
 
-    let stream = PdfStreamObject::new()
-        .with_object_number(pdf.object_ops.borrow_mut().next_object_number())
-        .with_data(cmd.flush(), PdfDictionaryObject::new());
+    let data = cmd.flush();
 
-    let mut page_dict = pdf
+    let page_dict = pdf
         .page_ops
-        .new_page(PageSize::A4)
+        .new_page_dict(PageSize::A4, data.clone())
         .expect("Failed to create page");
 
-    page_dict.add("Contents", stream).expect("failure:");
+    pdf.page_ops
+        .add_page_dict_to_root(page_dict)
+        .expect("Add page to tree failed");
+
+    let page_dict2 = pdf
+        .page_ops
+        .new_page_dict(PageSize::A4, data)
+        .expect("Failed to create page");
 
     pdf.page_ops
-        .add_page_to_root(page_dict)
+        .add_page_dict_to_root(page_dict2)
         .expect("Add page to tree failed");
 
     let path = "output.pdf";

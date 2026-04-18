@@ -1,4 +1,3 @@
-use crate::objects::assign_object_number::AssignObjectNumber;
 use crate::PdfError;
 
 #[derive(Clone)]
@@ -25,7 +24,8 @@ impl PdfReferenceObject {
         }
     }
 
-    pub fn with_object_number(mut self, value: u64) -> Self {
+    #[allow(dead_code)]
+    pub(crate) fn with_object_number(mut self, value: u64) -> Self {
         self.object_number = Some(value);
         self
     }
@@ -47,12 +47,6 @@ impl PdfReferenceObject {
         vec.extend(" R ".as_bytes());
 
         Ok(vec)
-    }
-}
-
-impl AssignObjectNumber for PdfReferenceObject {
-    fn set_object_number(&mut self, value: u64) {
-        self.object_number = Some(value);
     }
 }
 

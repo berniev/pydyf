@@ -1,6 +1,5 @@
 //! Array Objects:
 
-use crate::objects::assign_object_number::AssignObjectNumber;
 ///
 /// An array object is a one-dimensional collection of pdf objects arranged sequentially.
 ///
@@ -29,7 +28,8 @@ impl PdfArrayObject {
         }
     }
 
-    pub fn with_object_number(mut self, value: u64) -> Self {
+    #[allow(dead_code)]
+    pub(crate) fn with_object_number(mut self, value: u64) -> Self {
         self.object_number = Some(value);
         self
     }
@@ -54,12 +54,6 @@ impl PdfArrayObject {
         arr.push(b']');
 
         Ok(arr)
-    }
-}
-
-impl AssignObjectNumber for PdfArrayObject {
-    fn set_object_number(&mut self, value: u64) {
-        self.object_number = Some(value);
     }
 }
 

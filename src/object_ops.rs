@@ -1,3 +1,5 @@
+use crate::PdfStreamObject;
+
 pub struct ObjectOps {
     last_object_number: u64,
 }
@@ -17,5 +19,10 @@ impl ObjectOps {
         self.last_object_number += 1;
 
         self.last_object_number
+    }
+
+    pub fn new_stream(&mut self) -> PdfStreamObject {
+        let num = self.next_object_number();
+        PdfStreamObject::new().with_object_number(num)
     }
 }
