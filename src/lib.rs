@@ -39,6 +39,7 @@ pub mod util;
 pub mod version;
 pub mod writer;
 pub mod xmp;
+pub mod encryption_ops;
 
 // Re-export main types for user API convenience
 pub use action::{

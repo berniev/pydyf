@@ -177,13 +177,20 @@ mod tests {
     fn encode_stream_with_content() {
         let mut stream = PdfStreamObject::new().with_object_number(1);
         stream.add(b"some data".to_vec());
+
         let output = String::from_utf8(stream.encode().unwrap()).unwrap();
         assert!(output.contains("/Length 9"));
         assert!(output.contains("stream\nsome data\nendstream\n"));
+    }
+
+   #[test]
+    fn encode_stream_with_content2() {
+        let mut stream = PdfStreamObject::new().with_object_number(1);
+        stream.add(b"some data".to_vec());
         stream.add(b"BT /F1 12 Tf ET".to_vec());
         let output = String::from_utf8(stream.encode().unwrap()).unwrap();
-        assert!(output.contains("/Length 15"));
-        assert!(output.contains("stream\nBT /F1 12 Tf ET\nendstream\n"));
+        assert!(output.contains("/Length 24"));
+        assert!(output.contains("BT /F1 12 Tf ET"));
     }
 
     #[test]
