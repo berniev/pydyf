@@ -135,3 +135,36 @@ the things themselves (beyond trivial values).
 "Version",           1.4
 "ViewerPreferences", 1.2
 */
+use crate::object_ops::ObjectOps;
+use crate::objects::pdf_object::PdfObj;
+use crate::xref_ops::XRefOps;
+use crate::{PdfDictionaryObject, PdfError};
+use std::cell::RefCell;
+use std::fs::File;
+use std::rc::Rc;
+use crate::page_ops::PageOps;
+
+pub struct CatalogOps {
+    dictionary: PdfDictionaryObject,
+}
+
+impl CatalogOps {
+    pub fn new(object_ops: Rc<RefCell<ObjectOps>>, page_ops: &PageOps) -> Result<Self, PdfError> {
+        let num = object_ops.borrow_mut().next_object_number();
+       let mut dictionary = PdfDictionaryObject::new()
+            .typed("Catalog")?
+            .with_object_number(num);
+
+        dictionary.add("Pages", PdfObj::make_reference_obj(page_ops.root_page_tree_dict_id()))?;
+
+        Ok(Self { dictionary })
+    }
+
+    pub fn catalog_id(&self) -> u64 {
+        self.dictionary.object_number.unwrap() // must succeed
+    }
+
+    pub fn serialise(&mut self, xref_ops: &mut XRefOps, file: &mut File) -> Result<(), PdfError> {
+        self.dictionary.serialise(xref_ops, file)
+    }
+}

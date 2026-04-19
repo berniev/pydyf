@@ -77,18 +77,17 @@ use std::cell::RefCell;
 use std::fs::File;
 use std::rc::Rc;
 
-//-------------------------------- PageOps -------------------------------//
-
 pub struct PageOps {
     obj_ops: Rc<RefCell<ObjectOps>>,
     pub root_page_tree_dict: PdfDictionaryObject,
 }
 
 impl PageOps {
-    pub fn new(obj_ops: Rc<RefCell<ObjectOps>>) -> Result<Self, PdfError> {
-        let root_page_tree_dict = Self::make_tree_dict(&obj_ops)?;
+    pub fn new(object_ops: Rc<RefCell<ObjectOps>>) -> Result<Self, PdfError> {
+        let root_page_tree_dict = Self::make_tree_dict(&object_ops)?;
+
         Ok(PageOps {
-            obj_ops,
+            obj_ops: object_ops,
             root_page_tree_dict,
         })
     }
@@ -99,19 +98,21 @@ impl PageOps {
             .with_object_number(obj_ops.borrow_mut().next_object_number());
         tree.add("Kids", PdfArrayObject::new())?;
         tree.add("Count", 0)?;
+
         Ok(tree)
     }
 
     pub fn new_page_dict(&self, page_size: PageSize, content: Vec<u8> ) -> Result<PdfDictionaryObject, PdfError> {
+
+        let mut obj_ops = self.obj_ops.borrow_mut();
         let mut dict = PdfDictionaryObject::new()
             .typed("Page")?
-            .with_object_number(self.obj_ops.borrow_mut().next_object_number());
+            .with_object_number(obj_ops.next_object_number());
 
-        dict.add("MediaBox", page_size.to_rect()).expect("failure:");
-        dict.add("Resources", PdfDictionaryObject::new())
-            .expect("failure:");
+        dict.add("MediaBox", page_size.to_rect())?;
+        dict.add("Resources", PdfDictionaryObject::new())?;
 
-        let stream = self.obj_ops.borrow_mut().new_stream().with_data(content);
+        let stream = obj_ops.new_stream().with_data(content);
         dict.add("Contents", stream)?;
 
         Ok(dict)
@@ -127,6 +128,10 @@ impl PageOps {
 
     pub fn serialise(&self, xref: &mut XRefOps, file: &mut File) -> Result<(), PdfError> {
         self.root_page_tree_dict.serialise(xref, file)
+    }
+
+    pub fn root_page_tree_dict_id(&self) -> u64 {
+        self.root_page_tree_dict.object_number.unwrap() // must succeed
     }
 
     pub fn add_page_dict_to_root(&mut self, page_dict: PdfDictionaryObject) -> Result<(), PdfError> {
@@ -160,6 +165,7 @@ fn either_dict_has(
             )));
         }
     }
+
     Ok(())
 }
 
@@ -183,5 +189,6 @@ fn dict_has_kids(dict: &PdfDictionaryObject) -> Result<(), PdfError> {
             "Parent page tree must have a Kids array".to_string(),
         ));
     }
+
     Ok(())
 }

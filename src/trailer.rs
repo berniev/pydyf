@@ -11,59 +11,63 @@ ID       Array       Reqd*  If Encrypt entry present, else opt, but recommended.
                             A two-element array that uniquely identifies the document.
 Encrypt  Dictionary  Reqd*  If doc is encrypted. Specifies how the document is encrypted.
 */
-use std::fs::File;
-use std::io::Write;
+use crate::catalog::CatalogOps;
 use crate::file_identifier::FileIdentifierMode;
+use crate::object_ops::ObjectOps;
 use crate::objects::pdf_object::PdfObj;
 use crate::string_functions::encode_pdf_string;
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfObject};
 use crate::xref_ops::XRefOps;
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfObject};
+use std::cell::RefCell;
+use std::fs::File;
+use std::io::Write;
+use std::rc::Rc;
 
 pub struct Trailer {
-    dict: PdfDictionaryObject,
+    dictionary: PdfDictionaryObject,
 }
 
 impl Trailer {
-    pub fn new() -> Self {
-        Trailer {
-            dict: PdfDictionaryObject::new(),
-        }
-    }
+    pub fn new(
+        object_ops: Rc<RefCell<ObjectOps>>,
+        catalog_ops: &CatalogOps,
+    ) -> Result<Self, PdfError> {
+        let mut trailer = Trailer {
+            dictionary: PdfDictionaryObject::new(),
+        };
 
-    pub fn with_size(mut self, size: u64) -> Result<Self, PdfError> {
-        self.dict.add("Size", size)?;
+        trailer
+            .dictionary
+            .add("Size", object_ops.borrow().last_object_number() + 1)?;
+        trailer
+            .dictionary
+            .add("Root", PdfObj::make_reference_obj(catalog_ops.catalog_id()))?;
 
-        Ok(self)
-    }
-
-    pub fn with_root(mut self, root: u64) -> Result<Self, PdfError> {
-        self.dict.add("Root", PdfObj::make_reference_obj(root))?;
-
-        Ok(self)
+        Ok(trailer)
     }
 
     pub fn encrypted(&mut self) -> Result<&mut Self, PdfError> {
         let mut encryption_dict = PdfDictionaryObject::new(); // not typed, direct
         encryption_dict.add("Filter", PdfObj::make_name_obj("Standard"))?;
 
-        self.dict.add("Encrypt", encryption_dict)?;
+        self.dictionary.add("Encrypt", encryption_dict)?;
 
         let mut id_array = PdfArrayObject::new();
         id_array.push(PdfObj::make_string_obj("1234567890"));
         id_array.push(PdfObj::make_string_obj("0987654321"));
 
-        self.dict.add("ID", id_array)?;
+        self.dictionary.add("ID", id_array)?;
 
         Ok(self)
     }
 
-    pub fn serialise(&self, xref:&mut XRefOps, file:&mut File) -> Result<(), PdfError> {
-        let mut bytes :Vec<u8>= vec![];
+    pub fn serialise(&self, xref: &XRefOps, file: &mut File) -> Result<(), PdfError> {
+        let mut bytes: Vec<u8> = vec![];
         bytes.extend(b"\ntrailer\n");
-        bytes.extend(self.dict.encode()?);
+        bytes.extend(self.dictionary.encode()?);
         bytes.extend(format!("startxref\n{}\n%%EOF\n", xref.position).as_bytes());
 
-    file.write_all(&bytes)?;
+        file.write_all(&bytes)?;
 
         Ok(())
     }
