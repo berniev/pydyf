@@ -1,5 +1,5 @@
 use crate::fonts;
-use crate::object_ops::ObjectOps;
+use crate::object_ops::{ObjectNumber, ObjectOps};
 use crate::objects::pdf_object::PdfObj;
 pub use crate::page_size::PageSize;
 use crate::xref_ops::XRefOps;
@@ -131,7 +131,7 @@ impl PageOps {
         self.root_page_tree_dict.serialise(xref, file)
     }
 
-    pub fn root_page_tree_dict_id(&self) -> u64 {
+    pub fn root_page_tree_dict_id(&self) -> ObjectNumber {
         self.root_page_tree_dict.object_number.unwrap() // must succeed
     }
 

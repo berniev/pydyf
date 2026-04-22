@@ -76,6 +76,7 @@ use crate::{
 };
 use std::fs::File;
 use std::io::{Seek, Write};
+use crate::object_ops::ObjectNumber;
 //--------------------------- PdfObject -------------------------//
 
 #[derive(Clone)]
@@ -160,8 +161,8 @@ impl PdfObject {
         }
 
         let object_number = self.get_object_number();
-        if object_number == None {
-            return Ok(()); // direct object (no object number)
+       if object_number.is_none() {
+           return Ok(()); // direct object (no object number)
         }
 
         let offset = file.stream_position()?;
@@ -202,7 +203,7 @@ impl PdfObject {
         match_pdf_object!(&self, x => x.encode())
     }
 
-    pub fn get_object_number(&self) -> Option<u64> {
+    pub fn get_object_number(&self) -> Option<ObjectNumber> {
         match self {
             PdfObject::Array(x) => x.object_number,
             PdfObject::Dictionary(x) => x.object_number,
@@ -328,7 +329,7 @@ pub struct PdfObj {}
 
 // Dictionary, Array, Stream, Number, Boolean are now automatically converted to PdfObject
 impl PdfObj {
-    pub fn make_reference_obj(value: u64) -> PdfObject {
+    pub fn make_reference_obj(value: ObjectNumber) -> PdfObject {
         PdfObject::Reference(PdfReferenceObject::new(value))
     }
 

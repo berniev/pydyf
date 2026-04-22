@@ -11,11 +11,12 @@
 /// EXAMPLE [ 549 3.14 false ( Ralph ) /SomeName ]
 ///
 use crate::{PdfError, PdfObject};
+use crate::object_ops::ObjectNumber;
 
 #[derive(Clone)]
 pub struct PdfArrayObject {
     pub(crate) values: Vec<PdfObject>,
-    pub(crate) object_number: Option<u64>,
+    pub(crate) object_number: Option<ObjectNumber>,
     pub(crate) generation_number: Option<u16>,
 }
 
@@ -29,7 +30,7 @@ impl PdfArrayObject {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn with_object_number(mut self, value: u64) -> Self {
+    pub(crate) fn with_object_number(mut self, value: ObjectNumber) -> Self {
         self.object_number = Some(value);
         self
     }
@@ -98,7 +99,7 @@ mod tests {
     #[test]
     fn encode_with_indirect_reference() {
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfReferenceObject::new(10));
+        arr.push(PdfReferenceObject::new(ObjectNumber::new(10)));
         assert_eq!(arr.encode().unwrap(), b"[ 10 0 R  ]");
     }
 }

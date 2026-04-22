@@ -39,7 +39,7 @@ impl Trailer {
 
         trailer
             .dictionary
-            .add("Size", object_ops.borrow().last_object_number() + 1)?;
+            .add("Size", object_ops.borrow().last_object_number().value() + 1)?;
         trailer
             .dictionary
             .add("Root", PdfObj::make_reference_obj(catalog_ops.catalog_id()))?;

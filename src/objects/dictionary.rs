@@ -20,11 +20,12 @@ use crate::objects::pdf_object::PdfObj;
 ///
 use crate::{PdfError, PdfNameObject, PdfObject};
 use std::fs::File;
+use crate::object_ops::ObjectNumber;
 
 #[derive(Clone)]
 pub struct PdfDictionaryObject {
     pub(crate) values: Vec<(PdfNameObject, PdfObject)>,
-    pub(crate) object_number: Option<u64>,
+    pub(crate) object_number: Option<ObjectNumber>,
     pub(crate) generation_number: Option<u16>,
     pub(crate) children: Vec<Box<PdfDictionaryObject>>, // for page tree
 }
@@ -45,7 +46,7 @@ impl PdfDictionaryObject {
         Ok(self)
     }
 
-    pub(crate) fn with_object_number(mut self, value: u64) -> Self {
+    pub(crate) fn with_object_number(mut self, value: ObjectNumber) -> Self {
         self.object_number = Some(value);
         self
     }
@@ -270,7 +271,7 @@ mod tests {
     #[test]
     fn encode_with_indirect_reference() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Pages", PdfObj::make_reference_obj(2))
+        dict.add("Pages", PdfObj::make_reference_obj(ObjectNumber::new(2)))
             .expect("fail");
         let output = String::from_utf8(dict.encode().unwrap()).unwrap();
         assert!(output.contains("/Pages 2 0 R"));

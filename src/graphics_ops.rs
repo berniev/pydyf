@@ -1,12 +1,12 @@
 use crate::drawing_commands::DrawingCommands;
-use crate::object_ops::ObjectOps;
+use crate::object_ops::{ObjectNumber, ObjectOps};
 use crate::{PdfDictionaryObject, PdfError};
 use std::collections::HashMap;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 pub struct GraphicsOps {
-    opacity_states: HashMap<u32, u64>, // opacity values (scaled to u32) to object numbers
+    opacity_states: HashMap<u32, ObjectNumber>, // opacity values (scaled to u32) to object numbers
     resource_counter: u32,
     soft_masks: Vec<SoftMask>, // for transparent gradients
     drawing_commands: DrawingCommands,
@@ -37,7 +37,7 @@ impl GraphicsOps {
             let index = self
                 .opacity_states
                 .values()
-                .position(|&v| v == obj_num)
+                .position(|&v| v.value() == obj_num.value())
                 .unwrap();
             return Ok(format!("GS{}", index));
         }
@@ -68,7 +68,7 @@ impl GraphicsOps {
 
         for (i, (_opacity_key, &obj_num)) in self.opacity_states.iter().enumerate() {
             let resource_name = format!("GS{}", i);
-            let reference = format!("{} 0 R", obj_num).into_bytes();
+            let reference = format!("{:?} 0 R", obj_num).into_bytes();
             extgstate_dict.insert(resource_name, reference);
         }
 

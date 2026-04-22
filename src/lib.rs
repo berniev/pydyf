@@ -33,7 +33,7 @@ pub mod soft_mask;
 pub mod string_functions;
 pub mod text;
 pub mod trailer;
-pub mod tree_node;
+pub mod tree;
 pub mod util;
 pub mod version;
 pub mod writer;

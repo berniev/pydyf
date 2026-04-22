@@ -22,6 +22,8 @@ pub use crate::generation::Generation;
 pub use crate::objects::object_status::ObjectStatus;
 use std::fs::File;
 use std::io::{Seek, Write};
+use crate::object_ops::ObjectNumber;
+
 //--------------------------- CrossRefError -------------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -33,14 +35,14 @@ pub enum XRefError {
 //--------------------------- Entry -------------------------//
 
 pub struct XRefEntry {
-    pub object_number: u64,
+    pub object_number: ObjectNumber,
     pub object_status: ObjectStatus, // determines treatment of offset
     pub offset_or_next_free: u64,    // InUse: offset in stream. Free: next free object number
     pub generation: Generation,      // 65535 for root entry, otherwise 0
 }
 
 impl XRefEntry {
-    pub fn new(number: u64, offset: u64, status: ObjectStatus, generation: Generation) -> Self {
+    pub fn new(number: ObjectNumber, offset: u64, status: ObjectStatus, generation: Generation) -> Self {
         XRefEntry {
             object_number: number,
             object_status: status,
@@ -76,7 +78,7 @@ impl XRefOps {
             entries: Vec::new(),
             position: 0,
         };
-        table.add_entry(XRefEntry::new(0, 0, ObjectStatus::Free, Generation::Root));
+        table.add_entry(XRefEntry::new(ObjectNumber::new(0), 0, ObjectStatus::Free, Generation::Root));
 
         table
     }

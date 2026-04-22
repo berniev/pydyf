@@ -1,3 +1,4 @@
+use crate::object_ops::ObjectNumber;
 use crate::PdfError;
 
 #[derive(Clone)]
@@ -9,12 +10,12 @@ pub enum HostType {
 #[derive(Clone)]
 pub struct PdfReferenceObject {
     host_type: HostType,
-    pub object_number: Option<u64>,
+    pub object_number: Option<ObjectNumber>,
     pub generation_number: Option<u16>,
 }
 
 impl PdfReferenceObject {
-    pub fn new(obj_num: u64) -> Self {
+    pub fn new(obj_num: ObjectNumber) -> Self {
         Self {
             host_type: HostType::Standard {
                 generation_number: 0,
@@ -25,7 +26,7 @@ impl PdfReferenceObject {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn with_object_number(mut self, value: u64) -> Self {
+    pub(crate) fn with_object_number(mut self, value: ObjectNumber) -> Self {
         self.object_number = Some(value);
         self
     }
@@ -56,19 +57,19 @@ mod tests {
 
     #[test]
     fn encode_reference() {
-        let obj = PdfReferenceObject::new(5);
+        let obj = PdfReferenceObject::new(ObjectNumber::new(5));
         assert_eq!(obj.encode().unwrap(), b"5 0 R ");
     }
 
     #[test]
     fn encode_reference_object_one() {
-        let obj = PdfReferenceObject::new(1);
+        let obj = PdfReferenceObject::new(ObjectNumber::new(1));
         assert_eq!(obj.encode().unwrap(), b"1 0 R ");
     }
 
     #[test]
     fn encode_reference_large_number() {
-        let obj = PdfReferenceObject::new(999);
+        let obj = PdfReferenceObject::new(ObjectNumber::new(999));
         assert_eq!(obj.encode().unwrap(), b"999 0 R ");
     }
 }

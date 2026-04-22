@@ -5,6 +5,8 @@ pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, ToPdf
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
 use std::io::Write as IoWrite;
+use crate::object_ops::ObjectNumber;
+
 /// PDF content stream
 ///
 /// Content streams most commonly define page content, e.g.
@@ -79,7 +81,7 @@ use std::io::Write as IoWrite;
 pub struct PdfStreamObject {
     pub(crate) dict: PdfDictionaryObject,
     pub(crate) content: Vec<u8>,
-    pub(crate) object_number: Option<u64>,
+    pub(crate) object_number: Option<ObjectNumber>,
     pub(crate) generation_number: Option<u16>,
 
     pub(crate) compression_method: CompressionMethod,
@@ -103,7 +105,7 @@ impl PdfStreamObject {
         self
     }
 
-    pub(crate) fn with_object_number(mut self, value: u64) -> Self {
+    pub(crate) fn with_object_number(mut self, value: ObjectNumber) -> Self {
         self.object_number = Some(value);
 
         self
@@ -166,7 +168,7 @@ mod tests {
 
     #[test]
     fn encode_empty_stream() {
-        let stream = PdfStreamObject::new().with_object_number(1);
+        let stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
         let output = String::from_utf8(stream.encode().unwrap()).unwrap();
         assert!(output.contains("/Length 0"));
         assert!(output.contains("stream\n"));
@@ -175,7 +177,7 @@ mod tests {
 
     #[test]
     fn encode_stream_with_content() {
-        let mut stream = PdfStreamObject::new().with_object_number(1);
+        let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
         stream.add(b"some data".to_vec());
 
         let output = String::from_utf8(stream.encode().unwrap()).unwrap();
@@ -185,7 +187,7 @@ mod tests {
 
    #[test]
     fn encode_stream_with_content2() {
-        let mut stream = PdfStreamObject::new().with_object_number(1);
+        let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
         stream.add(b"some data".to_vec());
         stream.add(b"BT /F1 12 Tf ET".to_vec());
         let output = String::from_utf8(stream.encode().unwrap()).unwrap();
@@ -195,7 +197,7 @@ mod tests {
 
     #[test]
     fn encode_stream_length_matches_content() {
-        let mut stream = PdfStreamObject::new().with_object_number(1);
+        let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
         let content = b"q 1 0 0 1 100 200 cm Q";
         stream.add(content.to_vec());
         let output = String::from_utf8(stream.encode().unwrap()).unwrap();
@@ -204,7 +206,7 @@ mod tests {
 
     #[test]
     fn encode_compressed_stream_has_filter() {
-        let stream = PdfStreamObject::new().with_object_number(1).compressed();
+        let stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1)).compressed();
         let encoded = stream.expect("REASON").encode().unwrap();
         let contains = |needle: &[u8]| encoded.windows(needle.len()).any(|w| w == needle);
         assert!(contains(b"/Filter /FlateDecode"));
@@ -214,7 +216,7 @@ mod tests {
 
     #[test]
     fn encode_stream_with_dict_entries() {
-        let mut stream = PdfStreamObject::new().with_object_number(1);
+        let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
         stream
             .dict
             .add("Type", PdfObj::make_name_obj("XObject"))

@@ -135,7 +135,7 @@ the things themselves (beyond trivial values).
 "Version",           1.4
 "ViewerPreferences", 1.2
 */
-use crate::object_ops::ObjectOps;
+use crate::object_ops::{ObjectNumber, ObjectOps};
 use crate::objects::pdf_object::PdfObj;
 use crate::xref_ops::XRefOps;
 use crate::{PdfDictionaryObject, PdfError};
@@ -160,7 +160,7 @@ impl CatalogOps {
         Ok(Self { dictionary })
     }
 
-    pub fn catalog_id(&self) -> u64 {
+    pub fn catalog_id(&self) -> ObjectNumber {
         self.dictionary.object_number.unwrap() // must succeed
     }
 

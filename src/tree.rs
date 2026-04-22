@@ -5,13 +5,13 @@
 
  Tree must have at least one root node with a single entry (either Kids or Names)
 
- ===========================================================================================
+ ==========================================================================================
  Dict Key  Root  Int   Leaf  Value (flat array)
- ========  ====  ====  ====  ===============================================================
+ ========  ====  ====  ====  ==============================================================
  Kids      Cond  Reqd  None  Cond = no Data. Indirect references to Int or Leaf nodes
- *         Cond  None  Reqd  Cond = no Kids. Key** /Value(PdfObject) pairs, sorted*** on key
- Limits    None  Reqd  Reqd  Least and Greatest keys****
-============================================================================================
+ *         Cond  None  Reqd  Cond = no Kids. Key ** / PdfObject pairs. Sorted by key ***
+ Limits    None  Reqd  Reqd  Least and Greatest keys ****
+===========================================================================================
 
  ===================================================================================
         NameTree                             NumberTree
@@ -30,14 +30,15 @@
  */
 use crate::objects::pdf_object::PdfObj;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfObject};
+use crate::object_ops::ObjectNumber;
 
 ///Usage:
 /// ```
-///  let mut name_node: NameTreeNode = TreeNode::new(1);
-///  node.set_entries(vec![("key".to_string(), val)]);
+///  let mut name_node: NameTreeNode = TreeNode::new(ObjectNumber::new(1));
+///  node.set_entries(vec![("first_key".to_string(), val)]);
 ///  node.set_limits("a".to_string(), "z".to_string());
 ///
-///  let mut num_node: NumTreeNode = TreeNode::new(2);
+///  let mut num_node: NumTreeNode = TreeNode::new(ObjectNumber::new(2));
 ///  node.set_entries(vec![(42, val)]);
 ///  node.set_limits(1, 99);
 /// ```
@@ -49,16 +50,16 @@ pub struct Tree {
 }
 
 impl Tree {
-    pub fn new(object_number: u64) -> Self {
+    pub fn new(object_number: ObjectNumber) -> Self {
         Self {
             dict: PdfDictionaryObject::new().with_object_number(object_number),
         }
     }
 
-    pub fn set_kids(&mut self, kids: Vec<u64>) -> Result<(), PdfError> {
+    pub fn set_kids(&mut self, new_kids: Vec<ObjectNumber>) -> Result<(), PdfError> {
         let mut arr = PdfArrayObject::new();
-        for kid in kids {
-            arr.push(PdfObj::make_reference_obj(kid));
+        for new_kid in new_kids {
+            arr.push(PdfObj::make_reference_obj(new_kid));
         }
         self.dict.add("Kids", arr)?;
 
