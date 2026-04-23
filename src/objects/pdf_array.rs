@@ -62,10 +62,10 @@ impl PdfArrayObject {
 mod tests {
     use super::*;
     use crate::NumberType;
-    use crate::objects::boolean::PdfBooleanObject;
-    use crate::objects::name::PdfNameObject;
-    use crate::objects::number::PdfNumberObject;
-    use crate::objects::reference::PdfReferenceObject;
+    use crate::objects::pdf_boolean::PdfBooleanObject;
+    use crate::objects::pdf_name::PdfNameObject;
+    use crate::objects::pdf_number::PdfNumberObject;
+    use crate::objects::pdf_reference::PdfReferenceObject;
 
     #[test]
     fn encode_empty_array() {

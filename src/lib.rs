@@ -52,18 +52,17 @@ pub use error::{PdfError, PdfResult};
 pub use ext_g_state::{BlendMode, ExtGState, RenderingIntent};
 pub use graphics_ops::GraphicsOps;
 pub use metadata::{Metadata, TrappedState};
-pub use objects::array::PdfArrayObject;
-pub use objects::assign_object_number::AssignObjectNumber;
-pub use objects::boolean::PdfBooleanObject;
-pub use objects::dictionary::PdfDictionaryObject;
-pub use objects::name::PdfNameObject;
-pub use objects::null::PdfNullObject;
+pub use objects::pdf_array::PdfArrayObject;
+pub use objects::pdf_boolean::PdfBooleanObject;
+pub use objects::pdf_dictionary::PdfDictionaryObject;
+pub use objects::pdf_name::PdfNameObject;
+pub use objects::pdf_null::PdfNullObject;
 pub use objects::number_type::NumberType;
 pub use objects::pdf_object::PdfObject;
-pub use objects::reference::PdfReferenceObject;
-pub use objects::stream::PdfStreamObject as Stream;
-pub use objects::stream::{CompressionMethod, PdfStreamObject};
-pub use objects::string::PdfStringObject;
+pub use objects::pdf_reference::PdfReferenceObject;
+pub use objects::pdf_stream::PdfStreamObject as Stream;
+pub use objects::pdf_stream::{CompressionMethod, PdfStreamObject};
+pub use objects::pdf_string::PdfStringObject;
 pub use optional_content::{
     LayerOrder, OptionalContentConfig, OptionalContentGroup, VisibilityInitialState,
 };

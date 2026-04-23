@@ -1,8 +1,8 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-use crate::{Metadata, PdfDictionaryObject, PdfResult, PdfStreamObject};
 use crate::object_ops::ObjectOps;
 use crate::objects::pdf_object::PdfObj;
+use crate::{Metadata, PdfDictionaryObject, PdfResult, PdfStreamObject};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 /// XMP (Extensible Metadata Platform) (simplified)
 pub struct XmpMetadata {
@@ -75,7 +75,8 @@ impl XmpMetadata {
         let mut dict = PdfDictionaryObject::new().typed("Metadata")?;
         dict.add("SubType", PdfObj::make_name_obj("XML"))?;
 
-        let stream = object_ops.borrow_mut().new_stream()
+        let stream = PdfStreamObject::new()
+            .with_object_number(object_ops.borrow_mut().next_object_number())
             .with_dict_and_content(dict, self.xmp_packet.as_bytes().to_vec());
 
         Ok(stream)

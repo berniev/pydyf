@@ -1,4 +1,4 @@
-use crate::fonts;
+use crate::{fonts, PdfStreamObject};
 use crate::object_ops::{ObjectNumber, ObjectOps};
 use crate::objects::pdf_object::PdfObj;
 pub use crate::page_size::PageSize;
@@ -121,7 +121,7 @@ impl PageOps {
         dict.add("MediaBox", page_size.to_rect())?;
         dict.add("Resources", PdfDictionaryObject::new())?;
 
-        let stream = obj_ops.new_stream().with_data(content);
+        let stream = PdfStreamObject::new().with_data(content);
         dict.add("Contents", stream)?;
 
         Ok(dict)

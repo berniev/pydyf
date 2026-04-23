@@ -66,17 +66,17 @@ pub struct SerialLocation {
 }
 
 */
-use crate::xref_ops::{XRefOps, XRefEntry, ObjectStatus};
 use crate::generation::Generation;
-use crate::objects::number::PdfNumberObject;
-use crate::objects::reference::PdfReferenceObject;
+use crate::object_ops::ObjectNumber;
+use crate::objects::pdf_number::PdfNumberObject;
+use crate::objects::pdf_reference::PdfReferenceObject;
+use crate::xref_ops::{ObjectStatus, XRefEntry, XRefOps};
 use crate::{
     NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject,
     PdfNullObject, PdfStreamObject, PdfStringObject,
 };
 use std::fs::File;
 use std::io::{Seek, Write};
-use crate::object_ops::ObjectNumber;
 //--------------------------- PdfObject -------------------------//
 
 #[derive(Clone)]
@@ -123,7 +123,7 @@ impl PdfObject {
         }
     }
 
-     pub fn as_integer(&self) -> Result<i64, PdfError> {
+    pub fn as_integer(&self) -> Result<i64, PdfError> {
         match self {
             PdfObject::Number(n) => Ok(n.as_int()),
             other => Err(Self::unexpected_type(other)),
@@ -155,14 +155,14 @@ impl PdfObject {
         PdfError::StructureError(format!("Unexpected type: {}", self.type_name()))
     }
 
-   pub fn serialise(&self, xref: &mut XRefOps, file: &mut File) -> Result<(), PdfError> {
+    pub fn serialise(&self, xref: &mut XRefOps, file: &mut File) -> Result<(), PdfError> {
         if matches!(self, PdfObject::Reference(_)) {
             return Ok(());
         }
 
         let object_number = self.get_object_number();
-       if object_number.is_none() {
-           return Ok(()); // direct object (no object number)
+        if object_number.is_none() {
+            return Ok(()); // direct object (no object number)
         }
 
         let offset = file.stream_position()?;
@@ -211,7 +211,8 @@ impl PdfObject {
             PdfObject::Reference(x) => x.object_number,
             _ => None,
         }
-    }}
+    }
+}
 
 //--------------------------- From impl -------------------------//
 

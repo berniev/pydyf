@@ -88,6 +88,7 @@ pub struct PdfStreamObject {
 }
 
 impl PdfStreamObject {
+    
     pub(crate) fn new() -> Self {
         Self {
             dict: PdfDictionaryObject::new(),

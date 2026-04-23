@@ -1,5 +1,3 @@
-use crate::PdfStreamObject;
-
 pub struct ObjectOps {
     last_object_number: ObjectNumber,
 }
@@ -7,7 +5,8 @@ pub struct ObjectOps {
 impl ObjectOps {
     pub fn new() -> Self {
         Self {
-            last_object_number: ObjectNumber::new(0), // 0 is in xref table as 'free'. is gen# 65535, else 0 for new
+            // 0 is in xref table as 'free'. is gen# 65535, else 0 for new
+            last_object_number: ObjectNumber::new(0),
         }
     }
 
@@ -20,11 +19,6 @@ impl ObjectOps {
 
         self.last_object_number
     }
-
-    pub fn new_stream(&mut self) -> PdfStreamObject {
-        let num = self.next_object_number();
-        PdfStreamObject::new().with_object_number(num)
-    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -34,7 +28,9 @@ pub struct ObjectNumber {
 
 impl ObjectNumber {
     pub fn new(value: u64) -> Self {
-        Self { object_number: value }
+        Self {
+            object_number: value,
+        }
     }
 
     pub fn value(self) -> u64 {
@@ -65,4 +61,3 @@ impl Ord for ObjectNumber {
         self.value().cmp(&other.value())
     }
 }
-

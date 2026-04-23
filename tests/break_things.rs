@@ -1,6 +1,6 @@
 use rusty_pdf::color::{Color, RGB};
 use rusty_pdf::drawing_commands::DrawingCommands;
-use rusty_pdf::objects::stream::StrokeOrFill;
+use rusty_pdf::objects::pdf_stream::StrokeOrFill;
 use rusty_pdf::util::Matrix;
 use rusty_pdf::Pdf;
 /*fn create_page_with_content(page_size: PageSize, content_index: usize) -> PdfDictionaryObject {
