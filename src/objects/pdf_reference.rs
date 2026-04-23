@@ -25,17 +25,6 @@ impl PdfReferenceObject {
         }
     }
 
-    #[allow(dead_code)]
-    pub(crate) fn with_object_number(mut self, value: ObjectNumber) -> Self {
-        self.object_number = Some(value);
-        self
-    }
-
-    pub fn with_generation_number(mut self, value: u16) -> Self {
-        self.generation_number = Some(value); 
-        self
-    }
-
     pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
         let gen_num = match &self.host_type {
             HostType::Standard { generation_number } => *generation_number,

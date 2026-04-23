@@ -1,9 +1,9 @@
-use crate::{fonts, PdfStreamObject};
 use crate::object_ops::{ObjectNumber, ObjectOps};
 use crate::objects::pdf_object::PdfObj;
 pub use crate::page_size::PageSize;
 use crate::xref_ops::XRefOps;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
+use crate::{PdfStreamObject, fonts};
 use std::cell::RefCell;
 use std::fs::File;
 use std::rc::Rc;
@@ -121,7 +121,9 @@ impl PageOps {
         dict.add("MediaBox", page_size.to_rect())?;
         dict.add("Resources", PdfDictionaryObject::new())?;
 
-        let stream = PdfStreamObject::new().with_data(content);
+        let stream = PdfStreamObject::new()
+            .with_object_number(obj_ops.next_object_number())
+            .with_data(content);
         dict.add("Contents", stream)?;
 
         Ok(dict)
@@ -143,7 +145,7 @@ impl PageOps {
     }
 
     // static funcs
-    
+
     pub fn add_page_dict_to_tree_dict(
         mut page_dict: PdfDictionaryObject,
         tree_dict: &mut PdfDictionaryObject,

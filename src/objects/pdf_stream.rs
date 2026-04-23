@@ -9,6 +9,11 @@ use std::io::Write as IoWrite;
 
 /// PDF content stream
 ///
+/// A stream object is a (potentially very long) sequence of bytes.
+///
+/// Objects with potentially large amounts of data, such as images and page descriptions, shall be
+/// represented as streams.
+///
 /// Content streams most commonly define page content, e.g.
 /// - Graphics: paths, rectangles, curves
 /// - Text: fonts, positioning, display
@@ -16,9 +21,6 @@ use std::io::Write as IoWrite;
 /// - Images: inline images
 /// - Transformations: matrices, state management
 /// but have other uses as well.
-///
-/// A stream object is a (potentially very long) sequence of bytes. Objects with potentially large
-/// amounts of data, such as images and page descriptions, shall be represented as streams.
 ///
 /// A stream shall be an indirect object and consist of a direct dictionary object (known as the
 /// Stream Extent) followed by zero or more bytes bracketed between the keywords'stream' and
@@ -36,18 +38,18 @@ use std::io::Write as IoWrite;
 ///```
 /// ```
 /// Stream dictionary (Stream Extent) Entries:
-/// ===========================================================================
+/// ==========================================================================
 /// Name          Type     Reqd Description
-/// ============  ==========  = ===============================================
-/// Length        int         R The length of the stream in bytes
-/// DL            int         O Non-negative len of the decoded stream in bytes
+/// ============  ==========  = ==============================================
+/// Length        int         R The length of the stream (bytes)
+/// DL            int         O Non-negative len of the decoded stream (bytes)
 /// Filter        nam or arr  O A filter or sequence of filters to be applied
 /// DecodeParms   dic or arr  O Parameters for the filter(s) in Filter
 ///
 /// F             filespec    O A file specification for the stream data
 /// FFilter       nam or arr  O A filter or sequence of filters to file data
 /// FDecodeParms  dic or arr  O Parameters for the filter(s) in FFilter
-/// ===========================================================================
+/// ==========================================================================
 /// ```
 /// Stream Filters:
 /// Indicate how the data in the stream should be decoded before it is used.
@@ -101,18 +103,6 @@ impl PdfStreamObject {
     pub fn with_dict_and_content(mut self, dict: PdfDictionaryObject, content: Vec<u8>) -> Self {
         self.dict = dict;
         self.content = content;
-
-        self
-    }
-
-    pub fn with_object_number(mut self, value: ObjectNumber) -> Self {
-        self.object_number = Some(value);
-
-        self
-    }
-
-    pub fn with_generation_number(mut self, value: u16) -> Self {
-        self.generation_number = Some(value);
 
         self
     }

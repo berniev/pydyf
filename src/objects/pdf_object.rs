@@ -358,3 +358,23 @@ impl PdfObj {
         PdfObject::String(PdfStringObject::new(value))
     }
 }
+
+macro_rules! impl_obj_num_gen {
+    ($ty:ty) => {
+        impl $ty {
+            pub fn with_object_number(mut self, value: ObjectNumber) -> Self {
+                self.object_number = Some(value);
+                self
+            }
+            pub fn with_generation_number(mut self, value: u16) -> Self {
+                self.generation_number = Some(value);
+                self
+            }
+        }
+    };
+}
+
+impl_obj_num_gen!(PdfArrayObject);
+impl_obj_num_gen!(PdfDictionaryObject);
+impl_obj_num_gen!(PdfReferenceObject);
+impl_obj_num_gen!(PdfStreamObject);
