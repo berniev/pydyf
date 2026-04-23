@@ -190,14 +190,12 @@ impl PdfObject {
     /// Encode this object as it should appear when used as a value inside a dictionary or array.
     /// If it's an indirect object, emit a reference (N 0 R); otherwise encode inline.
     pub fn encode_as_value(&self) -> Result<Vec<u8>, PdfError> {
-        if matches!(self, PdfObject::Reference(_)) {
-            return self.encode(); // References are always encoded inline
+        if !matches!(self, PdfObject::Reference(_))
+            && let Some(obj_num) = self.get_object_number()
+        {
+            return PdfReferenceObject::new(obj_num).encode();
         }
-        if let Some(obj_num) = self.get_object_number() {
-            PdfReferenceObject::new(obj_num).encode()
-        } else {
-            self.encode()
-        }
+        self.encode()
     }
 
     pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
