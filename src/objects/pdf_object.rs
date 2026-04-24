@@ -156,28 +156,23 @@ impl PdfObject {
     }
 
     pub fn serialise(&self, xref: &mut XRefOps, file: &mut File) -> Result<(), PdfError> {
-        if matches!(self, PdfObject::Reference(_)) {
+        if matches!(self, PdfObject::Reference(_)) || !self.is_indirect(){
             return Ok(());
         }
 
-        let object_number = self.get_object_number();
-        if object_number.is_none() {
-            return Ok(()); // direct object (no object number)
-        }
-
-        let object_number_unwrapped = object_number.unwrap();
+        let object_number = self.get_object_number().unwrap();
         let offset = file.stream_position()?;
 
         // indirect object
         let mut vec = vec![];
-        vec.extend(object_number_unwrapped.to_string().as_bytes());
+        vec.extend(object_number.to_string().as_bytes());
         vec.extend(b" 0 obj\n");
         vec.extend(match_pdf_object!(self, x => x.encode())?);
         vec.extend(b"endobj\n\n");
         file.write_all(&*vec)?;
 
         let xref_ent = XRefEntry::new(
-            object_number_unwrapped,
+            object_number,
             offset,
             ObjectStatus::InUse,
             Generation::Normal,
@@ -208,6 +203,10 @@ impl PdfObject {
             PdfObject::Reference(x) => x.object_number,
             _ => None,
         }
+    }
+
+    pub fn is_indirect(&self) -> bool {
+        self.get_object_number().is_some()
     }
 }
 

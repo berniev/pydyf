@@ -169,7 +169,7 @@ impl PdfDictionaryObject {
 
         // serialise any indirect values (e.g. streams embedded in this dict)
         for (_name, value) in &self.values {
-            if value.get_object_number().is_some() {
+            if value.is_indirect() {
                 value.serialise(xref, file)?;
             }
         }
