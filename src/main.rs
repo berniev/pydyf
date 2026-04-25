@@ -8,7 +8,7 @@ fn main() -> Result<(), PdfError> {
     println!("rusty_pdf - PDF library for Rust");
     println!("Originally based on Python rusty_pdf\n");
 
-    let mut pdf = Pdf::new()?.with_page_size(PageSize::A4);
+    let mut pdf = Pdf::new()?.with_default_page_size(PageSize::A4);
 
     let mut cmd = DrawingCommands::new();
     cmd.set_color_rgb(RGB::BLUE, Fill);
@@ -50,13 +50,9 @@ fn main() -> Result<(), PdfError> {
 
     let root_tree = pdf.page_ops.root_tree();
 
-    let page = root_tree.make_page(data.clone())?;
-    root_tree.add_page(page)?;
+    root_tree.add_page_using(data.clone())?;
 
-    let page2 = root_tree.make_page(data.clone())?;
-    root_tree.add_page(page2)?;
-
-    let mut new_tree = root_tree.make_tree()?;
+    root_tree.add_page_using(data)?;
 
     cmd.set_color_rgb(RGB::ORANGE, Fill);
     cmd.add_rectangle(
@@ -86,8 +82,8 @@ fn main() -> Result<(), PdfError> {
     cmd.end_text();
 
     let data = cmd.flush();
-    let page3 = new_tree.make_page(data)?.with_page_size(PageSize::A5);
-    new_tree.add_page(page3)?;
+    let mut new_tree = root_tree.make_tree()?.with_default_page_size(PageSize::A5);
+    new_tree.add_page_using(data)?;
 
     root_tree.add_tree(new_tree)?;
 

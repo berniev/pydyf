@@ -138,7 +138,7 @@ impl PageTree {
         })
     }
 
-    pub fn with_page_size(mut self, page_size: PageSize) -> Self {
+    pub fn with_default_page_size(mut self, page_size: PageSize) -> Self {
         self.dictionary
             .update_or_add("MediaBox", page_size.to_rect());
         self
@@ -179,6 +179,10 @@ impl PageTree {
         Ok(())
     }
 
+    pub fn add_page_using(&mut self, data: Vec<u8>) -> Result<(), PdfError> {
+        self.add_page(self.make_page(data.clone())?)
+    }
+    
     pub fn add_resources() {}
 
     fn add_kid(&mut self, kid_obj: Box<PdfDictionaryObject>) -> Result<(), PdfError> {

@@ -39,7 +39,7 @@ impl Pdf {
         self
     }
 
-    pub fn with_page_size(mut self, page_size: PageSize) -> Self {
+    pub fn with_default_page_size(mut self, page_size: PageSize) -> Self {
         self.page_ops.set_default_page_size(page_size);
         
         self
