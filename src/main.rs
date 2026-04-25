@@ -8,9 +8,7 @@ fn main() -> Result<(), PdfError> {
     println!("rusty_pdf - PDF library for Rust");
     println!("Originally based on Python rusty_pdf\n");
 
-    let mut pdf = Pdf::new()
-        .expect("Failed to create PDF")
-        .with_page_size(PageSize::A4);
+    let mut pdf = Pdf::new()?.with_page_size(PageSize::A4);
 
     let mut cmd = DrawingCommands::new();
     cmd.set_color_rgb(RGB::BLUE, Fill);
@@ -52,17 +50,13 @@ fn main() -> Result<(), PdfError> {
 
     let root_tree = pdf.page_ops.root_tree();
 
-    let page = root_tree
-        .make_page(data.clone())
-        .expect("Failed to create page");
-    root_tree.add_page(page).expect("Add page to tree failed");
+    let page = root_tree.make_page(data.clone())?;
+    root_tree.add_page(page)?;
 
-    let page2 = root_tree
-        .make_page(data.clone())
-        .expect("Failed to create page");
-    root_tree.add_page(page2).expect("Add page to tree failed");
+    let page2 = root_tree.make_page(data.clone())?;
+    root_tree.add_page(page2)?;
 
-    let mut new_tree = root_tree.make_tree().expect("Faied to create tree");
+    let mut new_tree = root_tree.make_tree()?;
 
     cmd.set_color_rgb(RGB::ORANGE, Fill);
     cmd.add_rectangle(
@@ -92,23 +86,15 @@ fn main() -> Result<(), PdfError> {
     cmd.end_text();
 
     let data = cmd.flush();
-    let page3 = new_tree
-        .make_page(data)
-        .expect("Failed to create page")
-        .with_page_size(PageSize::A5);
-    new_tree.add_page(page3).expect("Add page to tree failed");
+    let page3 = new_tree.make_page(data)?.with_page_size(PageSize::A5);
+    new_tree.add_page(page3)?;
 
-    root_tree
-        .add_tree(new_tree)
-        .expect("Failed to add page to tree");
+    root_tree.add_tree(new_tree)?;
 
     let path = "output.pdf";
-    pdf.finalise(path).expect("finalise failed");
+    pdf.finalise(path)?;
 
-    println!(
-        "Created {path}:\n\n{}",
-        std::fs::read_to_string(path).unwrap()
-    );
-    
+    println!("Created {path}:\n\n{}", std::fs::read_to_string(path)?);
+
     Ok(())
 }
