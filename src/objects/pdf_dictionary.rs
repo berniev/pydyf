@@ -70,22 +70,6 @@ impl PdfDictionaryObject {
             .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
     }
 
-    // special case for page tree todo: move to page_tree.rs ??
-    pub fn add_kid_to_page_tree(
-        &mut self,
-        kid_obj: Box<PdfDictionaryObject>,
-    ) -> Result<(), PdfError> {
-        let reference = PdfObj::make_reference_obj(kid_obj.object_number.unwrap());
-        self.children.push(kid_obj);
-
-        if let Some(PdfObject::Array(arr)) = self.get_mut("Kids") {
-            arr.push(reference);
-            Ok(())
-        } else {
-            Err(PdfError::StructureError("Missing `Kids` array".to_string()))
-        }
-    }
-
     pub fn push_to_array(
         &mut self,
         key: &str,

@@ -1,9 +1,9 @@
-use crate::PdfStreamObject;
 use crate::object_ops::{ObjectNumber, ObjectOps};
 use crate::objects::pdf_object::PdfObj;
 pub use crate::page_size::PageSize;
 use crate::xref_ops::XRefOps;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
+use crate::PdfStreamObject;
 use std::cell::RefCell;
 use std::fs::File;
 use std::rc::Rc;
@@ -101,7 +101,9 @@ impl PageOps {
     }
 
     pub fn set_default_page_size(&mut self, page_size: PageSize) {
-        self.root_tree.dictionary.update_or_add("MediaBox", page_size.to_rect());
+        self.root_tree
+            .dictionary
+            .update_or_add("MediaBox", page_size.to_rect());
     }
 
     pub fn root_tree(&mut self) -> &mut PageTree {
@@ -160,8 +162,7 @@ impl PageTree {
         tree.dictionary
             .add("Parent", PdfObj::make_reference_obj(self.object_number()))?;
 
-        self.dictionary
-            .add_kid_to_page_tree(Box::new(tree.dictionary))?;
+        self.add_kid(Box::new(tree.dictionary))?;
 
         Ok(())
     }
@@ -173,13 +174,20 @@ impl PageTree {
             "Count",
             self.dictionary.get_integer("Count").unwrap_or(0) + 1,
         );
-        self.dictionary
-            .add_kid_to_page_tree(Box::new(page.dictionary))?;
+        self.add_kid(Box::new(page.dictionary))?;
 
         Ok(())
     }
 
     pub fn add_resources() {}
+
+    fn add_kid(&mut self, kid_obj: Box<PdfDictionaryObject>) -> Result<(), PdfError> {
+        let reference = PdfObj::make_reference_obj(kid_obj.object_number.unwrap());
+        self.dictionary.children.push(kid_obj);
+        self.dictionary.push_to_array("Kids", reference)?;
+
+        Ok(())
+    }
 
     fn has_kids(&self) -> Result<(), PdfError> {
         if !self.dictionary.contains_key("Kids") {
