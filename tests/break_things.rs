@@ -1,6 +1,5 @@
 use rusty_pdf::color::{Color, RGB};
 use rusty_pdf::drawing_commands::DrawingCommands;
-use rusty_pdf::objects::pdf_stream::StrokeOrFill;
 use rusty_pdf::util::Matrix;
 use rusty_pdf::Pdf;
 /*fn create_page_with_content(page_size: PageSize, content_index: usize) -> PdfDictionaryObject {
@@ -272,9 +271,8 @@ fn test_extreme_font_sizes() {
     let _pdf = Pdf::new().expect("Failed to create PDF");
     let mut cmd = DrawingCommands::new();
 
-    cmd.set_color_rgb(
+    cmd.set_color_rgb_fill(
         RGB::new(Color::new(0.0), Color::new(0.0), Color::new(0.0)),
-        StrokeOrFill::Fill,
     );
     cmd.begin_text();
 

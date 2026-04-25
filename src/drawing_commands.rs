@@ -87,13 +87,13 @@
 ///   Transformation matrices specify the transformation from the new (transformed) coordinate
 ///     system to the original (untransformed) coordinate system
 ///
-use crate::color::{Color, ColorSpace, CMYK, RGB};
+use crate::color::{CMYK, Color, ColorSpace, RGB};
 use crate::encoding::{ascii85_encode, f_to_pdf_num};
 use crate::string_functions::encode_pdf_string;
 use crate::util::{Dims, Matrix, Posn, StrokeOrFill, ToPdf, WindingRule};
 use crate::{CompressionMethod, PdfError};
-use flate2::write::ZlibEncoder;
 use flate2::Compression;
+use flate2::write::ZlibEncoder;
 use std::io::Write;
 
 //-------------------------- Drawing Commands --------------------------
@@ -116,13 +116,17 @@ impl DrawingCommands {
         self.cmds_arr.extend(b"\n".to_vec());
     }
 
+    pub fn read(&self) -> Vec<u8> {
+        self.cmds_arr.clone()
+    }
+
     pub fn flush(&mut self) -> Vec<u8> {
         let buff = self.cmds_arr.clone();
         self.cmds_arr = vec![];
-        
+
         buff
     }
-    
+
     //-------------------------- Drawing Command Methods --------------------------//
 
     fn add_windable_cmd(&mut self, cmd: char, even_odd: WindingRule) {
@@ -213,16 +217,28 @@ impl DrawingCommands {
         self.add(b"ET".to_vec());
     }
 
-    pub fn fill(&mut self, even_odd: WindingRule) {
-        self.add_windable_cmd('f', even_odd);
+    pub fn fill_even_odd(&mut self) {
+        self.add_windable_cmd('f', WindingRule::EvenOdd);
     }
 
-    pub fn fill_and_stroke(&mut self, even_odd: WindingRule) {
-        self.add_windable_cmd('B', even_odd);
+    pub fn fill_nonzero(&mut self) {
+        self.add_windable_cmd('f', WindingRule::NonZero);
     }
 
-    pub fn fill_stroke_and_close(&mut self, even_odd: WindingRule) {
-        self.add_windable_cmd('b', even_odd);
+    pub fn fill_and_stroke_even_odd(&mut self) {
+        self.add_windable_cmd('B', WindingRule::EvenOdd);
+    }
+
+    pub fn fill_and_stroke_nonzero(&mut self) {
+        self.add_windable_cmd('B', WindingRule::NonZero);
+    }
+
+    pub fn fill_stroke_and_close_even_odd(&mut self) {
+        self.add_windable_cmd('b', WindingRule::EvenOdd);
+    }
+
+    pub fn fill_stroke_and_close_nonzero(&mut self) {
+        self.add_windable_cmd('b', WindingRule::NonZero);
     }
 
     pub fn add_inline_image(
@@ -324,12 +340,12 @@ impl DrawingCommands {
         self.add_parts(&[&posn, &size], "re")
     }
 
-    pub fn set_color_rgb(&mut self, rgb: RGB, stroke: StrokeOrFill) {
-        let operator = match stroke {
-            StrokeOrFill::Stroke => "RG",
-            StrokeOrFill::Fill => "rg",
-        };
-        self.add_parts(&[&rgb], operator);
+    pub fn set_color_rgb_stroke(&mut self, rgb: RGB) {
+        self.add_parts(&[&rgb], "RG");
+    }
+
+    pub fn set_color_rgb_fill(&mut self, rgb: RGB) {
+        self.add_parts(&[&rgb], "rg");
     }
 
     pub fn set_color_cmyk(&mut self, cmyk: CMYK, stroke: StrokeOrFill) {
