@@ -2,9 +2,9 @@ use rusty_pdf::color::RGB;
 use rusty_pdf::drawing_commands::DrawingCommands;
 use rusty_pdf::util::StrokeOrFill::Fill;
 use rusty_pdf::util::{Dims, Posn, WindingRule};
-use rusty_pdf::{PageSize, Pdf};
+use rusty_pdf::{PageSize, Pdf, PdfError};
 
-fn main() {
+fn main() -> Result<(), PdfError> {
     println!("rusty_pdf - PDF library for Rust");
     println!("Originally based on Python rusty_pdf\n");
 
@@ -109,4 +109,6 @@ fn main() {
         "Created {path}:\n\n{}",
         std::fs::read_to_string(path).unwrap()
     );
+    
+    Ok(())
 }
