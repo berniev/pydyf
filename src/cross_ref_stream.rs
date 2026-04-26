@@ -134,6 +134,7 @@ impl CrossRefStreamEntry {
 pub(crate) struct CrossRefStream {
     entries: Vec<CrossRefStreamEntry>,
 }
+
 impl CrossRefStream {
     #[allow(dead_code)]
     pub fn new() -> Self {
