@@ -5,7 +5,7 @@ use rusty_pdf::{PageSize, Pdf, PdfError};
 
 fn main() -> Result<(), PdfError> {
     println!("rusty_pdf - PDF library for Rust");
-    println!("Originally based on Python rusty_pdf\n");
+    println!("Originally inspired by Python rusty_pdf\n");
 
     let mut pdf = Pdf::new()?.with_default_page_size(PageSize::A4);
 
