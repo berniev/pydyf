@@ -7,3 +7,6 @@ edition = "2024"
 flate2 = "1.1.9"
 md5 = "0.8.0"
 image = "0.25.1"
+
+[lib]
+doctest = false
