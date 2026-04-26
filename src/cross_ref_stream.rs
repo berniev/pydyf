@@ -2,18 +2,18 @@ use crate::xref_ops::{Generation, ObjectStatus};
 
 /// Cross-Reference Streams
 /// Beginning with PDF 1.5, cross-reference information may be stored in a cross-reference stream
-/// instead of in a cross-reference table. Cross-reference streams provide the following advantages:
+/// instead of in a cross-reference table.
+///
+/// Cross-reference streams provide the following advantages:
 /// • More compact representation of cross-reference information
-/// • Ability to access compressed objects that are stored in object streams (see 7.5.7,
-///   "Object Streams") and to allow new cross-reference entry types to be added in the future.
+/// • Ability to access compressed objects that are stored in object streams and to allow new
+///   cross-reference entry types to be added in the future.
 ///
-/// Cross-reference streams are stream objects.
-/// Cross-reference streams contain a dictionary and a data stream.
+/// Cross-reference streams are pdf stream objects (dict + stream).
 ///
-/// Each cross-reference stream contains the information equivalent
-/// to the cross-reference table (see 7.5.4, "Cross-Reference Table") and trailer (see 7.5.5, "File
-/// Trailer") for one cross-reference section.
-/// 
+/// Each cross-reference stream contains the information equivalent to the cross-reference table and
+/// trailer for one cross-reference section.
+///
 ///  Entry types:
 ///  =========================================================================
 ///  Type                  Num  Field2         Field3
@@ -131,7 +131,6 @@ impl CrossRefStreamEntry {
 
 //--------------------------- CrossRefStream -------------------------//
 
-//#[allow(dead_code)]
 pub(crate) struct CrossRefStream {
     entries: Vec<CrossRefStreamEntry>,
 }
