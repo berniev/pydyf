@@ -2,6 +2,10 @@
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 pub enum Version {
+    V1_0,
+    V1_1,
+    V1_2,
+    V1_3,
     V1_4,
     #[default]
     V1_5,
@@ -11,11 +15,16 @@ pub enum Version {
 
 impl Version {
     pub fn as_str(&self) -> &str {
+        use Version::*;
         match self {
-            Version::V1_4 => "1.4",
-            Version::V1_5 => "1.5",
-            Version::V1_6 => "1.6",
-            Version::V1_7 => "1.7",
+            V1_0 => "1.0",
+            V1_1 => "1.1",
+            V1_2 => "1.2",
+            V1_3 => "1.3",
+            V1_4 => "1.4",
+            V1_5 => "1.5",
+            V1_6 => "1.6",
+            V1_7 => "1.7",
         }
     }
 
