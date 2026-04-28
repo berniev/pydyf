@@ -106,7 +106,7 @@ pub trait Annotation {
         // Required entries
         dest_dict.add("Type", PdfObj::make_string_obj("Annot"))?;
         dest_dict.add("Subtype", PdfObj::make_string_obj(self.subtype()))?;
-        dest_dict.add("Rect", self.rect().as_pdf_array())?;
+        dest_dict.add("Rect", self.rect().as_pdf_array_object())?;
 
         // Optional common entries
         let flags = self.flags();
@@ -231,7 +231,7 @@ impl Annotation for TextAnnotation {
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new().typed("Annot")?;
         dict.add("Subtype", PdfObj::make_name_obj(self.subtype()))?;
-        dict.add("Rect", self.rect.as_pdf_array())?;
+        dict.add("Rect", self.rect.as_pdf_array_object())?;
         if !self.flags.is_empty() {
             dict.add("F", self.flags.bits() as i64)?;
         }
@@ -315,7 +315,7 @@ impl Annotation for LinkAnnotation {
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new().typed("Annot")?;
         dict.add("Subtype", PdfObj::make_name_obj(self.subtype()))?;
-        dict.add("Rect", self.rect().as_pdf_array())?;
+        dict.add("Rect", self.rect().as_pdf_array_object())?;
 
         let flags = self.flags();
         if flags.bits() != 0 {
@@ -369,7 +369,7 @@ mod tests {
             x2: 100.0,
             y2: 200.0,
         };
-        let arr = rect.as_pdf_array();
+        let arr = rect.as_pdf_array_object();
         assert_eq!(arr.values.len(), 4);
     }
 

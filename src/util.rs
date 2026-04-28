@@ -1,19 +1,11 @@
-use crate::PdfArrayObject;
-use crate::encoding::f_to_pdf_num;
+use crate::{NumberType, PdfArrayObject};
+use crate::encoding::to_pdf_string;
+use crate::objects::pdf_number::PdfNumberObject;
 //------------------------- ToPdf -----------------------------//
 
 pub trait ToPdf {
     fn to_pdf(&self) -> String;
-    fn as_string(&self) -> String;
-}
-
-impl ToPdf for f64 {
-    fn to_pdf(&self) -> String {
-        f_to_pdf_num(*self).to_string()
-    }
-    fn as_string(&self) -> String {
-        format!("{}", *self)
-    }
+    //fn as_string(&self) -> String;
 }
 
 //------------------------ Posn -------------------------------//
@@ -24,23 +16,9 @@ pub struct Posn {
     pub y: f64, // In pdf zero is at the bottom
 }
 
-impl Posn {
-    pub fn as_pdf_array(&self) -> PdfArrayObject {
-        let mut arr = PdfArrayObject::new();
-        arr.push(self.x);
-        arr.push(self.y);
-
-        arr
-    }
-}
-
 impl ToPdf for Posn {
     fn to_pdf(&self) -> String {
-        format!("{} {}", f_to_pdf_num(self.x), f_to_pdf_num(self.y))
-    }
-
-    fn as_string(&self) -> String {
-        format!("({} x {})", self.x, self.y)
+        format!("{} {}", to_pdf_string(self.x), to_pdf_string(self.y))
     }
 }
 
@@ -52,15 +30,6 @@ pub struct Line {
     pub end: Posn,
 }
 
-impl Line {
-    pub fn as_pdf_array(&self) -> PdfArrayObject {
-        let mut arr = PdfArrayObject::new();
-        arr.push(self.start.as_pdf_array());
-        arr.push(self.end.as_pdf_array());
-
-        arr
-    }
-}
 //------------------------ Dims -------------------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -69,19 +38,25 @@ pub struct Dims {
     pub height: f64,
 }
 
+impl Dims {
+    pub const fn new(width: f64, height: f64) -> Self {
+        Self { width, height }
+    }
+}
+
 impl ToPdf for Dims {
     fn to_pdf(&self) -> String {
-        format!("{} {}", f_to_pdf_num(self.width), f_to_pdf_num(self.height),)
-    }
-
-    fn as_string(&self) -> String {
-        format!("w:{} x h:{}", self.width, self.height,)
+        format!(
+            "{} {}",
+            to_pdf_string(self.width),
+            to_pdf_string(self.height),
+        )
     }
 }
 
 //------------------------ Rect -------------------------------//
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub struct Rectangle {
     pub x1: f64, // lower-left x
     pub y1: f64, // lower-left y
@@ -90,35 +65,26 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
-    pub fn as_vec(&self) -> Vec<f64> {
-        vec![self.x1, self.y1, self.x2, self.y2]
-    }
-
-    pub fn as_pdf_array(&self) -> PdfArrayObject {
+    pub fn as_pdf_array_object(&self) -> PdfArrayObject {
         let mut arr = PdfArrayObject::new();
-        arr.push(self.x1);
-        arr.push(self.y1);
-        arr.push(self.x2);
-        arr.push(self.y2);
+        arr.push(PdfNumberObject::new(NumberType::from(self.x1)));
+        arr.push(PdfNumberObject::new(NumberType::from(self.y1)));
+        arr.push(PdfNumberObject::new(NumberType::from(self.x2)));
+        arr.push(PdfNumberObject::new(NumberType::from(self.y2)));
 
         arr
     }
 }
 
-// todo: should be PdfArrayObject
 impl ToPdf for Rectangle {
     fn to_pdf(&self) -> String {
         format!(
             "{} {} {} {}",
-            f_to_pdf_num(self.x1),
-            f_to_pdf_num(self.y1),
-            f_to_pdf_num(self.x2),
-            f_to_pdf_num(self.y2),
+            to_pdf_string(self.x1),
+            to_pdf_string(self.y1),
+            to_pdf_string(self.x2),
+            to_pdf_string(self.y2),
         )
-    }
-
-    fn as_string(&self) -> String {
-        format!("[{} {} {} {}]", self.x1, self.y1, self.x2, self.y2)
     }
 }
 
@@ -160,19 +126,12 @@ impl ToPdf for Matrix {
     fn to_pdf(&self) -> String {
         format!(
             "{} {} {} {} {} {}",
-            f_to_pdf_num(self.a),
-            f_to_pdf_num(self.b),
-            f_to_pdf_num(self.c),
-            f_to_pdf_num(self.d),
-            f_to_pdf_num(self.e),
-            f_to_pdf_num(self.f),
-        )
-    }
-
-    fn as_string(&self) -> String {
-        format!(
-            "{} {} {} {} {} {}",
-            self.a, self.b, self.c, self.d, self.e, self.f,
+            to_pdf_string(self.a),
+            to_pdf_string(self.b),
+            to_pdf_string(self.c),
+            to_pdf_string(self.d),
+            to_pdf_string(self.e),
+            to_pdf_string(self.f),
         )
     }
 }

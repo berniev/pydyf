@@ -1,5 +1,6 @@
 //! Array Objects:
 
+use crate::object_ops::ObjectNumber;
 ///
 /// An array object is a one-dimensional collection of pdf objects arranged sequentially.
 ///
@@ -11,7 +12,6 @@
 /// EXAMPLE [ 549 3.14 false ( Ralph ) /SomeName ]
 ///
 use crate::{PdfError, PdfObject};
-use crate::object_ops::ObjectNumber;
 
 #[derive(Clone)]
 pub struct PdfArrayObject {
@@ -28,7 +28,15 @@ impl PdfArrayObject {
             generation_number: None,
         }
     }
-    
+
+    pub fn from_vec(values: Vec<PdfObject>) -> PdfArrayObject {
+        PdfArrayObject {
+            values,
+            object_number: None,
+            generation_number: None,
+        }
+    }
+
     pub fn push(&mut self, value: impl Into<PdfObject>) {
         self.values.push(value.into());
     }

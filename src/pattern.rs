@@ -52,7 +52,7 @@ impl TilingPattern {
         pat.stream
             .dict
             .add("Type", PdfObj::make_name_obj("Pattern"))?;
-        pat.stream.dict.add("BBox", bbox.as_pdf_array())?;
+        pat.stream.dict.add("BBox", bbox.as_pdf_array_object())?;
         pat.stream.dict.add("XStep", x_step)?;
         pat.stream.dict.add("YStep", y_step)?;
         pat.stream.dict.add("PaintType", paint_type as i64)?;

@@ -1,6 +1,6 @@
 use crate::{NumberType, PdfError};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PdfNumberObject {
     pub(crate) value: NumberType,
 }

@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::fmt::{self, Display};
 
-use crate::encoding::f_to_pdf_num;
+use crate::encoding::to_pdf_string;
 use crate::util::ToPdf;
 use crate::{PdfArrayObject, PdfError, PdfResult};
 
@@ -50,9 +50,9 @@ macro_rules! impl_color_logic {
                 [$(self.$field.to_string()),+].join(" ")
             }
 
-            fn as_string(&self) -> String {
+            /*fn as_string(&self) -> String {
                 [$(format!("{}:{}", $label, self.$field)),+].join(" ")
-            }
+            }*/
         }
     };
 }
@@ -88,22 +88,26 @@ impl Color {
 
         Ok(())
     }
+
+    pub fn as_string(&self) -> String {
+        format!("{}", self.color)
+    }
 }
 
 impl Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", f_to_pdf_num(self.color))
+        write!(f, "{}", to_pdf_string(self.color as f64))
     }
 }
 
 impl ToPdf for Color {
     fn to_pdf(&self) -> String {
-        f_to_pdf_num(self.color).to_string()
+        to_pdf_string(self.color as f64)
     }
-    fn as_string(&self) -> String {
+/*    fn as_string(&self) -> String {
         format!("{}", self.color)
     }
-}
+*/}
 
 impl PartialEq<f32> for Color {
     fn eq(&self, other: &f32) -> bool {
@@ -155,67 +159,66 @@ impl RGB {
         self.blue
     }
 
-pub const RED: RGB = RGB {
-    red: Color { color: 1.0 },
-    green: Color { color: 0.0 },
-    blue: Color { color: 0.0 },
-};
-pub const ORANGE: RGB = RGB {
-    red: Color { color: 1.0 },
-    green: Color { color: 0.5 },
-    blue: Color { color: 0.0 },
-};
-pub const YELLOW: RGB = RGB {
-    red: Color { color: 1.0 },
-    green: Color { color: 1.0 },
-    blue: Color { color: 0.0 },
-};
-pub const GREEN: RGB = RGB {
-    red: Color { color: 0.0 },
-    green: Color { color: 1.0 },
-    blue: Color { color: 0.0 },
-};
-pub const CYAN: RGB = RGB {
-    red: Color { color: 0.0 },
-    green: Color { color: 1.0 },
-    blue: Color { color: 1.0 },
-};
-pub const BLUE: RGB = RGB {
-    red: Color { color: 0.0 },
-    green: Color { color: 0.0 },
-    blue: Color { color: 1.0 },
-};
-pub const MAGENTA: RGB = RGB {
-    red: Color { color: 1.0 },
-    green: Color { color: 0.0 },
-    blue: Color { color: 1.0 },
-};
-pub const PURPLE: RGB = RGB {
-    red: Color { color: 1.0 },
-    green: Color { color: 0.0 },
-    blue: Color { color: 0.5 },
-};
-pub const BROWN: RGB = RGB {
-    red: Color { color: 0.6 },
-    green: Color { color: 0.4 },
-    blue: Color { color: 0.2 },
-};
-pub const GREY: RGB = RGB {
-    red: Color { color: 0.5 },
-    green: Color { color: 0.5 },
-    blue: Color { color: 0.5 },
-};
-pub const WHITE: RGB = RGB {
-    red: Color { color: 1.0 },
-    green: Color { color: 1.0 },
-    blue: Color { color: 1.0 },
-};
-pub const BLACK: RGB = RGB {
-    red: Color { color: 0.0 },
-    green: Color { color: 0.0 },
-    blue: Color { color: 0.0 },
-};
-
+    pub const RED: RGB = RGB {
+        red: Color { color: 1.0 },
+        green: Color { color: 0.0 },
+        blue: Color { color: 0.0 },
+    };
+    pub const ORANGE: RGB = RGB {
+        red: Color { color: 1.0 },
+        green: Color { color: 0.5 },
+        blue: Color { color: 0.0 },
+    };
+    pub const YELLOW: RGB = RGB {
+        red: Color { color: 1.0 },
+        green: Color { color: 1.0 },
+        blue: Color { color: 0.0 },
+    };
+    pub const GREEN: RGB = RGB {
+        red: Color { color: 0.0 },
+        green: Color { color: 1.0 },
+        blue: Color { color: 0.0 },
+    };
+    pub const CYAN: RGB = RGB {
+        red: Color { color: 0.0 },
+        green: Color { color: 1.0 },
+        blue: Color { color: 1.0 },
+    };
+    pub const BLUE: RGB = RGB {
+        red: Color { color: 0.0 },
+        green: Color { color: 0.0 },
+        blue: Color { color: 1.0 },
+    };
+    pub const MAGENTA: RGB = RGB {
+        red: Color { color: 1.0 },
+        green: Color { color: 0.0 },
+        blue: Color { color: 1.0 },
+    };
+    pub const PURPLE: RGB = RGB {
+        red: Color { color: 1.0 },
+        green: Color { color: 0.0 },
+        blue: Color { color: 0.5 },
+    };
+    pub const BROWN: RGB = RGB {
+        red: Color { color: 0.6 },
+        green: Color { color: 0.4 },
+        blue: Color { color: 0.2 },
+    };
+    pub const GREY: RGB = RGB {
+        red: Color { color: 0.5 },
+        green: Color { color: 0.5 },
+        blue: Color { color: 0.5 },
+    };
+    pub const WHITE: RGB = RGB {
+        red: Color { color: 1.0 },
+        green: Color { color: 1.0 },
+        blue: Color { color: 1.0 },
+    };
+    pub const BLACK: RGB = RGB {
+        red: Color { color: 0.0 },
+        green: Color { color: 0.0 },
+        blue: Color { color: 0.0 },
+    };
 }
 
 impl_color_logic!(RGB, InvalidRGB, rgb, red: "r", green: "g", blue: "b");
