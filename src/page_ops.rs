@@ -159,7 +159,7 @@ impl PageTree {
         self.has_kids()?;
 
         tree.dictionary
-            .add("Parent", PdfObj::make_reference_obj(self.object_number()))?;
+            .add("Parent", PdfObj::reference_obj(self.object_number()))?;
 
         self.add_kid(Box::new(tree.dictionary))?;
 
@@ -168,7 +168,7 @@ impl PageTree {
 
     pub fn add_page(&mut self, mut page: Page) -> Result<(), PdfError> {
         page.dictionary
-            .add("Parent", PdfObj::make_reference_obj(self.object_number()))?;
+            .add("Parent", PdfObj::reference_obj(self.object_number()))?;
         self.dictionary.update_or_add(
             "Count",
             self.dictionary.get_integer("Count").unwrap_or(0) + 1,
@@ -185,7 +185,7 @@ impl PageTree {
     pub fn add_resources() {}
 
     fn add_kid(&mut self, kid_obj: Box<PdfDictionaryObject>) -> Result<(), PdfError> {
-        let reference = PdfObj::make_reference_obj(kid_obj.object_number.unwrap());
+        let reference = PdfObj::reference_obj(kid_obj.object_number.unwrap());
         self.dictionary.children.push(kid_obj);
         self.dictionary.push_to_array("Kids", reference)?;
 
@@ -222,7 +222,7 @@ impl PageTree {
 }
 
 pub struct Page {
-    dictionary: PdfDictionaryObject,
+    pub dictionary: PdfDictionaryObject,
 }
 
 impl Page {

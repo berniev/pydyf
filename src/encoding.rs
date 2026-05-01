@@ -1,4 +1,4 @@
-pub fn to_pdf_string(val: f64) -> String {
+pub fn f64_to_pdf_string(val: f64) -> String {
     if val.fract() == 0.0 {
         format!("{}", val as i64)
     } else {

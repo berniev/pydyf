@@ -88,9 +88,9 @@
 ///     system to the original (untransformed) coordinate system
 ///
 use crate::color::{CMYK, Color, ColorSpace, RGB};
-use crate::encoding::{ascii85_encode, to_pdf_string};
+use crate::encoding::{ascii85_encode, f64_to_pdf_string};
 use crate::string_functions::encode_pdf_string;
-use crate::util::{Dims, Matrix, Posn, StrokeOrFill, ToPdf, WindingRule};
+use crate::util::{Dims, Matrix, Posn, StrokeOrFill, StreamString, WindingRule};
 use crate::{CompressionMethod, PdfError};
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
@@ -142,15 +142,15 @@ impl DrawingCommands {
         self.add(vec![cmd as u8]);
     }
 
-    fn add_parts(&mut self, operands: &[&dyn ToPdf], operator: &str) {
-        let mut cmd_parts: Vec<String> = operands.iter().map(|n| n.to_pdf()).collect();
+    fn add_parts(&mut self, operands: &[&dyn StreamString], operator: &str) {
+        let mut cmd_parts: Vec<String> = operands.iter().map(|n| n.to_stream_string()).collect();
         cmd_parts.push(operator.to_string());
 
         self.add(cmd_parts.join(" ").into_bytes());
     }
 
     fn add_float_cmd(&mut self, string: &str, value: f64) {
-        self.add(format!("{} {}", to_pdf_string(value), string).into_bytes());
+        self.add(format!("{} {}", f64_to_pdf_string(value), string).into_bytes());
     }
 
     fn add_int_cmd(&mut self, string: &str, value: i32) {
@@ -381,7 +381,7 @@ impl DrawingCommands {
     ) {
         let mut cmd_parts = operands
             .iter()
-            .map(|&n| to_pdf_string(n))
+            .map(|&n| f64_to_pdf_string(n))
             .collect::<Vec<String>>();
         if let Some(n) = name {
             cmd_parts.push(format!("/{n}"));
@@ -400,7 +400,7 @@ impl DrawingCommands {
     // font
 
     pub fn set_font_name_and_size(&mut self, font: &str, size: f64) {
-        self.add(format!("/{} {} Tf", font, to_pdf_string(size)).into_bytes());
+        self.add(format!("/{} {} Tf", font, f64_to_pdf_string(size)).into_bytes());
     }
 
     // text
@@ -447,7 +447,7 @@ impl DrawingCommands {
 
     pub fn set_dash_line_pattern(&mut self, dash_array: &[f64], dash_phase: i32) {
         // Build the [n n n] part directly
-        let array_str: Vec<String> = dash_array.iter().map(|&n| to_pdf_string(n)).collect();
+        let array_str: Vec<String> = dash_array.iter().map(|&n| f64_to_pdf_string(n)).collect();
         let cmd = format!("[{}] {} d", array_str.join(" "), dash_phase).into_bytes();
 
         self.add(cmd);

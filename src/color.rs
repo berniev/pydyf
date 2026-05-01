@@ -1,9 +1,9 @@
 use std::cmp::Ordering;
 use std::fmt::{self, Display};
 
-use crate::encoding::to_pdf_string;
-use crate::util::ToPdf;
-use crate::{PdfArrayObject, PdfError, PdfResult};
+use crate::encoding::f64_to_pdf_string;
+use crate::util::{StreamString};
+use crate::{PdfArrayObject, PdfError};
 
 //------------------------ ColorSpace -------------------------------
 
@@ -34,28 +34,28 @@ impl ColorSpace {
     }
 }
 
-//------------------------ Color -------------------------------
-
-macro_rules! impl_color_logic {
-    ($ty:ident, $err_var:ident, $err_field:ident, $($field:ident: $label:expr),+) => {
-        impl $ty {
-            pub fn validate(&self) -> PdfResult<()> {
-                $( self.$field.validate().map_err(|_| PdfError::$err_var { $err_field: *self })?; )+
-                Ok(())
-            }
-        }
-
-        impl ToPdf for $ty {
-            fn to_pdf(&self) -> String {
-                [$(self.$field.to_string()),+].join(" ")
-            }
-
-            /*fn as_string(&self) -> String {
-                [$(format!("{}:{}", $label, self.$field)),+].join(" ")
-            }*/
-        }
-    };
+pub enum ColorsInSpace {
+    RGB(RGB),
+    CMYK(CMYK),
+    Gray(Color),
+    None,
 }
+impl ColorsInSpace {
+    pub fn as_pdf_array(&self) -> PdfArrayObject {
+        match self {
+            ColorsInSpace::RGB(rgb) => rgb.as_pdf_array(),
+            ColorsInSpace::CMYK(cmyk) => cmyk.as_pdf_array(),
+            ColorsInSpace::Gray(gray) => {
+                let mut arr = PdfArrayObject::new();
+                arr.push(gray.to_f64());
+                arr
+            }
+            ColorsInSpace::None => PdfArrayObject::new(),
+        }
+    }
+}
+
+//------------------------ Color -------------------------------
 
 #[derive(Debug, Clone, Copy)]
 pub struct Color {
@@ -63,12 +63,11 @@ pub struct Color {
 }
 
 impl Color {
-    pub fn new(color: f32) -> Self {
-        let instance = Self { color };
-        instance
-            .validate()
-            .expect("color must be in range 0.0..=1.0");
-        instance
+    pub fn new(value: f32) -> Result<Self, PdfError> {
+        if !(0.0..=1.0).contains(&value) {
+            return Err(PdfError::InvalidColorValue { val: value });
+        }
+        Ok(Color { color: value })
     }
 
     pub fn to_f32(&self) -> f32 {
@@ -79,16 +78,6 @@ impl Color {
         self.color as f64
     }
 
-    pub fn validate(&self) -> PdfResult<()> {
-        if !(0.0..=1.0).contains(&self.color) {
-            return Err(PdfError::InvalidColorChannel {
-                color: { Color { color: self.color } },
-            });
-        }
-
-        Ok(())
-    }
-
     pub fn as_string(&self) -> String {
         format!("{}", self.color)
     }
@@ -96,18 +85,15 @@ impl Color {
 
 impl Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", to_pdf_string(self.color as f64))
+        write!(f, "{}", f64_to_pdf_string(self.color as f64))
     }
 }
 
-impl ToPdf for Color {
-    fn to_pdf(&self) -> String {
-        to_pdf_string(self.color as f64)
+impl StreamString for Color {
+    fn to_stream_string(&self) -> String {
+        f64_to_pdf_string(self.color as f64)
     }
-/*    fn as_string(&self) -> String {
-        format!("{}", self.color)
-    }
-*/}
+}
 
 impl PartialEq<f32> for Color {
     fn eq(&self, other: &f32) -> bool {
@@ -135,7 +121,7 @@ impl RGB {
         Self { red, green, blue }
     }
 
-    pub(crate) fn as_pdf_array(&self) -> PdfArrayObject {
+    pub fn as_pdf_array(&self) -> PdfArrayObject {
         let mut arr = PdfArrayObject::new();
         arr.push(self.red.to_f64());
         arr.push(self.green.to_f64());
@@ -143,6 +129,7 @@ impl RGB {
 
         arr
     }
+
     pub fn as_vec(&self) -> [Color; 3] {
         [self.red, self.green, self.blue]
     }
@@ -221,7 +208,16 @@ impl RGB {
     };
 }
 
-impl_color_logic!(RGB, InvalidRGB, rgb, red: "r", green: "g", blue: "b");
+impl StreamString for RGB {
+    fn to_stream_string(&self) -> String {
+        format!(
+            "{} {} {}",
+            f64_to_pdf_string(self.red.to_f64()),
+            f64_to_pdf_string(self.green.to_f64()),
+            f64_to_pdf_string(self.blue.to_f64())
+        )
+    }
+}
 
 //------------------------ RGBA -------------------------------
 
@@ -245,6 +241,16 @@ impl RGBA {
 
     pub fn as_vec(&self) -> [Color; 4] {
         [self.red, self.green, self.blue, self.alpha]
+    }
+
+    pub fn as_pdf_array(&self) -> PdfArrayObject {
+        let mut arr = PdfArrayObject::new();
+        arr.push(self.red.to_f64());
+        arr.push(self.green.to_f64());
+        arr.push(self.blue.to_f64());
+        arr.push(self.alpha.to_f64());
+
+        arr
     }
 
     pub fn as_vec_64(&self) -> [f64; 4] {
@@ -277,7 +283,18 @@ impl RGBA {
     }
 }
 
-impl_color_logic!(RGBA, InvalidRGBA, rgb, red: "r", green: "g", blue: "b", alpha: "a");
+
+impl StreamString for RGBA {
+    fn to_stream_string(&self) -> String {
+        format!(
+            "{} {} {} {}",
+            f64_to_pdf_string(self.red.to_f64()),
+            f64_to_pdf_string(self.green.to_f64()),
+            f64_to_pdf_string(self.blue.to_f64()),
+            f64_to_pdf_string(self.alpha.to_f64())
+        )
+    }
+}
 
 //------------------------ CMYK -------------------------------
 
@@ -303,21 +320,29 @@ impl CMYK {
         [self.cyan, self.magenta, self.yellow, self.black]
     }
 
-    pub fn c(&self) -> Color {
-        self.cyan
+    pub fn as_pdf_array(&self) -> PdfArrayObject {
+        let mut arr = PdfArrayObject::new();
+        arr.push(self.cyan.to_f64());
+        arr.push(self.magenta.to_f64());
+        arr.push(self.yellow.to_f64());
+        arr.push(self.black.to_f64());
+
+        arr
     }
 
-    pub fn m(&self) -> Color {
-        self.magenta
-    }
-
-    pub fn y(&self) -> Color {
-        self.yellow
-    }
-
-    pub fn k(&self) -> Color {
-        self.black
+    pub fn as_string(&self) -> String {
+        format!(
+            "{} {} {} {}",
+            f64_to_pdf_string(self.cyan.to_f64()),
+            f64_to_pdf_string(self.magenta.to_f64()),
+            f64_to_pdf_string(self.yellow.to_f64()),
+            f64_to_pdf_string(self.black.to_f64())
+        )
     }
 }
 
-impl_color_logic!(CMYK, InvalidCMYK, cmyk, cyan: "c", magenta: "m", yellow: "y", black: "k");
+impl StreamString for CMYK {
+    fn to_stream_string(&self) -> String {
+        self.as_string()
+    }
+}

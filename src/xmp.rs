@@ -73,7 +73,7 @@ impl XmpMetadata {
 
     pub fn to_stream(&self, object_ops: &Rc<RefCell<ObjectOps>>) -> PdfResult<PdfStreamObject> {
         let mut dict = PdfDictionaryObject::new().typed("Metadata")?;
-        dict.add("SubType", PdfObj::make_name_obj("XML"))?;
+        dict.add("SubType", PdfObj::name_obj("XML"))?;
 
         let stream = PdfStreamObject::new()
             .with_object_number(object_ops.borrow_mut().next_object_number())

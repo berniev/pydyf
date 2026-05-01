@@ -1,16 +1,17 @@
 use std::fmt;
 use std::io;
 
-use crate::color::{CMYK, Color, RGB, RGBA};
+use crate::color::{CMYK, RGB, RGBA};
 use crate::xref_ops::XRefError;
 
 #[derive(Debug)]
 pub enum PdfError {
     Io(io::Error),
     InvalidObjectReference(usize),
+    InvalidArgument(String),
     CompressionError(String),
     CrossRef(XRefError),
-    InvalidColorChannel { color: Color },
+    InvalidColorValue { val :f32 },
     InvalidFont(String),
     InvalidFunctionSpecification,
     InvalidRGB { rgb: RGB },
@@ -29,10 +30,11 @@ impl fmt::Display for PdfError {
             PdfError::InvalidObjectReference(num) => {
                 write!(f, "Invalid object reference: {}", num)
             }
+            PdfError::InvalidArgument(msg) => write!(f, "Invalid argument: {}", msg),
             PdfError::CompressionError(msg) => write!(f, "Compression error: {}", msg),
             PdfError::InvalidFont(msg) => write!(f, "Invalid font: {}", msg),
-            PdfError::InvalidColorChannel { color } => {
-                write!(f, "Invalid color channel: {:?}", color)
+            PdfError::InvalidColorValue { val } => {
+                write!(f, "color value {} not in range 0.0..=1.0", val)
             }
             PdfError::InvalidRGB { rgb } => {
                 write!(
@@ -56,11 +58,8 @@ impl fmt::Display for PdfError {
             PdfError::InvalidCMYK { cmyk } => {
                 write!(
                     f,
-                    "Invalid color values: c={}, m={}, y={}, k={} (must be 0.0-1.0)",
-                    cmyk.c(),
-                    cmyk.m(),
-                    cmyk.y(),
-                    cmyk.k()
+                    "Invalid color values: {} (must all be 0.0-1.0)",
+                    cmyk.as_string()
                 )
             }
             PdfError::InvalidImage(msg) => write!(f, "Invalid image: {}", msg),

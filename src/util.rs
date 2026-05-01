@@ -1,11 +1,10 @@
-use crate::{NumberType, PdfArrayObject};
-use crate::encoding::to_pdf_string;
+use crate::encoding::f64_to_pdf_string;
 use crate::objects::pdf_number::PdfNumberObject;
+use crate::{NumberType, PdfArrayObject};
 //------------------------- ToPdf -----------------------------//
 
-pub trait ToPdf {
-    fn to_pdf(&self) -> String;
-    //fn as_string(&self) -> String;
+pub trait StreamString {
+    fn to_stream_string(&self) -> String;
 }
 
 //------------------------ Posn -------------------------------//
@@ -16,9 +15,9 @@ pub struct Posn {
     pub y: f64, // In pdf zero is at the bottom
 }
 
-impl ToPdf for Posn {
-    fn to_pdf(&self) -> String {
-        format!("{} {}", to_pdf_string(self.x), to_pdf_string(self.y))
+impl StreamString for Posn {
+    fn to_stream_string(&self) -> String {
+        format!("{} {}", f64_to_pdf_string(self.x), f64_to_pdf_string(self.y))
     }
 }
 
@@ -29,7 +28,21 @@ pub struct Line {
     pub start: Posn,
     pub end: Posn,
 }
+impl Line{
+    pub fn new(start: Posn, end: Posn) -> Self {
+        Self { start, end }
+    }
 
+    pub fn as_pdf_array_object(&self) -> PdfArrayObject {
+        let mut arr = PdfArrayObject::new();
+        arr.push(self.start.x);
+        arr.push(self.start.y);
+        arr.push(self.end.x);
+        arr.push(self.end.y);
+
+        arr
+    }
+}
 //------------------------ Dims -------------------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -44,12 +57,12 @@ impl Dims {
     }
 }
 
-impl ToPdf for Dims {
-    fn to_pdf(&self) -> String {
+impl StreamString for Dims {
+    fn to_stream_string(&self) -> String {
         format!(
             "{} {}",
-            to_pdf_string(self.width),
-            to_pdf_string(self.height),
+            f64_to_pdf_string(self.width),
+            f64_to_pdf_string(self.height),
         )
     }
 }
@@ -76,14 +89,14 @@ impl Rectangle {
     }
 }
 
-impl ToPdf for Rectangle {
-    fn to_pdf(&self) -> String {
+impl StreamString for Rectangle {
+    fn to_stream_string(&self) -> String {
         format!(
             "{} {} {} {}",
-            to_pdf_string(self.x1),
-            to_pdf_string(self.y1),
-            to_pdf_string(self.x2),
-            to_pdf_string(self.y2),
+            f64_to_pdf_string(self.x1),
+            f64_to_pdf_string(self.y1),
+            f64_to_pdf_string(self.x2),
+            f64_to_pdf_string(self.y2),
         )
     }
 }
@@ -122,16 +135,16 @@ impl Matrix {
     }
 }
 
-impl ToPdf for Matrix {
-    fn to_pdf(&self) -> String {
+impl StreamString for Matrix {
+    fn to_stream_string(&self) -> String {
         format!(
             "{} {} {} {} {} {}",
-            to_pdf_string(self.a),
-            to_pdf_string(self.b),
-            to_pdf_string(self.c),
-            to_pdf_string(self.d),
-            to_pdf_string(self.e),
-            to_pdf_string(self.f),
+            f64_to_pdf_string(self.a),
+            f64_to_pdf_string(self.b),
+            f64_to_pdf_string(self.c),
+            f64_to_pdf_string(self.d),
+            f64_to_pdf_string(self.e),
+            f64_to_pdf_string(self.f),
         )
     }
 }

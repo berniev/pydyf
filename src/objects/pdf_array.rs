@@ -15,26 +15,54 @@ use crate::{PdfError, PdfObject};
 
 #[derive(Clone)]
 pub struct PdfArrayObject {
-    pub(crate) values: Vec<PdfObject>,
     pub(crate) object_number: Option<ObjectNumber>,
     pub(crate) generation_number: Option<u16>,
+    pub(crate) values: Vec<PdfObject>,
 }
 
 impl PdfArrayObject {
     pub fn new() -> Self {
         Self {
-            values: vec![],
             object_number: None,
             generation_number: None,
+            values: vec![],
         }
     }
 
     pub fn from_vec(values: Vec<PdfObject>) -> PdfArrayObject {
         PdfArrayObject {
-            values,
             object_number: None,
             generation_number: None,
+            values,
         }
+    }
+
+    pub fn from_vec_u32(values: Vec<u32>) -> PdfArrayObject {
+        PdfArrayObject {
+            object_number: None,
+            generation_number: None,
+            values: values.into_iter().map(|v| v.into()).collect(),
+        }
+    }
+
+    pub fn from_vec_f32(values: Vec<f32>) -> PdfArrayObject {
+        PdfArrayObject {
+            object_number: None,
+            generation_number: None,
+            values: values.into_iter().map(|v| v.into()).collect(),
+        }
+    }
+    
+    pub fn from_vec_f64(values: Vec<f64>) -> PdfArrayObject {
+        PdfArrayObject {
+            object_number: None,
+            generation_number: None,
+            values: values.into_iter().map(|v| v.into()).collect(),
+        }
+    }
+    
+    pub fn to_vec_f64(&self) -> Result<Vec<f64>, PdfError> {
+        self.values.iter().map(|v| v.as_f64()).collect()
     }
 
     pub fn push(&mut self, value: impl Into<PdfObject>) {

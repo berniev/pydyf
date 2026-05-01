@@ -155,7 +155,7 @@ impl CatalogOps {
             .typed("Catalog")?
             .with_object_number(num);
 
-        dictionary.add("Pages", PdfObj::make_reference_obj(page_ops.root_tree().object_number()))?;
+        dictionary.add("Pages", PdfObj::reference_obj(page_ops.root_tree().object_number()))?;
 
         Ok(Self { dictionary })
     }

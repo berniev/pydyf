@@ -24,8 +24,8 @@ pub fn standard_fonts_dict() -> Result<PdfDictionaryObject, PdfError> {
     for font in ALL_STANDARD_FONTS {
         let name = font.pdf_name();
         let mut dict = PdfDictionaryObject::new().typed("Font")?;
-        dict.add("Subtype", PdfObj::make_name_obj("Type1"))?;
-        dict.add("BaseFont", PdfObj::make_name_obj(name))?;
+        dict.add("Subtype", PdfObj::name_obj("Type1"))?;
+        dict.add("BaseFont", PdfObj::name_obj(name))?;
         fonts_dict.add(name, dict)?;
     }
 

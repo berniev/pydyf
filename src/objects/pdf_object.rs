@@ -130,6 +130,20 @@ impl PdfObject {
         }
     }
 
+    pub fn as_f64(&self) -> Result<f64, PdfError> {
+        match self {
+            PdfObject::Number(n) => Ok(n.as_real()),
+            other => Err(Self::unexpected_type(other)),
+        }
+    }
+
+    pub fn as_vec_f64(&self) -> Result<Vec<f64>, PdfError> {
+        match self {
+            PdfObject::Array(a) => a.to_vec_f64(),
+            other => Err(Self::unexpected_type(other)),
+        }
+    }
+
     pub fn as_string(&self) -> Result<&str, PdfError> {
         match self {
             PdfObject::String(s) => Ok(s.value.as_str()),
@@ -272,6 +286,24 @@ impl From<PdfStringObject> for PdfObject {
     }
 }
 
+impl From<String> for PdfObject {
+    fn from(v: String) -> Self {
+        PdfObject::String(PdfStringObject::new(&v))
+    }
+}
+
+impl From<&str> for PdfObject {
+    fn from(v: &str) -> Self {
+        PdfObject::String(PdfStringObject::new(&v))
+    }
+}
+
+impl From<Vec<u32>> for PdfObject {
+    fn from(v: Vec<u32>) -> Self {
+        PdfObject::Array(PdfArrayObject::from_vec_u32(v))
+    }
+}
+
 impl From<bool> for PdfObject {
     fn from(v: bool) -> Self {
         PdfObject::Boolean(PdfBooleanObject::new(v))
@@ -286,6 +318,12 @@ impl From<NumberType> for PdfObject {
 
 impl From<u8> for PdfObject {
     fn from(v: u8) -> Self {
+        PdfObject::from(NumberType::from(v))
+    }
+}
+
+impl From<u32> for PdfObject {
+    fn from(v: u32) -> Self {
         PdfObject::from(NumberType::from(v))
     }
 }
@@ -332,31 +370,31 @@ pub struct PdfObj {}
 
 // Dictionary, Array, Stream, Number, Boolean are now automatically converted to PdfObject
 impl PdfObj {
-    pub fn make_reference_obj(value: ObjectNumber) -> PdfObject {
+    pub fn reference_obj(value: ObjectNumber) -> PdfObject {
         PdfObject::Reference(PdfReferenceObject::new(value))
     }
 
-    pub fn make_null_obj() -> PdfObject {
+    pub fn null_obj() -> PdfObject {
         PdfObject::Null(PdfNullObject::new())
     }
 
-    pub fn make_num_obj(value: impl Into<NumberType>) -> PdfObject {
+    pub fn num_obj(value: impl Into<NumberType>) -> PdfObject {
         PdfObject::Number(PdfNumberObject::new(value.into()))
     }
 
-    pub fn make_num_or_null_obj<T: Into<NumberType>>(value: Option<T>) -> PdfObject {
+    pub fn num_or_null_obj<T: Into<NumberType>>(value: Option<T>) -> PdfObject {
         match value {
-            Some(v) => PdfObj::make_num_obj(v),
-            None => PdfObj::make_null_obj(),
+            Some(v) => PdfObj::num_obj(v),
+            None => PdfObj::null_obj(),
         }
     }
 
     // name and string are ambiguous so have to stay
-    pub fn make_name_obj(value: &str) -> PdfObject {
+    pub fn name_obj(value: &str) -> PdfObject {
         PdfObject::Name(PdfNameObject::new(value))
     }
 
-    pub fn make_string_obj(value: &str) -> PdfObject {
+    pub fn string_obj(value: &str) -> PdfObject {
         PdfObject::String(PdfStringObject::new(value))
     }
 }

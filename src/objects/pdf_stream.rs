@@ -2,7 +2,7 @@ use crate::PdfDictionaryObject;
 use crate::error::PdfError;
 use crate::object_ops::ObjectNumber;
 use crate::objects::pdf_object::PdfObj;
-pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, ToPdf, WindingRule};
+pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, StreamString, WindingRule};
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
 use std::io::Write as IoWrite;
@@ -110,7 +110,7 @@ impl PdfStreamObject {
     pub fn compressed(mut self) -> Result<Self, PdfError> {
         self.compression_method = CompressionMethod::Flate;
         self.dict
-            .add("Filter", PdfObj::make_name_obj("FlateDecode"))?;
+            .add("Filter", PdfObj::name_obj("FlateDecode"))?;
 
         Ok(self)
     }
@@ -211,7 +211,7 @@ mod tests {
         let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
         stream
             .dict
-            .add("Type", PdfObj::make_name_obj("XObject"))
+            .add("Type", PdfObj::name_obj("XObject"))
             .expect("fail");
         stream.add(b"some data".to_vec());
         let output = String::from_utf8(stream.encode().unwrap()).unwrap();
