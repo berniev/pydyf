@@ -272,7 +272,7 @@ fn test_extreme_font_sizes() {
     let mut cmd = DrawingCommands::new();
 
     cmd.set_color_rgb_fill(
-        RGB::new(Color::new(0.0), Color::new(0.0), Color::new(0.0)),
+        RGB::new(Color::new(0.0).unwrap(), Color::new(0.0).unwrap(), Color::new(0.0).unwrap()),
     );
     cmd.begin_text();
 
