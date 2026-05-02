@@ -1,7 +1,6 @@
 use crate::PdfDictionaryObject;
 use crate::error::PdfError;
-use crate::object_ops::ObjectNumber;
-use crate::objects::pdf_object::PdfObj;
+use crate::object_ops::{ObjectNumber, PdfObj};
 pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, StreamString, WindingRule};
 use flate2::Compression;
 use flate2::write::ZlibEncoder;

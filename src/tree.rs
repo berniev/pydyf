@@ -28,9 +28,8 @@
  Direct:   Null, Number, Boolean, Name
  =====================================
  */
-use crate::objects::pdf_object::PdfObj;
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfObject};
-use crate::object_ops::ObjectNumber;
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
+use crate::object_ops::{ObjectNumber, PdfObj, PdfObject};
 
 ///Usage:
 ///

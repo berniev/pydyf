@@ -6,13 +6,13 @@
 use crate::annotation_support::{AdditionalActions, AppearanceCharacteristics, CaptionPosition, FreeTextIntent, HighlightingMode, Poly, Quadding, Shape, TextMarkupType};
 use crate::color::ColorsInSpace;
 use crate::date::Date;
-use crate::objects::pdf_object::PdfObj;
 use crate::util::{Line, Rectangle};
 use crate::AnnotationFlags;
 use crate::{
     Intent, PdfArrayObject, PdfDictionaryObject, PdfError, PdfNameObject, PdfReferenceObject,
     PdfStreamObject,
 };
+use crate::object_ops::PdfObj;
 
 pub fn make_annotation_dict(
     subtype: &str,

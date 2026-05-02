@@ -1,4 +1,5 @@
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfObject};
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
+use crate::object_ops::PdfObject;
 //--------------------------- ShadingType ----------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

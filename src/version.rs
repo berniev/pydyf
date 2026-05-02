@@ -46,3 +46,15 @@ impl Version {
         self.as_str().as_bytes()
     }
 }
+
+
+pub struct TargetVersion {
+    pub target: Version,
+}
+
+impl TargetVersion {
+    pub fn new() -> Self {
+        let version = Version::default();
+        Self { target: version }   
+    }
+}

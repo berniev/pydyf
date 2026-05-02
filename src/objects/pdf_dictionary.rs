@@ -1,5 +1,5 @@
+use crate::object_ops::{ObjectNumber, PdfObj, PdfObject};
 use crate::xref_ops::XRefOps;
-use crate::objects::pdf_object::PdfObj;
 /// Spec:
 /// Dictionary:
 ///     An associative table containing pairs of objects, the first object being a name object
@@ -18,9 +18,8 @@ use crate::objects::pdf_object::PdfObj;
 ///         name "Subtype" Opt (requires Type)
 ///
 ///
-use crate::{PdfError, PdfNameObject, PdfObject};
+use crate::{PdfError, PdfNameObject};
 use std::fs::File;
-use crate::object_ops::ObjectNumber;
 
 #[derive(Clone)]
 pub struct PdfDictionaryObject {
@@ -59,15 +58,23 @@ impl PdfDictionaryObject {
     }
 
     pub fn get(&self, key: &str) -> Option<&PdfObject> {
-        self.values
-            .iter()
-            .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
+        self.values.iter().find_map(|(k, v)| {
+            if k.value == key.as_bytes() {
+                Some(v)
+            } else {
+                None
+            }
+        })
     }
 
     fn get_mut(&mut self, key: &str) -> Option<&mut PdfObject> {
-        self.values
-            .iter_mut()
-            .find_map(|(k, v)| if k.value == key { Some(v) } else { None })
+        self.values.iter_mut().find_map(|(k, v)| {
+            if k.value == key.as_bytes() {
+                Some(v)
+            } else {
+                None
+            }
+        })
     }
 
     pub fn push_to_array(
@@ -113,9 +120,9 @@ impl PdfDictionaryObject {
         }
     }
 
-    pub fn get_name(&self, key: &str) -> Result<&str, PdfError> {
+    pub fn get_name(&self, key: &str) -> Result<Vec<u8>, PdfError> {
         match self.require(key)? {
-            PdfObject::Name(n) => Ok(n.value.as_str()),
+            PdfObject::Name(n) => Ok(n.value.clone()),
             other => Err(Self::type_error(key, other)),
         }
     }
@@ -128,7 +135,7 @@ impl PdfDictionaryObject {
     }
 
     pub fn update_or_add(&mut self, key: &str, object: impl Into<PdfObject>) {
-        if let Some((_, value)) = self.values.iter_mut().find(|(k, _)| k.value == key) {
+        if let Some(value) = self.get_mut(key) {
             *value = object.into();
         } else {
             self.values.push((PdfNameObject::new(key), object.into()));
@@ -184,7 +191,6 @@ impl PdfDictionaryObject {
 mod tests {
     use super::*;
     use crate::PdfBooleanObject;
-    use crate::objects::pdf_object::PdfObj;
 
     #[test]
     fn test_dictionary_methods() {
@@ -214,8 +220,7 @@ mod tests {
     #[test]
     fn encode_single_entry() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Type", PdfObj::name_obj("Catalog"))
-            .expect("fail");
+        dict.add("Type", PdfObj::name_obj("Catalog")).expect("fail");
         let output = String::from_utf8(dict.encode().unwrap()).unwrap();
         assert!(output.starts_with("<<\n"));
         assert!(output.contains("/Type /Catalog"));
@@ -225,8 +230,7 @@ mod tests {
     #[test]
     fn encode_multiple_entries() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Type", PdfObj::name_obj("Page"))
-            .expect("fail");
+        dict.add("Type", PdfObj::name_obj("Page")).expect("fail");
         dict.add("Count", PdfObj::num_obj(3i64)).expect("fail");
         let output = String::from_utf8(dict.encode().unwrap()).unwrap();
         assert!(output.contains("/Type /Page"));

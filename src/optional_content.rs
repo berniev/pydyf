@@ -3,9 +3,8 @@
 //! Optional Content Groups (OCGs) allow parts of a PDF to be selectively
 //! visible or hidden, commonly used for layers in technical drawings.
 
-use crate::objects::pdf_object::PdfObj;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
-
+use crate::object_ops::PdfObj;
 //------------------ VisibilityInitialState -----------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

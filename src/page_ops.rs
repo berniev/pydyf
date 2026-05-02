@@ -1,5 +1,4 @@
-use crate::object_ops::{ObjectNumber, ObjectOps};
-use crate::objects::pdf_object::PdfObj;
+use crate::object_ops::{ObjectNumber, ObjectOps, PdfObj};
 pub use crate::page_size::PageSize;
 use crate::xref_ops::XRefOps;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
@@ -208,9 +207,9 @@ impl PageTree {
     fn update_counts(dict: &mut PdfDictionaryObject) {
         let mut count = 0i64;
         for child in &mut dict.children {
-            match child.get_name("Type") {
-                Ok("Page") => count += 1,
-                Ok("Pages") => {
+            match child.get_name("Type").as_deref() {
+                Ok(b"Page") => count += 1,
+                Ok(b"Pages") => {
                     Self::update_counts(child);
                     count += child.get_integer("Count").unwrap_or(0);
                 }

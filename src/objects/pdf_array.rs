@@ -1,17 +1,5 @@
-//! Array Objects:
-
-use crate::object_ops::ObjectNumber;
-///
-/// An array object is a one-dimensional collection of pdf objects arranged sequentially.
-///
-/// Unlike arrays in many other computer languages, PDF arrays may be heterogeneous; that is, an
-/// array’s elements may be any combination of numbers, strings, dictionaries, or any other pdf
-/// objects, including other arrays. An array may have zero elements.
-///
-/// An array shall be written as a sequence of objects enclosed in SQUARE BRACKETS.
-/// EXAMPLE [ 549 3.14 false ( Ralph ) /SomeName ]
-///
-use crate::{PdfError, PdfObject};
+use crate::object_ops::{ObjectNumber, PdfObject};
+use crate::{PdfError};
 
 #[derive(Clone)]
 pub struct PdfArrayObject {
@@ -87,6 +75,7 @@ impl PdfArrayObject {
 mod tests {
     use super::*;
     use crate::NumberType;
+    use crate::object_ops::PdfObj;
     use crate::objects::pdf_boolean::PdfBooleanObject;
     use crate::objects::pdf_name::PdfNameObject;
     use crate::objects::pdf_number::PdfNumberObject;
@@ -101,23 +90,23 @@ mod tests {
     #[test]
     fn encode_single_element() {
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfNumberObject::new(NumberType::Integer(42)));
+        arr.push(42);
         assert_eq!(arr.encode().unwrap(), b"[ 42 ]");
     }
 
     #[test]
     fn encode_mixed_elements() {
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfNumberObject::new(NumberType::Integer(549)));
-        arr.push(PdfNumberObject::new(NumberType::Real(3.14)));
-        arr.push(PdfBooleanObject::new(false));
+        arr.push(549);
+        arr.push(3.14);
+        arr.push(false);
         assert_eq!(arr.encode().unwrap(), b"[ 549 3.14 false ]");
     }
 
     #[test]
     fn encode_with_name() {
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfNameObject::new("SomeName"));
+        arr.push(PdfObj::name_obj("SomeName"));
         assert_eq!(arr.encode().unwrap(), b"[ /SomeName ]");
     }
 

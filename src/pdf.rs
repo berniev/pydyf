@@ -11,7 +11,7 @@ use std::fs::File;
 use std::rc::Rc;
 
 pub struct Pdf {
-    pub version: Option<Version>,
+    pub version: Version,
     pub object_ops: Rc<RefCell<ObjectOps>>,
     pub page_ops: PageOps,
     pub graphics_ops: GraphicsOps,
@@ -19,12 +19,13 @@ pub struct Pdf {
 
 impl Pdf {
     pub fn new() -> Result<Self, PdfError> {
-        let object_ops = Rc::new(RefCell::new(ObjectOps::new()));
+        let def_ver = Version::default();
+        let object_ops = Rc::new(RefCell::new(ObjectOps::new(def_ver.clone())));
         let page_ops = PageOps::new(Rc::clone(&object_ops))?;
         let graphics_ops = GraphicsOps::new(Rc::clone(&object_ops));
 
         let pdf = Pdf {
-            version: None,
+            version: def_ver,
             object_ops,
             page_ops,
             graphics_ops,
@@ -34,7 +35,7 @@ impl Pdf {
     }
 
     pub fn having_version(mut self, version: Version) -> Self {
-        self.version = Some(version);
+        self.version = version;
 
         self
     }
@@ -46,7 +47,7 @@ impl Pdf {
     }
     pub fn finalise(&mut self, path: &str) -> Result<(), PdfError> {
         let mut build = || {
-            let header = Header::new().with_version(self.version.unwrap_or_default());
+            let header = Header::new().with_version(self.version);
             let mut catalog_ops = CatalogOps::new(Rc::clone(&self.object_ops), &mut self.page_ops)?;
             let trailer = Trailer::new(Rc::clone(&self.object_ops), &catalog_ops)?;
             let mut xref_ops = XRefOps::new();

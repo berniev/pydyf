@@ -1,5 +1,5 @@
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfStreamObject};
-use crate::objects::pdf_object::PdfObj;
+use crate::object_ops::PdfObj;
 
 pub enum MaskSubType {
     Luminosity,

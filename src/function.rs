@@ -54,30 +54,15 @@ pub enum FunctionType {
     PostScript = 4,
 }
 
-impl FunctionType {
-    pub fn as_str(&self) -> &str {
-        match self {
-            FunctionType::Sampled => "Sampled",
-            FunctionType::Exponential => "Exponential",
-            FunctionType::Stitching => "Stitching",
-            FunctionType::PostScript => "PostScript",
-        }
-    }
-}
-
 //--------------------------- Function ---------------------------//
 
 fn make_func_dict(
     func_type: FunctionType,
     domain: PdfArrayObject,
-    range: Option<PdfArrayObject>,
 ) -> Result<PdfDictionaryObject, PdfError> {
     let mut dict = PdfDictionaryObject::new();
     dict.add("FunctionType", func_type as i64)?;
     dict.add("Domain", domain)?;
-    if let Some(range) = range {
-        dict.add("Range", range)?;
-    }
 
     Ok(dict)
 }
@@ -99,8 +84,9 @@ impl Function0Sampled {
         bits_per_sample: u32,
         code: Vec<u8>,
     ) -> Result<Self, PdfError> {
-        let mut dict = make_func_dict(FunctionType::Sampled, domain, Some(range))?;
+        let mut dict = make_func_dict(FunctionType::Sampled, domain)?;
         dict.add("Size", size)?;
+        dict.add("Range", range)?;
         if !matches!(bits_per_sample, 1 | 2 | 4 | 8 | 12 | 16 | 24 | 32) {
             return Err(PdfError::StructureError(format!(
                 "BitsPerSample must be 1, 2, 4, 8, 12, 16, 24, or 32, got {}",
@@ -140,7 +126,7 @@ pub struct Function2Exponential {
 impl Function2Exponential {
     pub fn new(domain: PdfArrayObject, interpolation_exponent: f64) -> Result<Self, PdfError> {
         let mut func = Function2Exponential {
-            dictionary: make_func_dict(FunctionType::Exponential, domain, None)?,
+            dictionary: make_func_dict(FunctionType::Exponential, domain)?,
         };
         func.dictionary.add("N", interpolation_exponent)?;
 
@@ -181,7 +167,7 @@ impl Function3Stitching {
         encode: PdfArrayObject,
     ) -> Result<Self, PdfError> {
         let mut func = Function3Stitching {
-            dictionary: make_func_dict(FunctionType::Stitching, domain, None)?,
+            dictionary: make_func_dict(FunctionType::Stitching, domain)?,
         };
         func.dictionary.add("Functions", functions)?;
         func.dictionary.add("Bounds", bounds)?;
@@ -207,8 +193,9 @@ impl Function4PostScript {
         range: PdfArrayObject,
         code: Vec<u8>,
     ) -> Result<Self, PdfError> {
-        let mut dict = make_func_dict(FunctionType::PostScript, domain, Some(range))?;
+        let mut dict = make_func_dict(FunctionType::PostScript, domain)?;
         dict.add("Length", code.len() as i64)?;
+        dict.add("Range", range)?;
         let stream = PdfStreamObject::new().with_dict_and_content(dict, code);
 
         Ok(Self { stream })

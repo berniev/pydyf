@@ -1,5 +1,4 @@
-use crate::object_ops::ObjectOps;
-use crate::objects::pdf_object::PdfObj;
+use crate::object_ops::{ObjectOps, PdfObj};
 use crate::{Metadata, PdfDictionaryObject, PdfResult, PdfStreamObject};
 use std::cell::RefCell;
 use std::rc::Rc;

@@ -15,8 +15,7 @@ use crate::catalog::CatalogOps;
 use crate::encryption_ops::{
     bytes_to_pdf_hex_string, compute_data_hash, compute_encryption_values, EncryptionConfig,
 };
-use crate::object_ops::ObjectOps;
-use crate::objects::pdf_object::PdfObj;
+use crate::object_ops::{ObjectOps, PdfObj};
 use crate::xref_ops::XRefOps;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
 use std::cell::RefCell;

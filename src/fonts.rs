@@ -1,5 +1,5 @@
-use crate::objects::pdf_object::PdfObj;
 use crate::{PdfDictionaryObject, PdfError};
+use crate::object_ops::PdfObj;
 use crate::text::StandardFont;
 
 const ALL_STANDARD_FONTS: [StandardFont; 12] = [

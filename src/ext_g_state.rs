@@ -3,8 +3,8 @@
 //! ExtGState objects control advanced graphics rendering features like
 //! transparency, blend modes, and rendering intent.
 
-use crate::objects::pdf_object::PdfObj;
 use crate::{PdfDictionaryObject, PdfError};
+use crate::object_ops::PdfObj;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BlendMode {

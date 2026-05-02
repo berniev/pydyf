@@ -1,6 +1,5 @@
-use crate::objects::pdf_object::PdfObj;
 use crate::{PdfDictionaryObject, PdfError};
-
+use crate::object_ops::PdfObj;
 //--------------------------TrappedState-------------------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,9 +1,9 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-use crate::objects::pdf_object::PdfObj;
 use crate::util::{Matrix, Rectangle};
 use crate::{PdfError, PdfStreamObject};
+use crate::object_ops::PdfObj;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PatternType {

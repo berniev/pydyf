@@ -4,10 +4,9 @@
 //! clicking links, opening documents, or interacting with form fields.
 /// Actions specify responses to various events in PDF documents, such as
 /// user interactions with annotations or form fields.
-use crate::objects::pdf_object::PdfObj;
 use crate::util::Rectangle;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfResult};
-
+use crate::object_ops::PdfObj;
 //------------------------ Action -------------------------------//
 
 pub trait Action {

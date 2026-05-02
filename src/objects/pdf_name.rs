@@ -1,23 +1,40 @@
-/// Spec:
-/// name object:
-///     an atomic symbol uniquely defined by a sequence of characters introduced by a SOLIDUS (/),
-///     (2Fh) but the SOLIDUS is not considered to be part of the name
 use crate::PdfError;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct PdfNameObject {
-    pub(crate) value: String,
+    pub(crate) value: Vec<u8>,
 }
 
 impl PdfNameObject {
-    pub fn new(value: &str) -> Self {
+    pub fn new(value: impl AsRef<[u8]>) -> Self {
+        let value = value.as_ref().to_vec();
         Self {
-            value: value.to_string(),
+            value: Self::fix(value),
         }
     }
 
+    // nb: all input # will be encoded
+    fn fix(vec: Vec<u8>) -> Vec<u8> {
+        const HEX_CHARS: &[u8] = b"0123456789ABCDEF";
+        let mut result = vec![];
+        for &byte in &vec {
+            if byte == b'#' || !(0x21..=0x7E).contains(&byte) {
+                result.push(b'#');
+                result.push(HEX_CHARS[(byte >> 4) as usize]);
+                result.push(HEX_CHARS[(byte & 0xF) as usize]);
+            } else {
+                if byte != 0x00 {
+                    result.push(byte); // silently strip nulls
+                }
+            }
+        }
+        result
+    }
+
     pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
-        Ok(format!("/{}", self.value).into_bytes())
+        let mut result = vec![b'/'];
+        result.extend(&self.value);
+        Ok(result)
     }
 }
 

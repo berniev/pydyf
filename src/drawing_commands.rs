@@ -87,13 +87,12 @@
 ///   Transformation matrices specify the transformation from the new (transformed) coordinate
 ///     system to the original (untransformed) coordinate system
 ///
-use crate::color::{CMYK, Color, ColorSpace, RGB};
+use crate::color::{Color, ColorSpace, CMYK, RGB};
 use crate::encoding::{ascii85_encode, f64_to_pdf_string};
-use crate::string_functions::encode_pdf_string;
-use crate::util::{Dims, Matrix, Posn, StrokeOrFill, StreamString, WindingRule};
+use crate::util::{Dims, Matrix, Posn, StreamString, StrokeOrFill, WindingRule};
 use crate::{CompressionMethod, PdfError};
-use flate2::Compression;
 use flate2::write::ZlibEncoder;
+use flate2::Compression;
 use std::io::Write;
 
 //-------------------------- Drawing Commands --------------------------
@@ -433,10 +432,8 @@ impl DrawingCommands {
     }
 
     pub fn show_single_text_string(&mut self, text: &str) {
-        let mut cmd = encode_pdf_string(text);
-        cmd.push_str(" Tj");
-
-        self.add(Vec::from(cmd));
+        let cmd = format!("{} Tj", text);
+        self.add(cmd.into_bytes());
     }
 
     pub fn show_text_strings(&mut self, text: &str) {

@@ -6,7 +6,6 @@ pub mod pdf_null;
 pub mod pdf_number;
 pub mod number_type;
 pub mod object_status;
-pub mod pdf_object;
 pub mod pdf_reference;
 pub mod pdf_stream;
 pub mod pdf_string;
