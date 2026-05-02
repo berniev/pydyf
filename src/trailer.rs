@@ -53,18 +53,18 @@ impl Trailer {
         // Build /Encrypt dictionary
         let mut encrypt_dict = PdfDictionaryObject::new();
         encrypt_dict.add("Filter", PdfObj::name_obj("Standard"))?;
-        encrypt_dict.add("V", PdfObj::num_obj(1_i64))?;
-        encrypt_dict.add("R", PdfObj::num_obj(2_i64))?;
-        encrypt_dict.add("O", PdfObj::string_obj(&bytes_to_pdf_hex_string(&vals.o_value)))?;
-        encrypt_dict.add("U", PdfObj::string_obj(&bytes_to_pdf_hex_string(&vals.u_value)))?;
-        encrypt_dict.add("P", PdfObj::num_obj(vals.permissions as i64))?;
+        encrypt_dict.add("V", 1_i64)?;
+        encrypt_dict.add("R", 2_i64)?;
+        encrypt_dict.add("O", bytes_to_pdf_hex_string(&vals.o_value))?;
+        encrypt_dict.add("U", bytes_to_pdf_hex_string(&vals.u_value))?;
+        encrypt_dict.add("P", vals.permissions as i64)?;
         self.dictionary.add("Encrypt", encrypt_dict)?;
 
         // Build /ID array
         let id_hex = bytes_to_pdf_hex_string(&file_id_bytes);
         let mut id_array = PdfArrayObject::new();
-        id_array.push(PdfObj::string_obj(&id_hex));
-        id_array.push(PdfObj::string_obj(&id_hex));
+        id_array.push(id_hex.clone());
+        id_array.push(id_hex);
         self.dictionary.add("ID", id_array)?;
 
         Ok(self)

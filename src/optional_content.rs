@@ -83,7 +83,7 @@ impl OptionalContentGroup {
 
     pub fn to_dict(&self) -> Result<PdfDictionaryObject, PdfError> {
         let mut dict = PdfDictionaryObject::new().typed("OCG")?;
-        dict.add("Name", PdfObj::string_obj(self.name.as_str()))?;
+        dict.add("Name", self.name.as_str())?;
         //dict.add_name("Name", self.name.clone());
 
         if let Some(ref intent) = self.intent {
@@ -196,10 +196,10 @@ impl OptionalContentConfig {
     pub fn to_dict(&self) -> Result<PdfDictionaryObject, PdfError> {
         let mut dict = PdfDictionaryObject::new();
 
-        dict.add("Name", PdfObj::string_obj(self.name.as_str()))?;
+        dict.add("Name", self.name.as_str())?;
 
         if let Some(ref creator) = self.creator {
-            dict.add("Creator", PdfObj::string_obj(creator))?;
+            dict.add("Creator", creator.as_str())?;
         }
 
         dict.add(
@@ -243,7 +243,7 @@ impl OptionalContentConfig {
                     //arr.push(Pdf::indirect(*id));
                 }
                 LayerOrder::Group { label, children } => {
-                    arr.push(PdfObj::string_obj(label.as_str()));
+                    arr.push(label.as_str());
                     arr.push(self.build_order_array(children));
                 }
             }

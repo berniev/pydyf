@@ -19,7 +19,7 @@ pub fn make_annotation_dict(
     rect: Rectangle,
 ) -> Result<PdfDictionaryObject, PdfError> {
     let mut dict = PdfDictionaryObject::new().typed("Annot")?;
-    dict.add("Subtype", PdfObj::string_obj(subtype))?;
+    dict.add("Subtype", subtype)?;
     dict.add("Rect", rect.as_pdf_array_object())?;
     dict.add(
         "Border",
@@ -70,7 +70,7 @@ pub trait Annotation: Sized {
     fn dict(&mut self) -> &mut PdfDictionaryObject;
 
     fn with_contents(mut self, contents: &str) -> Result<Self, PdfError> {
-        self.dict().add("Contents", PdfObj::string_obj(contents))?;
+        self.dict().add("Contents", contents)?;
         Ok(self)
     }
 
@@ -148,13 +148,13 @@ impl TextAnnotation {
     }
 
     pub fn with_state(mut self, state: &str) -> Result<Self, PdfError> {
-        self.dict.add("State", PdfObj::string_obj(state))?;
+        self.dict.add("State", state)?;
         Ok(self)
     }
 
     pub fn with_state_model(mut self, state_model: &str) -> Result<Self, PdfError> {
         self.dict
-            .add("StateModel", PdfObj::string_obj(state_model))?;
+            .add("StateModel", state_model)?;
         Ok(self)
     }
 }
@@ -182,7 +182,7 @@ impl LinkAnnotation {
     }
 
     pub fn with_dest_string(mut self, dest: &str) -> Result<Self, PdfError> {
-        self.dict.add("Dest", PdfObj::string_obj(dest))?;
+        self.dict.add("Dest", dest)?;
         Ok(self)
     }
 

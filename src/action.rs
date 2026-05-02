@@ -38,7 +38,7 @@ impl Action for UriAction {
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
         dict.add("S", PdfObj::name_obj(self.action_type()))?;
-        dict.add("URI", PdfObj::string_obj(self.uri.as_str()))?;
+        dict.add("URI", self.uri.clone())?;
 
         if self.is_map {
             dict.add("IsMap", true)?;
@@ -90,7 +90,7 @@ impl Action for JavaScriptAction {
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
         dict.add("S", PdfObj::name_obj(self.action_type()))?;
-        dict.add("JS", PdfObj::string_obj(self.script.as_str()))?;
+        dict.add("JS", self.script.clone())?;
 
         Ok(dict)
     }
@@ -125,7 +125,7 @@ impl Action for LaunchAction {
         dict.add("S", PdfObj::name_obj(self.action_type()))?;
 
         let mut file_dict = PdfDictionaryObject::new().typed("Filespec")?;
-        file_dict.add("F", PdfObj::string_obj(self.file.as_str()))?;
+        file_dict.add("F", self.file.clone())?;
         dict.add("F", file_dict)?;
 
         if let Some(new_win) = self.new_window {

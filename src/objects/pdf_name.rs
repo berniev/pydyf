@@ -13,7 +13,7 @@ impl PdfNameObject {
         }
     }
 
-    // nb: all input # will be encoded
+    // nb: all #'s will be encoded
     fn fix(vec: Vec<u8>) -> Vec<u8> {
         const HEX_CHARS: &[u8] = b"0123456789ABCDEF";
         let mut result = vec![];
