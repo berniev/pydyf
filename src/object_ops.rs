@@ -168,10 +168,11 @@ impl PdfObject {
             return Ok(());
         }
 
+        // indirect object
+
         let object_number = self.get_object_number().unwrap();
         let offset = file.stream_position()?;
 
-        // indirect object
         let mut vec = vec![];
         vec.extend(object_number.to_string().as_bytes());
         vec.extend(b" 0 obj\n");
@@ -249,7 +250,7 @@ impl PdfObject {
     pub fn string_obj(value: &str) -> PdfObject {
         PdfObject::String(PdfStringObject::new(value))
     }
-    
+
     pub fn string_text_obj(value: &str) -> PdfObject {
         PdfObject::String(PdfStringObject::new(value))
     }
