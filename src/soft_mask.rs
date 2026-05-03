@@ -1,5 +1,5 @@
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfStreamObject};
-use crate::object_ops::PdfObj;
+use crate::object_ops::PdfObject;
 
 pub enum MaskSubType {
     Luminosity,
@@ -25,14 +25,14 @@ impl SoftMask {
             dictionary: PdfDictionaryObject::new(),
         };
         msk.dictionary
-            .add("S", PdfObj::name_obj(sub_type.as_str()))?;
+            .add("S", PdfObject::name_obj(sub_type.as_str()))?;
         msk.dictionary.add("G", stream)?;
 
         Ok(msk)
     }
 
     pub fn typed(mut self) -> Result<Self, PdfError> {
-        self.dictionary.add("Type", PdfObj::name_obj("Mask"))?;
+        self.dictionary.add("Type", PdfObject::name_obj("Mask"))?;
 
         Ok(self)
     }
@@ -50,7 +50,7 @@ impl SoftMask {
     }
 
     pub fn with_function_identity(mut self) -> Result<Self, PdfError> {
-        self.dictionary.add("TR", PdfObj::name_obj("Identity"))?;
+        self.dictionary.add("TR", PdfObject::name_obj("Identity"))?;
 
         Ok(self)
     }

@@ -1,5 +1,5 @@
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
-use crate::object_ops::PdfObj;
+use crate::object_ops::PdfObject;
 
 pub struct FileSpecification {
     dict: PdfDictionaryObject,
@@ -11,7 +11,7 @@ impl FileSpecification {
     }
 
     pub fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict.add("FS", PdfObj::name_obj(name))?;
+        self.dict.add("FS", PdfObject::name_obj(name))?;
         Ok(self)
     }
 

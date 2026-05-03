@@ -1,5 +1,5 @@
 use crate::{PdfDictionaryObject, PdfError};
-use crate::object_ops::PdfObj;
+use crate::object_ops::PdfObject;
 //--------------------------TrappedState-------------------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -34,7 +34,7 @@ impl Metadata {
     }
 
     fn add(mut self, key: &str, value: &str) -> Result<Self, PdfError> {
-        self.dictionary.add(key, PdfObj::string_obj(value))?;
+        self.dictionary.add(key, PdfObject::string_obj(value))?;
 
         Ok(self)
     }

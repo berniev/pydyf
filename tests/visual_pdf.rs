@@ -167,7 +167,7 @@ fn test_generate_circle_over_rectangle() {
     stream.show_single_text_string("Tests Bezier curves for circular paths");
     stream.end_text();
 
-    let content_id = pdf.save_indirect_object(PdfObj::stream(stream));
+    let content_id = pdf.save_indirect_object(PdfObject::stream(stream));
     let _content_ref = format!("{} 0 R", content_id).into_bytes();
 /*    let page = create_page_with_content(content_ref);
     pdf.add_page(page);
@@ -223,7 +223,7 @@ fn test_multipage_pdf() {
     stream1.show_single_text_string("Red rectangle - Tests multi-page PDF generation");
     stream1.end_text();
 
-    let content_id1 = pdf.save_indirect_object(PdfObj::stream(stream1));
+    let content_id1 = pdf.save_indirect_object(PdfObject::stream(stream1));
     let _content_ref1 = format!("{} 0 R", content_id1).into_bytes();
  /*   let page1 = create_page_with_content(content_ref1);
     pdf.add_page(page1);
@@ -474,7 +474,7 @@ fn test_graphics_operations() {
     stream.show_single_text_string("Cyan triangle | Orange trapezoid");
     stream.end_text();
 
-    let content_id = pdf.save_indirect_object(PdfObj::stream(stream));
+    let content_id = pdf.save_indirect_object(PdfObject::stream(stream));
     let _content_ref = format!("{} 0 R", content_id).into_bytes();
  /*   let page = create_page_with_content(content_ref);
     pdf.add_page(page);
@@ -525,7 +525,7 @@ fn test_comparison_uncompressed() {
 
     stream.end_text();
 
-    let content_id = pdf.save_indirect_object(PdfObj::stream(stream));
+    let content_id = pdf.save_indirect_object(PdfObject::stream(stream));
     let _content_ref = format!("{} 0 R", content_id).into_bytes();
 /*    let page = create_page_with_content(content_ref);
     pdf.add_page(page);
@@ -576,7 +576,7 @@ fn test_comparison_compressed() {
 
     stream.end_text();
 
-    let content_id = pdf.save_indirect_object(PdfObj::stream(stream));
+    let content_id = pdf.save_indirect_object(PdfObject::stream(stream));
     let _content_ref = format!("{} 0 R", content_id).into_bytes();
 /*    let page = create_page_with_content(content_ref);
     pdf.add_page(page);

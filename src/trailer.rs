@@ -15,7 +15,7 @@ use crate::catalog::CatalogOps;
 use crate::encryption_ops::{
     bytes_to_pdf_hex_string, compute_data_hash, compute_encryption_values, EncryptionConfig,
 };
-use crate::object_ops::{ObjectOps, PdfObj};
+use crate::object_ops::{ObjectOps, PdfObject};
 use crate::xref_ops::XRefOps;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
 use std::cell::RefCell;
@@ -41,7 +41,7 @@ impl Trailer {
             .add("Size", object_ops.borrow().last_object_number().value() + 1)?;
         trailer
             .dictionary
-            .add("Root", PdfObj::reference_obj(catalog_ops.catalog_id()))?;
+            .add("Root", PdfObject::reference_obj(catalog_ops.catalog_id()))?;
 
         Ok(trailer)
     }
@@ -52,7 +52,7 @@ impl Trailer {
 
         // Build /Encrypt dictionary
         let mut encrypt_dict = PdfDictionaryObject::new();
-        encrypt_dict.add("Filter", PdfObj::name_obj("Standard"))?;
+        encrypt_dict.add("Filter", PdfObject::name_obj("Standard"))?;
         encrypt_dict.add("V", 1_i64)?;
         encrypt_dict.add("R", 2_i64)?;
         encrypt_dict.add("O", bytes_to_pdf_hex_string(&vals.o_value))?;

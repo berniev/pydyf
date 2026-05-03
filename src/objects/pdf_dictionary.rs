@@ -1,4 +1,4 @@
-use crate::object_ops::{ObjectNumber, PdfObj, PdfObject};
+use crate::object_ops::{ObjectNumber, PdfObject};
 use crate::xref_ops::XRefOps;
 /// Spec:
 /// Dictionary:
@@ -40,7 +40,7 @@ impl PdfDictionaryObject {
     }
 
     pub(crate) fn typed(mut self, name: &str) -> Result<Self, PdfError> {
-        self.add("Type", PdfObj::name_obj(name))?;
+        self.add("Type", PdfObject::name_obj(name))?;
 
         Ok(self)
     }
@@ -198,14 +198,14 @@ mod tests {
         assert!(dict.is_empty());
         assert_eq!(dict.len(), 0);
 
-        dict.add("Key1", *Box::from(PdfObj::name_obj("Value1")))
+        dict.add("Key1", *Box::from(PdfObject::name_obj("Value1")))
             .expect("fail");
         assert!(!dict.is_empty());
         assert_eq!(dict.len(), 1);
         assert!(dict.contains_key("Key1"));
         assert!(!dict.contains_key("Key2"));
 
-        dict.add("Key2", *Box::from(PdfObj::name_obj("Value2")))
+        dict.add("Key2", *Box::from(PdfObject::name_obj("Value2")))
             .expect("fail");
         assert_eq!(dict.len(), 2);
         assert!(dict.contains_key("Key2"));
@@ -220,7 +220,7 @@ mod tests {
     #[test]
     fn encode_single_entry() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Type", PdfObj::name_obj("Catalog")).expect("fail");
+        dict.add("Type", PdfObject::name_obj("Catalog")).expect("fail");
         let output = String::from_utf8(dict.encode().unwrap()).unwrap();
         assert!(output.starts_with("<<\n"));
         assert!(output.contains("/Type /Catalog"));
@@ -230,8 +230,8 @@ mod tests {
     #[test]
     fn encode_multiple_entries() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Type", PdfObj::name_obj("Page")).expect("fail");
-        dict.add("Count", PdfObj::num_obj(3i64)).expect("fail");
+        dict.add("Type", PdfObject::name_obj("Page")).expect("fail");
+        dict.add("Count", PdfObject::num_obj(3i64)).expect("fail");
         let output = String::from_utf8(dict.encode().unwrap()).unwrap();
         assert!(output.contains("/Type /Page"));
         assert!(output.contains("/Count 3"));
@@ -249,7 +249,7 @@ mod tests {
     #[test]
     fn encode_with_indirect_reference() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Pages", PdfObj::reference_obj(ObjectNumber::new(2)))
+        dict.add("Pages", PdfObject::reference_obj(ObjectNumber::new(2)))
             .expect("fail");
         let output = String::from_utf8(dict.encode().unwrap()).unwrap();
         assert!(output.contains("/Pages 2 0 R"));

@@ -29,7 +29,7 @@
  =====================================
  */
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
-use crate::object_ops::{ObjectNumber, PdfObj, PdfObject};
+use crate::object_ops::{ObjectNumber, PdfObject};
 
 ///Usage:
 ///
@@ -58,7 +58,7 @@ impl Tree {
     pub fn set_kids(&mut self, new_kids: Vec<ObjectNumber>) -> Result<(), PdfError> {
         let mut arr = PdfArrayObject::new();
         for new_kid in new_kids {
-            arr.push(PdfObj::reference_obj(new_kid));
+            arr.push(PdfObject::reference_obj(new_kid));
         }
         self.dict.add("Kids", arr)?;
 
@@ -98,7 +98,7 @@ pub trait TreeKey: Sized {
 
 impl TreeKey for String {
     fn to_pdf_obj(self) -> PdfObject {
-        PdfObj::string_obj(&self)
+        PdfObject::string_obj(&self)
     }
     fn entry_key_name() -> &'static str {
         "Names"
@@ -107,7 +107,7 @@ impl TreeKey for String {
 
 impl TreeKey for i64 {
     fn to_pdf_obj(self) -> PdfObject {
-        PdfObj::num_obj(self)
+        PdfObject::num_obj(self)
     }
     fn entry_key_name() -> &'static str {
         "Nums"

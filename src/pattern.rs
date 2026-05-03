@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 
 use crate::util::{Matrix, Rectangle};
 use crate::{PdfError, PdfStreamObject};
-use crate::object_ops::PdfObj;
+use crate::object_ops::PdfObject;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PatternType {
@@ -51,7 +51,7 @@ impl TilingPattern {
         };
         pat.stream
             .dict
-            .add("Type", PdfObj::name_obj("Pattern"))?;
+            .add("Type", PdfObject::name_obj("Pattern"))?;
         pat.stream.dict.add("BBox", bbox.as_pdf_array_object())?;
         pat.stream.dict.add("XStep", x_step)?;
         pat.stream.dict.add("YStep", y_step)?;

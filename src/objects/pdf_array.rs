@@ -75,7 +75,6 @@ impl PdfArrayObject {
 mod tests {
     use super::*;
     use crate::NumberType;
-    use crate::object_ops::PdfObj;
     use crate::objects::pdf_boolean::PdfBooleanObject;
     use crate::objects::pdf_name::PdfNameObject;
     use crate::objects::pdf_number::PdfNumberObject;
@@ -106,7 +105,7 @@ mod tests {
     #[test]
     fn encode_with_name() {
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfObj::name_obj("SomeName"));
+        arr.push(PdfObject::name_obj("SomeName"));
         assert_eq!(arr.encode().unwrap(), b"[ /SomeName ]");
     }
 

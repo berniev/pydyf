@@ -1,4 +1,4 @@
-use crate::object_ops::{ObjectNumber, ObjectOps, PdfObj};
+use crate::object_ops::{ObjectNumber, ObjectOps, PdfObject};
 pub use crate::page_size::PageSize;
 use crate::xref_ops::XRefOps;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
@@ -158,7 +158,7 @@ impl PageTree {
         self.has_kids()?;
 
         tree.dictionary
-            .add("Parent", PdfObj::reference_obj(self.object_number()))?;
+            .add("Parent", PdfObject::reference_obj(self.object_number()))?;
 
         self.add_kid(Box::new(tree.dictionary))?;
 
@@ -167,7 +167,7 @@ impl PageTree {
 
     pub fn add_page(&mut self, mut page: Page) -> Result<(), PdfError> {
         page.dictionary
-            .add("Parent", PdfObj::reference_obj(self.object_number()))?;
+            .add("Parent", PdfObject::reference_obj(self.object_number()))?;
         self.dictionary.update_or_add(
             "Count",
             self.dictionary.get_integer("Count").unwrap_or(0) + 1,
@@ -184,7 +184,7 @@ impl PageTree {
     pub fn add_resources() {}
 
     fn add_kid(&mut self, kid_obj: Box<PdfDictionaryObject>) -> Result<(), PdfError> {
-        let reference = PdfObj::reference_obj(kid_obj.object_number.unwrap());
+        let reference = PdfObject::reference_obj(kid_obj.object_number.unwrap());
         self.dictionary.children.push(kid_obj);
         self.dictionary.push_to_array("Kids", reference)?;
 

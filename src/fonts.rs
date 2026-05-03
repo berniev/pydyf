@@ -1,5 +1,5 @@
 use crate::{PdfDictionaryObject, PdfError};
-use crate::object_ops::PdfObj;
+use crate::object_ops::PdfObject;
 use crate::text::StandardFont;
 
 const ALL_STANDARD_FONTS: [StandardFont; 12] = [
@@ -24,8 +24,8 @@ pub fn standard_fonts_dict() -> Result<PdfDictionaryObject, PdfError> {
     for font in ALL_STANDARD_FONTS {
         let name = font.pdf_name();
         let mut dict = PdfDictionaryObject::new().typed("Font")?;
-        dict.add("Subtype", PdfObj::name_obj("Type1"))?;
-        dict.add("BaseFont", PdfObj::name_obj(name))?;
+        dict.add("Subtype", PdfObject::name_obj("Type1"))?;
+        dict.add("BaseFont", PdfObject::name_obj(name))?;
         fonts_dict.add(name, dict)?;
     }
 

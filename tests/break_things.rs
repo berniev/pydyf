@@ -342,7 +342,7 @@ let mut cmd = DrawingCommands::new(&mut stream);
     cmd.fill(WindingRule::EvenOdd);
     cmd.end_text();
 
-    let _content_index = pdf.save_indirect_object(PdfObj::stream(stream));
+    let _content_index = pdf.save_indirect_object(PdfObject::stream(stream));
         let page = create_page_with_content(PageSize::A4, content_index);
         pdf.add_page(page);
 

@@ -4,7 +4,7 @@
 //! visible or hidden, commonly used for layers in technical drawings.
 
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
-use crate::object_ops::PdfObj;
+use crate::object_ops::PdfObject;
 //------------------ VisibilityInitialState -----------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -88,11 +88,11 @@ impl OptionalContentGroup {
 
         if let Some(ref intent) = self.intent {
             if intent.len() == 1 {
-                dict.add("Intent", PdfObj::name_obj(&intent[0]))?;
+                dict.add("Intent", PdfObject::name_obj(&intent[0]))?;
             } else {
                 let mut arr = PdfArrayObject::new();
                 for i in intent {
-                    arr.push(PdfObj::name_obj(i.as_str()));
+                    arr.push(PdfObject::name_obj(i.as_str()));
                 }
                 dict.add("Intent", arr)?;
             }
@@ -105,7 +105,7 @@ impl OptionalContentGroup {
                 let mut print_dict = PdfDictionaryObject::new();
                 print_dict.add(
                     "PrintState",
-                    PdfObj::name_obj(match print.state {
+                    PdfObject::name_obj(match print.state {
                         VisibilityInitialState::On => "ON",
                         VisibilityInitialState::Off => "OFF",
                     }),
@@ -115,7 +115,7 @@ impl OptionalContentGroup {
 
             if let Some(ref view) = usage.view {
                 let mut view_dict = PdfDictionaryObject::new();
-                view_dict.add("ViewState", PdfObj::name_obj(&*view.state.to_string()))?;
+                view_dict.add("ViewState", PdfObject::name_obj(&*view.state.to_string()))?;
                 usage_dict.add("View", view_dict)?;
             }
 
@@ -123,7 +123,7 @@ impl OptionalContentGroup {
                 let mut export_dict = PdfDictionaryObject::new();
                 export_dict.add(
                     "ExportState",
-                    PdfObj::name_obj(match export.state {
+                    PdfObject::name_obj(match export.state {
                         VisibilityInitialState::On => "ON",
                         VisibilityInitialState::Off => "OFF",
                     }),
@@ -204,7 +204,7 @@ impl OptionalContentConfig {
 
         dict.add(
             "BaseState",
-            PdfObj::name_obj(match self.base_state {
+            PdfObject::name_obj(match self.base_state {
                 VisibilityInitialState::On => "ON",
                 VisibilityInitialState::Off => "OFF",
             }),

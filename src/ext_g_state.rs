@@ -4,7 +4,7 @@
 //! transparency, blend modes, and rendering intent.
 
 use crate::{PdfDictionaryObject, PdfError};
-use crate::object_ops::PdfObj;
+use crate::object_ops::PdfObject;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BlendMode {
@@ -176,11 +176,11 @@ impl ExtGState {
         }
 
         if let Some(bm) = self.blend_mode {
-            dict.add("BM", PdfObj::name_obj(bm.as_str()))?;
+            dict.add("BM", PdfObject::name_obj(bm.as_str()))?;
         }
 
         if let Some(ri) = self.rendering_intent {
-            dict.add("RI", PdfObj::name_obj(ri.as_str()))?;
+            dict.add("RI", PdfObject::name_obj(ri.as_str()))?;
         }
 
         if let Some(op) = self.overprint_stroke {

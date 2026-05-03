@@ -135,7 +135,7 @@ the things themselves (beyond trivial values).
 "Version",           1.4
 "ViewerPreferences", 1.2
 */
-use crate::object_ops::{ObjectNumber, ObjectOps, PdfObj};
+use crate::object_ops::{ObjectNumber, ObjectOps, PdfObject};
 use crate::xref_ops::XRefOps;
 use crate::{PdfDictionaryObject, PdfError};
 use std::cell::RefCell;
@@ -154,7 +154,7 @@ impl CatalogOps {
             .typed("Catalog")?
             .with_object_number(num);
 
-        dictionary.add("Pages", PdfObj::reference_obj(page_ops.root_tree().object_number()))?;
+        dictionary.add("Pages", PdfObject::reference_obj(page_ops.root_tree().object_number()))?;
 
         Ok(Self { dictionary })
     }

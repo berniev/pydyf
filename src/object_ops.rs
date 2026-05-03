@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::{Seek, Write};
+use image::EncodableLayout;
 use crate::{NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject, PdfNullObject, PdfReferenceObject, PdfStreamObject, PdfStringObject};
 use crate::generation::Generation;
 use crate::objects::pdf_number::PdfNumberObject;
@@ -221,6 +222,38 @@ impl PdfObject {
     pub fn is_direct(&self) -> bool {
         !self.is_indirect()
     }
+    pub fn reference_obj(value: ObjectNumber) -> PdfObject {
+        PdfObject::Reference(PdfReferenceObject::new(value))
+    }
+
+    pub fn null_obj() -> PdfObject {
+        PdfObject::Null(PdfNullObject::new())
+    }
+
+    pub fn num_obj(value: impl Into<NumberType>) -> PdfObject {
+        PdfObject::Number(PdfNumberObject::new(value.into()))
+    }
+
+    pub fn num_or_null_obj<T: Into<NumberType>>(value: Option<T>) -> PdfObject {
+        match value {
+            Some(v) => Self::num_obj(v),
+            None => Self::null_obj(),
+        }
+    }
+
+    // disambiguate name from string
+    pub fn name_obj(value: &str) -> PdfObject {
+        PdfObject::Name(PdfNameObject::new(value))
+    }
+
+    pub fn string_obj(value: &str) -> PdfObject {
+        PdfObject::String(PdfStringObject::new(value))
+    }
+    
+    pub fn string_text_obj(value: &str) -> PdfObject {
+        PdfObject::String(PdfStringObject::new(value))
+    }
+
 }
 
 //--------------------------- From impl -------------------------//
@@ -357,45 +390,7 @@ impl From<f64> for PdfObject {
     }
 }
 
-//--------------------------- PdfObj -------------------------//
-
-pub struct PdfObj {}
-
-// Dictionary, Array, Stream, Number, Boolean are now automatically converted to PdfObject
-impl PdfObj {
-    pub fn reference_obj(value: ObjectNumber) -> PdfObject {
-        PdfObject::Reference(PdfReferenceObject::new(value))
-    }
-
-    pub fn null_obj() -> PdfObject {
-        PdfObject::Null(PdfNullObject::new())
-    }
-
-    pub fn num_obj(value: impl Into<NumberType>) -> PdfObject {
-        PdfObject::Number(PdfNumberObject::new(value.into()))
-    }
-
-    pub fn num_or_null_obj<T: Into<NumberType>>(value: Option<T>) -> PdfObject {
-        match value {
-            Some(v) => PdfObj::num_obj(v),
-            None => PdfObj::null_obj(),
-        }
-    }
-
-    // name and string are ambiguous so have to stay
-    pub fn name_obj(value: &str) -> PdfObject {
-        PdfObject::Name(PdfNameObject::new(value))
-    }
-
-    pub fn string_obj(value: &str) -> PdfObject {
-        PdfObject::String(PdfStringObject::new(value))
-    }
-    
-    pub fn string_text_obj(value: &str) -> PdfObject {
-        PdfObject::String(PdfStringObject::new(value))
-    }
-}
-
+// Array, Dictionary, Reference, Stream
 macro_rules! impl_obj_num_gen {
     ($ty:ty) => {
         impl $ty {
@@ -415,3 +410,4 @@ impl_obj_num_gen!(PdfArrayObject);
 impl_obj_num_gen!(PdfDictionaryObject);
 impl_obj_num_gen!(PdfReferenceObject);
 impl_obj_num_gen!(PdfStreamObject);
+

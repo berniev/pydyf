@@ -3,24 +3,24 @@ use crate::version::Version;
 
 #[derive(Clone)]
 pub struct PdfStringObject {
-    pub(crate) value: Vec<u8>,
+    pub(crate) value: String,
 }
 
 impl PdfStringObject {
     pub fn new(value: &str) -> Self {
         Self {
-            value: encode_text_string(value, ),
+            value: value.to_owned(),
         }
     }
 
     pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
-        Ok(self.value.clone())
+        Ok(encode_text_string(&*self.value, Version::V1_5))
     }
 }
 
 // PDFEncoding matches ASCII for 32 -> 126 only. Only for use outside content streams
 
-fn encode_text_string(string: &str, version: Version) -> Vec<u8> {
+fn encode_text_string(string: &str, version: Version) -> Vec<u8> { // todo: fixversion hack
     if string.is_ascii() {
         // < 128
         encode_ascii(string)
@@ -119,7 +119,12 @@ mod tests {
     fn encode_chinese_version_2() {
         let str = "公共汽车";
         let res = encode_text_string(str, Version::V2_2017);
-        assert_eq!(res, [0xEF, 0xBB, 0xBF, 229, 133, 172, 229, 133, 177, 230, 177, 189, 232, 189, 166]);
+        assert_eq!(
+            res,
+            [
+                0xEF, 0xBB, 0xBF, 229, 133, 172, 229, 133, 177, 230, 177, 189, 232, 189, 166
+            ]
+        );
     }
 
     #[test]
