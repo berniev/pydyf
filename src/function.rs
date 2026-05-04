@@ -76,6 +76,18 @@ pub struct Function0Sampled {
     pub stream: PdfStreamObject,
 }
 
+pub struct Function2Exponential {
+    pub dictionary: PdfDictionaryObject,
+}
+
+pub struct Function3Stitching {
+    pub dictionary: PdfDictionaryObject,
+}
+
+pub struct Function4PostScript {
+    pub stream: PdfStreamObject,
+}
+
 impl Function0Sampled {
     pub fn new(
         domain: PdfArrayObject,
@@ -119,10 +131,6 @@ impl Function0Sampled {
     }
 }
 
-pub struct Function2Exponential {
-    pub dictionary: PdfDictionaryObject,
-}
-
 impl Function2Exponential {
     pub fn new(domain: PdfArrayObject, interpolation_exponent: f64) -> Result<Self, PdfError> {
         let mut func = Function2Exponential {
@@ -155,10 +163,6 @@ impl Function2Exponential {
     }
 }
 
-pub struct Function3Stitching {
-    pub dictionary: PdfDictionaryObject,
-}
-
 impl Function3Stitching {
     pub fn new(
         functions: PdfArrayObject,
@@ -181,10 +185,6 @@ impl Function3Stitching {
 
         Ok(self)
     }
-}
-
-pub struct Function4PostScript {
-    pub stream: PdfStreamObject,
 }
 
 impl Function4PostScript {
