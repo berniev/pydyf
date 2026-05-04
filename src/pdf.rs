@@ -1,11 +1,10 @@
-use crate::catalog::CatalogOps;
-use crate::header::Header;
+use crate::catalog_ops::CatalogOps;
 use crate::object_ops::ObjectOps;
 use crate::page_ops::PageOps;
 use crate::trailer::Trailer;
 use crate::version::Version;
 use crate::xref_ops::XRefOps;
-use crate::{GraphicsOps, PageSize, PdfError};
+use crate::{GraphicsOps, PageSize, PdfError, header};
 use std::cell::RefCell;
 use std::fs::File;
 use std::rc::Rc;
@@ -42,22 +41,28 @@ impl Pdf {
 
     pub fn with_default_page_size(mut self, page_size: PageSize) -> Self {
         self.page_ops.set_default_page_size(page_size);
-        
+
         self
     }
-    pub fn finalise(&mut self, path: &str) -> Result<(), PdfError> {
+
+    pub fn finalize(&mut self, path: &str) -> Result<(), PdfError> {
         let mut build = || {
-            let header = Header::new().with_version(self.version);
-            let mut catalog_ops = CatalogOps::new(Rc::clone(&self.object_ops), &mut self.page_ops)?;
-            let trailer = Trailer::new(Rc::clone(&self.object_ops), &catalog_ops)?;
+            let catalog_object_number = self.object_ops.borrow_mut().next_object_number();
+            let mut catalog_ops =
+                CatalogOps::new(catalog_object_number.clone(), &mut self.page_ops)?;
+            let trailer = Trailer::new(
+                self.object_ops.borrow().last_object_number(),
+                catalog_object_number,
+            )?;
             let mut xref_ops = XRefOps::new();
             let mut file = File::create(path)?;
 
-            header.serialise(&mut file)?;
-            catalog_ops.serialise(&mut xref_ops, &mut file)?;
-            self.page_ops.serialise(&mut xref_ops, &mut file)?;
-            xref_ops.serialise(&mut file)?;
-            trailer.serialise(&mut xref_ops, &mut file)?;
+            header::serialize(self.version, &mut file)?;
+            catalog_ops.serialize(self.version, &mut xref_ops, &mut file)?;
+            self.page_ops
+                .serialize(self.version, &mut xref_ops, &mut file)?;
+            xref_ops.serialize(&mut file)?;
+            trailer.serialize(self.version, &mut xref_ops, &mut file)?;
 
             Ok(())
         };

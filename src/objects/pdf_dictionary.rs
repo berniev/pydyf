@@ -1,4 +1,5 @@
-use crate::object_ops::{ObjectNumber, PdfObject};
+use crate::object_ops::{ObjectNumber, PdfObject, write_indirect_object};
+use crate::version::Version;
 use crate::xref_ops::XRefOps;
 /// Spec:
 /// Dictionary:
@@ -40,7 +41,7 @@ impl PdfDictionaryObject {
     }
 
     pub(crate) fn typed(mut self, name: &str) -> Result<Self, PdfError> {
-        self.add("Type", PdfObject::name_obj(name))?;
+        self.add("Type", PdfObject::name(name))?;
 
         Ok(self)
     }
@@ -154,31 +155,40 @@ impl PdfDictionaryObject {
         Ok(())
     }
 
-    pub fn serialise(&self, xref: &mut XRefOps, file: &mut File) -> Result<(), PdfError> {
-        let tree_obj = PdfObject::from(self.clone());
-        tree_obj.serialise(xref, file)?;
+    pub fn serialize(
+        &self,
+        version: Version,
+        xref: &mut XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError> {
+        write_indirect_object(
+            self.object_number.unwrap(),
+            self.encode(version)?,
+            xref,
+            file,
+        )?;
 
-        // serialise any indirect values (e.g. streams embedded in this dict)
+        // serialize any indirect values (e.g. streams embedded in this dict)
         for (_name, value) in &self.values {
             if value.is_indirect() {
-                value.serialise(xref, file)?;
+                value.serialize(version, xref, file)?;
             }
         }
 
         for child in &self.children {
-            child.serialise(xref, file)?;
+            child.serialize(version, xref, file)?;
         }
 
         Ok(())
     }
 
-    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
         let mut arr = vec![];
         arr.extend(b"<<\n");
         for (pdf_name_obj, pdf_object) in &self.values {
-            arr.extend(pdf_name_obj.encode()?);
+            arr.extend(pdf_name_obj.encode(version)?);
             arr.push(b' ');
-            arr.extend(pdf_object.encode()?);
+            arr.extend(pdf_object.encode(version)?);
             arr.extend(b"\n");
         }
         arr.extend(b">>\n");
@@ -198,14 +208,14 @@ mod tests {
         assert!(dict.is_empty());
         assert_eq!(dict.len(), 0);
 
-        dict.add("Key1", *Box::from(PdfObject::name_obj("Value1")))
+        dict.add("Key1", *Box::from(PdfObject::name("Value1")))
             .expect("fail");
         assert!(!dict.is_empty());
         assert_eq!(dict.len(), 1);
         assert!(dict.contains_key("Key1"));
         assert!(!dict.contains_key("Key2"));
 
-        dict.add("Key2", *Box::from(PdfObject::name_obj("Value2")))
+        dict.add("Key2", *Box::from(PdfObject::name("Value2")))
             .expect("fail");
         assert_eq!(dict.len(), 2);
         assert!(dict.contains_key("Key2"));
@@ -214,14 +224,15 @@ mod tests {
     #[test]
     fn encode_empty_dictionary() {
         let dict = PdfDictionaryObject::new();
-        assert_eq!(dict.encode().unwrap(), b"<<\n>>\n");
+        assert_eq!(dict.encode(Version::V1_5).unwrap(), b"<<\n>>\n");
     }
 
     #[test]
     fn encode_single_entry() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Type", PdfObject::name_obj("Catalog")).expect("fail");
-        let output = String::from_utf8(dict.encode().unwrap()).unwrap();
+        dict.add("Type", PdfObject::name("Catalog"))
+            .expect("fail");
+        let output = String::from_utf8(dict.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.starts_with("<<\n"));
         assert!(output.contains("/Type /Catalog"));
         assert!(output.ends_with(">>\n"));
@@ -230,9 +241,9 @@ mod tests {
     #[test]
     fn encode_multiple_entries() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Type", PdfObject::name_obj("Page")).expect("fail");
-        dict.add("Count", PdfObject::num_obj(3i64)).expect("fail");
-        let output = String::from_utf8(dict.encode().unwrap()).unwrap();
+        dict.add("Type", PdfObject::name("Page")).expect("fail");
+        dict.add("Count", PdfObject::num(3i64)).expect("fail");
+        let output = String::from_utf8(dict.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains("/Type /Page"));
         assert!(output.contains("/Count 3"));
     }
@@ -242,16 +253,16 @@ mod tests {
         let mut dict = PdfDictionaryObject::new();
         dict.add("Visible", PdfBooleanObject::new(true))
             .expect("fail");
-        let output = String::from_utf8(dict.encode().unwrap()).unwrap();
+        let output = String::from_utf8(dict.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains("/Visible true"));
     }
 
     #[test]
     fn encode_with_indirect_reference() {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Pages", PdfObject::reference_obj(ObjectNumber::new(2)))
+        dict.add("Pages", ObjectNumber::new(2))
             .expect("fail");
-        let output = String::from_utf8(dict.encode().unwrap()).unwrap();
+        let output = String::from_utf8(dict.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains("/Pages 2 0 R"));
     }
 }

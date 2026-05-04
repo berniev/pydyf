@@ -1,5 +1,6 @@
+use crate::PdfError;
 use crate::object_ops::{ObjectNumber, PdfObject};
-use crate::{PdfError};
+use crate::version::Version;
 
 #[derive(Clone)]
 pub struct PdfArrayObject {
@@ -40,7 +41,7 @@ impl PdfArrayObject {
             values: values.into_iter().map(|v| v.into()).collect(),
         }
     }
-    
+
     pub fn from_vec_f64(values: Vec<f64>) -> PdfArrayObject {
         PdfArrayObject {
             object_number: None,
@@ -48,7 +49,7 @@ impl PdfArrayObject {
             values: values.into_iter().map(|v| v.into()).collect(),
         }
     }
-    
+
     pub fn to_vec_f64(&self) -> Result<Vec<f64>, PdfError> {
         self.values.iter().map(|v| v.as_f64()).collect()
     }
@@ -57,12 +58,12 @@ impl PdfArrayObject {
         self.values.push(value.into());
     }
 
-    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
         let mut arr = vec![];
         arr.push(b'[');
         arr.push(b' ');
         for pdf_object in &self.values {
-            arr.extend(pdf_object.encode()?);
+            arr.extend(pdf_object.encode(version)?);
             arr.push(b' ');
         }
         arr.push(b']');
@@ -74,23 +75,19 @@ impl PdfArrayObject {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::NumberType;
-    use crate::objects::pdf_boolean::PdfBooleanObject;
-    use crate::objects::pdf_name::PdfNameObject;
-    use crate::objects::pdf_number::PdfNumberObject;
     use crate::objects::pdf_reference::PdfReferenceObject;
 
     #[test]
     fn encode_empty_array() {
         let arr = PdfArrayObject::new();
-        assert_eq!(arr.encode().unwrap(), b"[ ]");
+        assert_eq!(arr.encode(Version::V1_5).unwrap(), b"[ ]");
     }
 
     #[test]
     fn encode_single_element() {
         let mut arr = PdfArrayObject::new();
         arr.push(42);
-        assert_eq!(arr.encode().unwrap(), b"[ 42 ]");
+        assert_eq!(arr.encode(Version::V1_5).unwrap(), b"[ 42 ]");
     }
 
     #[test]
@@ -99,20 +96,20 @@ mod tests {
         arr.push(549);
         arr.push(3.14);
         arr.push(false);
-        assert_eq!(arr.encode().unwrap(), b"[ 549 3.14 false ]");
+        assert_eq!(arr.encode(Version::V1_5).unwrap(), b"[ 549 3.14 false ]");
     }
 
     #[test]
     fn encode_with_name() {
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfObject::name_obj("SomeName"));
-        assert_eq!(arr.encode().unwrap(), b"[ /SomeName ]");
+        arr.push(PdfObject::name("SomeName"));
+        assert_eq!(arr.encode(Version::V1_5).unwrap(), b"[ /SomeName ]");
     }
 
     #[test]
     fn encode_with_indirect_reference() {
         let mut arr = PdfArrayObject::new();
         arr.push(PdfReferenceObject::new(ObjectNumber::new(10)));
-        assert_eq!(arr.encode().unwrap(), b"[ 10 0 R  ]");
+        assert_eq!(arr.encode(Version::V1_5).unwrap(), b"[ 10 0 R  ]");
     }
 }

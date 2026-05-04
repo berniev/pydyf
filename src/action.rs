@@ -37,7 +37,7 @@ impl Action for UriAction {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("S", PdfObject::name_obj(self.action_type()))?;
+        dict.add("S", PdfObject::name(self.action_type()))?;
         dict.add("URI", self.uri.clone())?;
 
         if self.is_map {
@@ -65,7 +65,7 @@ impl Action for GoToAction {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("S", PdfObject::name_obj(self.action_type()))?;
+        dict.add("S", PdfObject::name(self.action_type()))?;
         dict.add("D", self.destination.to_pdf_array())?;
         
         Ok(dict)
@@ -89,7 +89,7 @@ impl Action for JavaScriptAction {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("S", PdfObject::name_obj(self.action_type()))?;
+        dict.add("S", PdfObject::name(self.action_type()))?;
         dict.add("JS", self.script.clone())?;
 
         Ok(dict)
@@ -122,7 +122,7 @@ impl Action for LaunchAction {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("S", PdfObject::name_obj(self.action_type()))?;
+        dict.add("S", PdfObject::name(self.action_type()))?;
 
         let mut file_dict = PdfDictionaryObject::new().typed("Filespec")?;
         file_dict.add("F", self.file.clone())?;
@@ -172,8 +172,8 @@ impl Action for NamedAction {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("S", PdfObject::name_obj(self.action_type()))?;
-        dict.add("N", PdfObject::name_obj(self.name.as_str()))?;
+        dict.add("S", PdfObject::name(self.action_type()))?;
+        dict.add("N", PdfObject::name(self.name.as_str()))?;
 
         Ok(dict)
     }
@@ -236,32 +236,32 @@ impl FitDestination {
                 zoom,
             } => {
                 arr.push(*page);
-                arr.push(PdfObject::name_obj("XYZ"));
-                arr.push(PdfObject::num_or_null_obj(*left));
-                arr.push(PdfObject::num_or_null_obj(*top));
-                arr.push(PdfObject::num_or_null_obj(*zoom));
+                arr.push(PdfObject::name("XYZ"));
+                arr.push(PdfObject::num_or_null(*left));
+                arr.push(PdfObject::num_or_null(*top));
+                arr.push(PdfObject::num_or_null(*zoom));
             }
 
             FitDestination::Fit { page } => {
                 arr.push(*page);
-                arr.push(PdfObject::name_obj("Fit"));
+                arr.push(PdfObject::name("Fit"));
             }
 
             FitDestination::FitH { page, top } => {
                 arr.push(*page);
-                arr.push(PdfObject::name_obj("FitH"));
-                arr.push(PdfObject::num_or_null_obj(*top));
+                arr.push(PdfObject::name("FitH"));
+                arr.push(PdfObject::num_or_null(*top));
             }
 
             FitDestination::FitV { page, left } => {
                 arr.push(*page);
-                arr.push(PdfObject::name_obj("FitV"));
-                arr.push(PdfObject::num_or_null_obj(*left));
+                arr.push(PdfObject::name("FitV"));
+                arr.push(PdfObject::num_or_null(*left));
             }
 
             FitDestination::FitR { page, rect } => {
                 arr.push(*page);
-                arr.push(PdfObject::name_obj("FitR"));
+                arr.push(PdfObject::name("FitR"));
                 arr.push(rect.x1);
                 arr.push(rect.y1);
                 arr.push(rect.x2);

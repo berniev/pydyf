@@ -83,7 +83,7 @@ fn main() -> Result<(), PdfError> {
     root_tree.add_tree(new_tree)?;
 
     let path = "output.pdf";
-    pdf.finalise(path)?;
+    pdf.finalize(path)?;
 
     println!("Created {path}:\n\n{}", std::fs::read_to_string(path)?);
 

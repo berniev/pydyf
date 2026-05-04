@@ -1,11 +1,15 @@
-use std::fs::File;
-use std::io::{Seek, Write};
-use image::EncodableLayout;
-use crate::{NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject, PdfNullObject, PdfReferenceObject, PdfStreamObject, PdfStringObject};
 use crate::generation::Generation;
 use crate::objects::pdf_number::PdfNumberObject;
 use crate::version::Version;
 use crate::xref_ops::{ObjectStatus, XRefEntry, XRefOps};
+use crate::{
+    NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject,
+    PdfNullObject, PdfReferenceObject, PdfStreamObject, PdfStringObject,
+};
+use std::fs::File;
+use std::io::{Seek, Write};
+
+//--------------------------- ObjectOps -------------------------//
 
 pub struct ObjectOps {
     version: Version,
@@ -30,7 +34,17 @@ impl ObjectOps {
 
         self.last_object_number
     }
+
+    pub fn make_obj<T: Into<PdfObject>>(&self, value: T) -> PdfObject {
+        value.into()
+    }
+
+    pub fn version(&self) -> Version {
+        self.version
+    }
 }
+
+//--------------------------- ObjectNumber -------------------------//
 
 #[derive(Clone, Copy, Debug)]
 pub struct ObjectNumber {
@@ -73,6 +87,7 @@ impl Ord for ObjectNumber {
     }
 }
 
+//--------------------------- PdfObject -------------------------//
 #[derive(Clone)]
 pub enum PdfObject {
     Array(PdfArrayObject),
@@ -163,39 +178,32 @@ impl PdfObject {
         PdfError::StructureError(format!("Unexpected type: {}", self.type_name()))
     }
 
-    pub fn serialise(&self, xref: &mut XRefOps, file: &mut File) -> Result<(), PdfError> {
+    // only used by PdfDictionaryObject to gain access to the object number
+    pub fn serialize(
+        &self,
+        version: Version,
+        xref: &mut XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError> {
         if self.is_reference() || self.is_direct() {
             return Ok(());
         }
 
         // indirect object
-
-        let object_number = self.get_object_number().unwrap();
-
-        let mut vec = vec![];
-        vec.extend(object_number.to_string().as_bytes());
-        vec.extend(b" 0 obj\n");
-        vec.extend(match_pdf_object!(self, x => x.encode())?);
-        vec.extend(b"endobj\n\n");
-        file.write_all(&*vec)?;
-
-        let xref_ent = XRefEntry::new(
-            object_number,
-            file.stream_position()?,
-            ObjectStatus::InUse,
-            Generation::Normal,
-        );
-        xref.add_entry(xref_ent);
-
-        Ok(())
+        write_indirect_object(
+            self.get_object_number().unwrap(),
+            match_pdf_object!(self, x => x.encode(version))?,
+            xref,
+            file,
+        )
     }
 
-    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
         if self.is_indirect() && !self.is_reference() {
-            return PdfReferenceObject::new(self.get_object_number().unwrap()).encode();
+            return PdfReferenceObject::new(self.get_object_number().unwrap()).encode(version);
         }
-        
-        match_pdf_object!(&self, x => x.encode())
+
+        match_pdf_object!(&self, x => x.encode(version))
     }
 
     pub fn get_object_number(&self) -> Option<ObjectNumber> {
@@ -219,40 +227,35 @@ impl PdfObject {
     pub fn is_direct(&self) -> bool {
         !self.is_indirect()
     }
-    pub fn reference_obj(value: ObjectNumber) -> PdfObject {
-        PdfObject::Reference(PdfReferenceObject::new(value))
-    }
 
-    pub fn null_obj() -> PdfObject {
-        PdfObject::Null(PdfNullObject::new())
-    }
-
-    pub fn num_obj(value: impl Into<NumberType>) -> PdfObject {
+    // ----------------- builders ----------------------
+    
+    pub fn num(value: impl Into<NumberType>) -> PdfObject {
         PdfObject::Number(PdfNumberObject::new(value.into()))
     }
 
-    pub fn num_or_null_obj<T: Into<NumberType>>(value: Option<T>) -> PdfObject {
+    pub fn num_or_null<T: Into<NumberType>>(value: Option<T>) -> PdfObject {
         match value {
-            Some(v) => Self::num_obj(v),
-            None => Self::null_obj(),
+            Some(v) => Self::num(v),
+            None => PdfObject::Null(PdfNullObject::new()),
         }
     }
 
-    // disambiguate name from string
-    pub fn name_obj(value: &str) -> PdfObject {
+    // disambiguate name / string / text
+    pub fn name(value: &str) -> PdfObject {
         PdfObject::Name(PdfNameObject::new(value))
     }
 
-    pub fn string_obj(value: &str) -> PdfObject {
+    pub fn string(value: &str) -> PdfObject {
         PdfObject::String(PdfStringObject::new(value))
     }
 
-    pub fn string_text_obj(value: &str) -> PdfObject {
+    pub fn text(value: &str) -> PdfObject {
         PdfObject::String(PdfStringObject::new(value))
     }
 }
 
-//--------------------------- From impl -------------------------//
+//--------------------------- From<T> -------------------------//
 
 impl From<PdfArrayObject> for PdfObject {
     fn from(v: PdfArrayObject) -> Self {
@@ -311,6 +314,18 @@ impl From<PdfStringObject> for PdfObject {
 impl From<String> for PdfObject {
     fn from(v: String) -> Self {
         PdfObject::String(PdfStringObject::new(&v))
+    }
+}
+
+impl From<ObjectNumber> for PdfObject {
+    fn from(v: ObjectNumber) -> Self {
+        PdfObject::Reference(PdfReferenceObject::new(v))
+    }
+}
+
+impl From<()> for PdfObject {
+    fn from(_: ()) -> Self {
+        PdfObject::Null(PdfNullObject::new())
     }
 }
 
@@ -386,6 +401,8 @@ impl From<f64> for PdfObject {
     }
 }
 
+//--------------------------- misc -------------------------//
+
 // Array, Dictionary, Reference, Stream
 macro_rules! impl_obj_num_gen {
     ($ty:ty) => {
@@ -407,3 +424,26 @@ impl_obj_num_gen!(PdfDictionaryObject);
 impl_obj_num_gen!(PdfReferenceObject);
 impl_obj_num_gen!(PdfStreamObject);
 
+pub(crate) fn write_indirect_object(
+    object_number: ObjectNumber,
+    encoded: Vec<u8>,
+    xref: &mut XRefOps,
+    file: &mut File,
+) -> Result<(), PdfError> {
+    let mut vec = vec![];
+    let offset = file.stream_position()?;
+    vec.extend(object_number.to_string().as_bytes());
+    vec.extend(b" 0 obj\n");
+    vec.extend(encoded);
+    vec.extend(b"endobj\n\n");
+    file.write_all(&vec)?;
+
+    let xref_ent = XRefEntry::new(
+        object_number,
+        offset,
+        ObjectStatus::InUse,
+        Generation::Normal,
+    );
+    xref.add_entry(xref_ent);
+    Ok(())
+}

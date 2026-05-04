@@ -1,5 +1,6 @@
 use crate::object_ops::ObjectNumber;
 use crate::PdfError;
+use crate::version::Version;
 
 #[derive(Clone)]
 pub enum HostType {
@@ -25,7 +26,7 @@ impl PdfReferenceObject {
         }
     }
 
-    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self, _version:Version) -> Result<Vec<u8>, PdfError> {
         let gen_num = match &self.host_type {
             HostType::Standard { generation_number } => *generation_number,
             HostType::ObjectStream { .. } => 0,
@@ -47,18 +48,18 @@ mod tests {
     #[test]
     fn encode_reference() {
         let obj = PdfReferenceObject::new(ObjectNumber::new(5));
-        assert_eq!(obj.encode().unwrap(), b"5 0 R ");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"5 0 R ");
     }
 
     #[test]
     fn encode_reference_object_one() {
         let obj = PdfReferenceObject::new(ObjectNumber::new(1));
-        assert_eq!(obj.encode().unwrap(), b"1 0 R ");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"1 0 R ");
     }
 
     #[test]
     fn encode_reference_large_number() {
         let obj = PdfReferenceObject::new(ObjectNumber::new(999));
-        assert_eq!(obj.encode().unwrap(), b"999 0 R ");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"999 0 R ");
     }
 }

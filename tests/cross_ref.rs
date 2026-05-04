@@ -20,7 +20,7 @@ fn test_new_table_has_root_entry() {
 /*#[test]
 fn test_entry_formatting() {
     let entry = CrossReferenceEntry::new(1, ObjectStatus::InUse, 12345, Generation::Normal);
-    let formatted = entry.serialise();
+    let formatted = entry.serialize();
 
     // Check format: 10-digit offset, 5-digit generation, status, CRLF
     assert_eq!(formatted, "0000012345 00000 n \r\n");
@@ -29,7 +29,7 @@ fn test_entry_formatting() {
 /*#[test]
 fn test_root_entry_formatting() {
     let entry = CrossReferenceEntry::new(0, ObjectStatus::Free, 0, Generation::Root);
-    let formatted = entry.serialise();
+    let formatted = entry.serialize();
 
     // Root entry should have generation 65535
     let expected = format!("0000000000 {} f \r\n", Generation::Root.as_u16());
@@ -73,7 +73,7 @@ fn test_generation_equality() {
 /*#[test]
 fn test_large_offset_formatting() {
     let entry = CrossReferenceEntry::new(1, ObjectStatus::InUse, 9999999999, Generation::Normal);
-    let formatted = entry.serialise();
+    let formatted = entry.serialize();
 
     // Should handle 10-digit max value
     assert_eq!(formatted, "9999999999 00000 n \r\n");
@@ -83,7 +83,7 @@ fn test_large_offset_formatting() {
 fn test_free_entry_formatting() {
     // Free entry pointing to next free object at position 5
     let entry = CrossReferenceEntry::new(2, ObjectStatus::Free, 5, Generation::Normal);
-    let formatted = entry.serialise();
+    let formatted = entry.serialize();
 
     assert_eq!(formatted, "0000000005 00000 f \r\n");
 }

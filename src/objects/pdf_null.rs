@@ -1,4 +1,5 @@
 use crate::PdfError;
+use crate::version::Version;
 
 #[derive(Clone)]
 pub struct PdfNullObject {}
@@ -10,7 +11,7 @@ impl PdfNullObject {
 }
 
 impl PdfNullObject {
-    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
         Ok(vec![])
     }
 }
@@ -22,6 +23,6 @@ mod tests {
     #[test]
     fn encode_null() {
         let obj = PdfNullObject::new();
-        assert_eq!(obj.encode().unwrap(), b"");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"");
     }
 }

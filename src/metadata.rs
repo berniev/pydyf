@@ -34,7 +34,7 @@ impl Metadata {
     }
 
     fn add(mut self, key: &str, value: &str) -> Result<Self, PdfError> {
-        self.dictionary.add(key, PdfObject::string_obj(value))?;
+        self.dictionary.add(key, PdfObject::string(value))?;
 
         Ok(self)
     }

@@ -11,7 +11,7 @@ impl FileSpecification {
     }
 
     pub fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict.add("FS", PdfObject::name_obj(name))?;
+        self.dict.add("FS", PdfObject::name(name))?;
         Ok(self)
     }
 

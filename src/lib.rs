@@ -2,7 +2,7 @@ pub mod action;
 pub mod annotation;
 pub mod annotation_support;
 pub mod body;
-pub mod catalog;
+pub mod catalog_ops;
 pub mod color;
 pub mod cross_ref_stream;
 pub mod drawing_commands;

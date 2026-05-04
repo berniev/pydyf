@@ -1,4 +1,5 @@
 use crate::PdfError;
+use crate::version::Version;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct PdfNameObject {
@@ -31,7 +32,7 @@ impl PdfNameObject {
         result
     }
 
-    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
         let mut result = vec![b'/'];
         result.extend(&self.value);
         Ok(result)
@@ -45,18 +46,18 @@ mod tests {
     #[test]
     fn encode_simple_name() {
         let obj = PdfNameObject::new("Type");
-        assert_eq!(obj.encode().unwrap(), b"/Type");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"/Type");
     }
 
     #[test]
     fn encode_longer_name() {
         let obj = PdfNameObject::new("FlateDecode");
-        assert_eq!(obj.encode().unwrap(), b"/FlateDecode");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"/FlateDecode");
     }
 
     #[test]
     fn encode_empty_name() {
         let obj = PdfNameObject::new("");
-        assert_eq!(obj.encode().unwrap(), b"/");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"/");
     }
 }

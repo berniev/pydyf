@@ -1,4 +1,5 @@
 use crate::{NumberType, PdfError};
+use crate::version::Version;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PdfNumberObject {
@@ -30,7 +31,7 @@ impl PdfNumberObject {
         }
     }
 
-    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
         let mut arr = vec![];
         arr = match self.value {
             NumberType::Integer(i) => Vec::from(&*i.to_string().into_bytes()),
@@ -86,43 +87,43 @@ mod tests {
     #[test]
     fn encode_positive_integer() {
         let obj = PdfNumberObject::new(NumberType::Integer(42));
-        assert_eq!(obj.encode().unwrap(), b"42");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"42");
     }
 
     #[test]
     fn encode_negative_integer() {
         let obj = PdfNumberObject::new(NumberType::Integer(-7));
-        assert_eq!(obj.encode().unwrap(), b"-7");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"-7");
     }
 
     #[test]
     fn encode_zero_integer() {
         let obj = PdfNumberObject::new(NumberType::Integer(0));
-        assert_eq!(obj.encode().unwrap(), b"0");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"0");
     }
 
     #[test]
     fn encode_real() {
         let obj = PdfNumberObject::new(NumberType::Real(3.14));
-        assert_eq!(obj.encode().unwrap(), b"3.14");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"3.14");
     }
 
     #[test]
     fn encode_real_whole_number_strips_trailing() {
         let obj = PdfNumberObject::new(NumberType::Real(5.0));
-        assert_eq!(obj.encode().unwrap(), b"5");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"5");
     }
 
     #[test]
     fn encode_negative_real() {
         let obj = PdfNumberObject::new(NumberType::Real(-0.5));
-        assert_eq!(obj.encode().unwrap(), b"-0.5");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"-0.5");
     }
 
     #[test]
     fn encode_real_precision_four_decimals() {
         // 1.23456 → formatted as "1.2346" (4 decimal places, trailing zeros stripped)
         let obj = PdfNumberObject::new(NumberType::Real(1.23456));
-        assert_eq!(obj.encode().unwrap(), b"1.2346");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"1.2346");
     }
 }

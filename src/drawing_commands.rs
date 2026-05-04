@@ -432,7 +432,7 @@ impl DrawingCommands {
     }
 
     pub fn show_single_text_string(&mut self, text: &str) {
-        let cmd = format!("{} Tj", text);
+        let cmd = format!("({}) Tj", text);
         self.add(cmd.into_bytes());
     }
 

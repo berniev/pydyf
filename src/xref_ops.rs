@@ -55,7 +55,7 @@ impl XRefEntry {
     /// generation: 5-digit number padded with leading zeros
     /// status: n
     /// eol: 2-character end-of-line sequence
-    pub fn serialise(&self) -> Vec<u8> {
+    pub fn serialize(&self) -> Vec<u8> {
         format!(
             "{:010} {:05} {}\r\n",
             self.offset_or_next_free, self.generation.as_u16(), self.object_status
@@ -87,7 +87,7 @@ impl XRefOps {
             self.entries.push(entry);
     }
 
-    pub fn serialise(&mut self, file:&mut File) -> Result<(), PdfError> {
+    pub fn serialize(&mut self, file:&mut File) -> Result<(), PdfError> {
         if self.entries.is_empty() {
             return Err(XRefError::EmptyTable.into());
         }
@@ -106,7 +106,7 @@ impl XRefOps {
             .to_vec();
 
         for entry in &self.entries {
-            vec.extend(entry.serialise());
+            vec.extend(entry.serialize());
         }
 
         file.write_all(&vec)?;

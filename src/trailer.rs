@@ -11,17 +11,15 @@ ID       Array       Reqd*  If Encrypt entry present, else opt, but recommended.
                             A two-element array that uniquely identifies the document.
 Encrypt  Dictionary  Reqd*  If doc is encrypted. Specifies how the document is encrypted.
 */
-use crate::catalog::CatalogOps;
 use crate::encryption_ops::{
     bytes_to_pdf_hex_string, compute_data_hash, compute_encryption_values, EncryptionConfig,
 };
-use crate::object_ops::{ObjectOps, PdfObject};
+use crate::object_ops::{ObjectNumber, PdfObject};
 use crate::xref_ops::XRefOps;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
-use std::cell::RefCell;
 use std::fs::File;
 use std::io::Write;
-use std::rc::Rc;
+use crate::version::Version;
 
 pub struct Trailer {
     dictionary: PdfDictionaryObject,
@@ -29,8 +27,8 @@ pub struct Trailer {
 
 impl Trailer {
     pub fn new(
-        object_ops: Rc<RefCell<ObjectOps>>,
-        catalog_ops: &CatalogOps,
+        last_object_number: ObjectNumber,
+        catalog_object_number: ObjectNumber,
     ) -> Result<Self, PdfError> {
         let mut trailer = Trailer {
             dictionary: PdfDictionaryObject::new(),
@@ -38,10 +36,10 @@ impl Trailer {
 
         trailer
             .dictionary
-            .add("Size", object_ops.borrow().last_object_number().value() + 1)?;
+            .add("Size", last_object_number.value() + 1)?;
         trailer
             .dictionary
-            .add("Root", PdfObject::reference_obj(catalog_ops.catalog_id()))?;
+            .add("Root", catalog_object_number)?;
 
         Ok(trailer)
     }
@@ -52,7 +50,7 @@ impl Trailer {
 
         // Build /Encrypt dictionary
         let mut encrypt_dict = PdfDictionaryObject::new();
-        encrypt_dict.add("Filter", PdfObject::name_obj("Standard"))?;
+        encrypt_dict.add("Filter", PdfObject::name("Standard"))?;
         encrypt_dict.add("V", 1_i64)?;
         encrypt_dict.add("R", 2_i64)?;
         encrypt_dict.add("O", bytes_to_pdf_hex_string(&vals.o_value))?;
@@ -70,10 +68,10 @@ impl Trailer {
         Ok(self)
     }
 
-    pub fn serialise(&self, xref: &XRefOps, file: &mut File) -> Result<(), PdfError> {
+    pub fn serialize(&self, version: Version, xref: &XRefOps, file: &mut File) -> Result<(), PdfError> {
         let mut bytes: Vec<u8> = vec![];
         bytes.extend(b"\ntrailer\n");
-        bytes.extend(self.dictionary.encode()?);
+        bytes.extend(self.dictionary.encode(version)?);
         bytes.extend(format!("startxref\n{}\n%%EOF\n", xref.position).as_bytes());
 
         file.write_all(&bytes)?;

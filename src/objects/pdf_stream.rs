@@ -1,7 +1,10 @@
 use crate::PdfDictionaryObject;
 use crate::error::PdfError;
 use crate::object_ops::{ObjectNumber, PdfObject};
-pub use crate::util::{CompressionMethod, Dims, Matrix, Posn, StrokeOrFill, StreamString, WindingRule};
+pub use crate::util::{
+    CompressionMethod, Dims, Matrix, Posn, StreamString, StrokeOrFill, WindingRule,
+};
+use crate::version::Version;
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
 use std::io::Write as IoWrite;
@@ -109,7 +112,7 @@ impl PdfStreamObject {
     pub fn compressed(mut self) -> Result<Self, PdfError> {
         self.compression_method = CompressionMethod::Flate;
         self.dict
-            .add("Filter", PdfObject::name_obj("FlateDecode"))?;
+            .add("Filter", PdfObject::name("FlateDecode"))?;
 
         Ok(self)
     }
@@ -128,7 +131,7 @@ impl PdfStreamObject {
         self.content.extend(bytes);
     }
 
-    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
         let stream_bytes: Vec<u8> = match self.compression_method {
             CompressionMethod::None => self.content.clone(),
             CompressionMethod::Flate => {
@@ -142,7 +145,7 @@ impl PdfStreamObject {
         dict.add("Length", stream_bytes.len() as f64)?;
 
         let mut vec = vec![];
-        vec.extend(dict.encode()?);
+        vec.extend(dict.encode(version)?);
         vec.extend(b"stream\n");
         vec.extend(stream_bytes);
         vec.extend(b"\nendstream\n");
@@ -158,7 +161,7 @@ mod tests {
     #[test]
     fn encode_empty_stream() {
         let stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
-        let output = String::from_utf8(stream.encode().unwrap()).unwrap();
+        let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains("/Length 0"));
         assert!(output.contains("stream\n"));
         assert!(output.contains("\nendstream\n"));
@@ -169,7 +172,7 @@ mod tests {
         let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
         stream.add(b"some data".to_vec());
 
-        let output = String::from_utf8(stream.encode().unwrap()).unwrap();
+        let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains("/Length 9"));
         assert!(output.contains("stream\nsome data\nendstream\n"));
     }
@@ -179,7 +182,7 @@ mod tests {
         let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
         stream.add(b"some data".to_vec());
         stream.add(b"BT /F1 12 Tf ET".to_vec());
-        let output = String::from_utf8(stream.encode().unwrap()).unwrap();
+        let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains("/Length 24"));
         assert!(output.contains("BT /F1 12 Tf ET"));
     }
@@ -189,7 +192,7 @@ mod tests {
         let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
         let content = b"q 1 0 0 1 100 200 cm Q";
         stream.add(content.to_vec());
-        let output = String::from_utf8(stream.encode().unwrap()).unwrap();
+        let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains(&format!("/Length {}", content.len())));
     }
 
@@ -198,7 +201,7 @@ mod tests {
         let stream = PdfStreamObject::new()
             .with_object_number(ObjectNumber::new(1))
             .compressed();
-        let encoded = stream.expect("REASON").encode().unwrap();
+        let encoded = stream.expect("REASON").encode(Version::V1_5).unwrap();
         let contains = |needle: &[u8]| encoded.windows(needle.len()).any(|w| w == needle);
         assert!(contains(b"/Filter /FlateDecode"));
         assert!(contains(b"stream\n"));
@@ -210,10 +213,10 @@ mod tests {
         let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
         stream
             .dict
-            .add("Type", PdfObject::name_obj("XObject"))
+            .add("Type", PdfObject::name("XObject"))
             .expect("fail");
         stream.add(b"some data".to_vec());
-        let output = String::from_utf8(stream.encode().unwrap()).unwrap();
+        let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains("/Type /XObject"));
         assert!(output.contains("/Length 9"));
     }

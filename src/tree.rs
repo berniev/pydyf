@@ -58,7 +58,7 @@ impl Tree {
     pub fn set_kids(&mut self, new_kids: Vec<ObjectNumber>) -> Result<(), PdfError> {
         let mut arr = PdfArrayObject::new();
         for new_kid in new_kids {
-            arr.push(PdfObject::reference_obj(new_kid));
+            arr.push(new_kid);
         }
         self.dict.add("Kids", arr)?;
 
@@ -98,7 +98,7 @@ pub trait TreeKey: Sized {
 
 impl TreeKey for String {
     fn to_pdf_obj(self) -> PdfObject {
-        PdfObject::string_obj(&self)
+        PdfObject::string(&self)
     }
     fn entry_key_name() -> &'static str {
         "Names"
@@ -107,7 +107,7 @@ impl TreeKey for String {
 
 impl TreeKey for i64 {
     fn to_pdf_obj(self) -> PdfObject {
-        PdfObject::num_obj(self)
+        PdfObject::num(self)
     }
     fn entry_key_name() -> &'static str {
         "Nums"

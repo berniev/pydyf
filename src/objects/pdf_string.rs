@@ -13,8 +13,8 @@ impl PdfStringObject {
         }
     }
 
-    pub fn encode(&self) -> Result<Vec<u8>, PdfError> {
-        Ok(encode_text_string(&*self.value, Version::V1_5))
+    pub fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
+        Ok(encode_text_string(&*self.value, version))
     }
 }
 
@@ -70,19 +70,19 @@ mod tests {
     #[test]
     fn encode_simple_string() {
         let obj = PdfStringObject::new("Hello, World!");
-        assert_eq!(obj.encode().unwrap(), b"(Hello, World!)");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"(Hello, World!)");
     }
 
     #[test]
     fn encode_empty_string() {
         let obj = PdfStringObject::new("");
-        assert_eq!(obj.encode().unwrap(), b"()");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"()");
     }
 
     #[test]
     fn encode_string_with_newline() {
         let obj = PdfStringObject::new("line1\nline2");
-        assert_eq!(obj.encode().unwrap(), b"(line1\nline2)");
+        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"(line1\nline2)");
     }
 
     #[test]

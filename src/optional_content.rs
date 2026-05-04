@@ -88,11 +88,11 @@ impl OptionalContentGroup {
 
         if let Some(ref intent) = self.intent {
             if intent.len() == 1 {
-                dict.add("Intent", PdfObject::name_obj(&intent[0]))?;
+                dict.add("Intent", PdfObject::name(&intent[0]))?;
             } else {
                 let mut arr = PdfArrayObject::new();
                 for i in intent {
-                    arr.push(PdfObject::name_obj(i.as_str()));
+                    arr.push(PdfObject::name(i.as_str()));
                 }
                 dict.add("Intent", arr)?;
             }
@@ -105,7 +105,7 @@ impl OptionalContentGroup {
                 let mut print_dict = PdfDictionaryObject::new();
                 print_dict.add(
                     "PrintState",
-                    PdfObject::name_obj(match print.state {
+                    PdfObject::name(match print.state {
                         VisibilityInitialState::On => "ON",
                         VisibilityInitialState::Off => "OFF",
                     }),
@@ -115,7 +115,7 @@ impl OptionalContentGroup {
 
             if let Some(ref view) = usage.view {
                 let mut view_dict = PdfDictionaryObject::new();
-                view_dict.add("ViewState", PdfObject::name_obj(&*view.state.to_string()))?;
+                view_dict.add("ViewState", PdfObject::name(&*view.state.to_string()))?;
                 usage_dict.add("View", view_dict)?;
             }
 
@@ -123,7 +123,7 @@ impl OptionalContentGroup {
                 let mut export_dict = PdfDictionaryObject::new();
                 export_dict.add(
                     "ExportState",
-                    PdfObject::name_obj(match export.state {
+                    PdfObject::name(match export.state {
                         VisibilityInitialState::On => "ON",
                         VisibilityInitialState::Off => "OFF",
                     }),
@@ -204,7 +204,7 @@ impl OptionalContentConfig {
 
         dict.add(
             "BaseState",
-            PdfObject::name_obj(match self.base_state {
+            PdfObject::name(match self.base_state {
                 VisibilityInitialState::On => "ON",
                 VisibilityInitialState::Off => "OFF",
             }),

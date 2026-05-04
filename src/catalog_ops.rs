@@ -135,26 +135,24 @@ the things themselves (beyond trivial values).
 "Version",           1.4
 "ViewerPreferences", 1.2
 */
-use crate::object_ops::{ObjectNumber, ObjectOps, PdfObject};
+use crate::object_ops::ObjectNumber;
+use crate::page_ops::PageOps;
+use crate::version::Version;
 use crate::xref_ops::XRefOps;
 use crate::{PdfDictionaryObject, PdfError};
-use std::cell::RefCell;
 use std::fs::File;
-use std::rc::Rc;
-use crate::page_ops::PageOps;
 
 pub struct CatalogOps {
     dictionary: PdfDictionaryObject,
 }
 
 impl CatalogOps {
-    pub fn new(object_ops: Rc<RefCell<ObjectOps>>, page_ops: &mut PageOps) -> Result<Self, PdfError> {
-        let num = object_ops.borrow_mut().next_object_number();
+    pub fn new(object_number: ObjectNumber, page_ops: &mut PageOps) -> Result<Self, PdfError> {
        let mut dictionary = PdfDictionaryObject::new()
             .typed("Catalog")?
-            .with_object_number(num);
+            .with_object_number(object_number);
 
-        dictionary.add("Pages", PdfObject::reference_obj(page_ops.root_tree().object_number()))?;
+        dictionary.add("Pages", page_ops.root_tree().object_number())?;
 
         Ok(Self { dictionary })
     }
@@ -163,7 +161,7 @@ impl CatalogOps {
         self.dictionary.object_number.unwrap() // must succeed
     }
 
-    pub fn serialise(&mut self, xref_ops: &mut XRefOps, file: &mut File) -> Result<(), PdfError> {
-        self.dictionary.serialise(xref_ops, file)
+    pub fn serialize(&mut self, version: Version, xref_ops: &mut XRefOps, file: &mut File) -> Result<(), PdfError> {
+        self.dictionary.serialize(version, xref_ops, file)
     }
 }

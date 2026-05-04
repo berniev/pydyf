@@ -80,7 +80,7 @@ pub trait Annotation: Sized {
     }
 
     fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict().add("NM", PdfObject::name_obj(name))?;
+        self.dict().add("NM", PdfObject::name(name))?;
         Ok(self)
     }
 
@@ -100,7 +100,7 @@ pub trait Annotation: Sized {
     }
 
     fn with_appearance_state(mut self, app_state: &str) -> Result<Self, PdfError> {
-        self.dict().add("AS", PdfObject::name_obj(app_state))?;
+        self.dict().add("AS", PdfObject::name(app_state))?;
         Ok(self)
     }
 
@@ -143,7 +143,7 @@ impl TextAnnotation {
     }
 
     pub fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict.add("Name", PdfObject::name_obj(name))?;
+        self.dict.add("Name", PdfObject::name(name))?;
         Ok(self)
     }
 
@@ -228,7 +228,7 @@ impl FreeTextAnnotation {
         let mut ann_dict = make_annotation_dict("FreeText", rect)?;
         ann_dict.add("DA", default_appearance)?;
         ann_dict.add("IT", FreeTextIntent::FreeText as u8)?; // default
-        ann_dict.add("LE", PdfObject::name_obj("None"))?; // default
+        ann_dict.add("LE", PdfObject::name("None"))?; // default
 
         Ok(Self { dict: ann_dict })
     }
@@ -288,7 +288,7 @@ impl FreeTextAnnotation {
     }
 
     pub fn with_line_ending_style(mut self, style: &str) -> Result<Self, PdfError> {
-        self.dict.add("LE", PdfObject::name_obj(style))?;
+        self.dict.add("LE", PdfObject::name(style))?;
         Ok(self)
     }
 }
@@ -303,14 +303,14 @@ impl LineAnnotation {
         let mut dict = make_annotation_dict("Line", rect)?;
         dict.add("L", line.as_pdf_array_object())?;
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfObject::name_obj("None"));
-        arr.push(PdfObject::name_obj("None"));
+        arr.push(PdfObject::name("None"));
+        arr.push(PdfObject::name("None"));
         // defaults
         dict.add("LE", arr)?;
-        dict.add("LL", PdfObject::num_obj(0))?;
-        dict.add("LLE", PdfObject::num_obj(0))?;
+        dict.add("LL", PdfObject::num(0))?;
+        dict.add("LLE", PdfObject::num(0))?;
         dict.add("Cap", false)?;
-        dict.add("CP", PdfObject::name_obj("Inline"))?;
+        dict.add("CP", PdfObject::name("Inline"))?;
         dict.add("CO", PdfArrayObject::from_vec_f64(vec![0.0, 0.0]))?;
 
         Ok(Self {
@@ -325,8 +325,8 @@ impl LineAnnotation {
 
     pub fn with_line_ending_style(mut self, first: &str, second: &str) -> Result<Self, PdfError> {
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfObject::name_obj(first));
-        arr.push(PdfObject::name_obj(second));
+        arr.push(PdfObject::name(first));
+        arr.push(PdfObject::name(second));
         self.dict.add("LE", arr)?;
         Ok(self)
     }
@@ -337,12 +337,12 @@ impl LineAnnotation {
     }
 
     pub fn with_leader_lines_length(mut self, length: f64) -> Result<Self, PdfError> {
-        self.dict.add("LL", PdfObject::num_obj(length))?;
+        self.dict.add("LL", PdfObject::num(length))?;
         Ok(self)
     }
 
     pub fn with_leader_lines_extension_length(mut self, length: f64) -> Result<Self, PdfError> {
-        self.dict.add("LLE", PdfObject::num_obj(length))?;
+        self.dict.add("LLE", PdfObject::num(length))?;
         Ok(self)
     }
 
@@ -353,18 +353,18 @@ impl LineAnnotation {
 
     pub fn with_intent(mut self, intent: Intent) -> Result<Self, PdfError> {
         self.dict
-            .add("IT", PdfObject::name_obj(&*intent.to_string()))?;
+            .add("IT", PdfObject::name(&*intent.to_string()))?;
         Ok(self)
     }
 
     pub fn with_leader_line_offset_length(mut self, length: u64) -> Result<Self, PdfError> {
-        self.dict.add("LLO", PdfObject::num_obj(length))?;
+        self.dict.add("LLO", PdfObject::num(length))?;
         Ok(self)
     }
 
     pub fn with_caption_position(mut self, position: CaptionPosition) -> Result<Self, PdfError> {
         self.dict
-            .add("CP", PdfObject::name_obj(&*position.to_string()))?;
+            .add("CP", PdfObject::name(&*position.to_string()))?;
         Ok(self)
     }
 
@@ -474,8 +474,8 @@ impl PolyLineAnnotation {
         let mut dict = make_annotation_dict("PolyLine", rect)?;
         dict.add("Vertices", vertices)?;
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfObject::name_obj("None"));
-        arr.push(PdfObject::name_obj("None"));
+        arr.push(PdfObject::name("None"));
+        arr.push(PdfObject::name("None"));
         dict.add("LE", arr)?;
         Ok(Self { dict })
     }
@@ -487,8 +487,8 @@ impl PolyLineAnnotation {
             ));
         }
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfObject::name_obj(first));
-        arr.push(PdfObject::name_obj(second));
+        arr.push(PdfObject::name(first));
+        arr.push(PdfObject::name(second));
         self.dict.add("LE", arr)?;
         Ok(self)
     }
@@ -518,7 +518,7 @@ impl PolyLineAnnotation {
 
     pub fn with_intent(mut self, intent: Intent) -> Result<Self, PdfError> {
         self.dict
-            .add("IT", PdfObject::name_obj(&*intent.to_string()))?;
+            .add("IT", PdfObject::name(&*intent.to_string()))?;
         Ok(self)
     }
 
@@ -559,7 +559,7 @@ pub struct CaretAnnotation {
 impl CaretAnnotation {
     pub fn new(rect: Rectangle) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("Caret", rect)?;
-        dict.add("Sy", PdfObject::name_obj("None"))?;
+        dict.add("Sy", PdfObject::name("None"))?;
         Ok(Self { dict })
     }
 
@@ -594,7 +594,7 @@ impl CaretAnnotation {
     }
 
     pub fn with_symbol(mut self) -> Result<Self, PdfError> {
-        self.dict.add("Symbol", PdfObject::name_obj("P"))?;
+        self.dict.add("Symbol", PdfObject::name("P"))?;
         Ok(self)
     }
 }
@@ -607,12 +607,12 @@ pub struct StampAnnotation {
 impl StampAnnotation {
     pub fn new(rect: Rectangle) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("Stamp", rect)?;
-        dict.add("Name", PdfObject::name_obj("Draft"))?;
+        dict.add("Name", PdfObject::name("Draft"))?;
         Ok(Self { dict })
     }
 
     pub fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict.add("Name", PdfObject::name_obj(name))?;
+        self.dict.add("Name", PdfObject::name(name))?;
         Ok(self)
     }
 }
@@ -671,12 +671,12 @@ pub struct FileAttachmentAnnotation {
 impl FileAttachmentAnnotation {
     pub fn new(rect: Rectangle, file_spec: &str) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("FileAttachment", rect)?;
-        dict.add("FS", PdfObject::name_obj(file_spec))?;
+        dict.add("FS", PdfObject::name(file_spec))?;
         Ok(Self { dict })
     }
 
     pub fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict.add("Name", PdfObject::name_obj(name))?;
+        self.dict.add("Name", PdfObject::name(name))?;
         Ok(self)
     }
 }
@@ -694,7 +694,7 @@ impl SoundAnnotation {
     }
 
     pub fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict.add("Name", PdfObject::name_obj(name))?;
+        self.dict.add("Name", PdfObject::name(name))?;
         Ok(self)
     }
 }
@@ -835,7 +835,7 @@ impl PrintersMarkAnnotation {
     }
 
     pub fn with_type(mut self, type_: &str) -> Result<Self, PdfError> {
-        self.dict.add("MN", PdfObject::name_obj(type_))?;
+        self.dict.add("MN", PdfObject::name(type_))?;
         Ok(self)
     }
 }

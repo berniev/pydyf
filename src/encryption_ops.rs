@@ -14,7 +14,7 @@ commented out). Once object serialisation is wired in, the file ID will be a gen
 
 2. Stream/string encryption — the actual RC4 encryption of stream data and string values during 
 serialisation isn't implemented yet. That would require threading the encryption key through 
-the serialise call chain.
+the serialize call chain.
 
 3. Higher revisions — this implements R=2, V=1 (40-bit RC4). For AES-128 (V=4, R=4) 
 or AES-256 (V=5, R=6), the key derivation and encryption algorithms are more complex and would 
@@ -135,7 +135,7 @@ pub fn compute_data_hash(_objects: &[PdfObject]) -> (String, Vec<u8>) {
     let context = md5::Context::new();
     /*  for obj in objects {
             if obj.metadata().status != ObjectStatus::Free {
-                context.consume(obj.serialise());
+                context.consume(obj.serialize());
             }
         }
     */
