@@ -12,14 +12,14 @@ ID       Array       Reqd*  If Encrypt entry present, else opt, but recommended.
 Encrypt  Dictionary  Reqd*  If doc is encrypted. Specifies how the document is encrypted.
 */
 use crate::encryption_ops::{
-    bytes_to_pdf_hex_string, compute_data_hash, compute_encryption_values, EncryptionConfig,
+    EncryptionConfig, bytes_to_pdf_hex_string, compute_data_hash, compute_encryption_values,
 };
 use crate::object_ops::{ObjectNumber, PdfObject};
+use crate::version::Version;
 use crate::xref_ops::XRefOps;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
 use std::fs::File;
 use std::io::Write;
-use crate::version::Version;
 
 pub struct Trailer {
     dictionary: PdfDictionaryObject,
@@ -30,18 +30,11 @@ impl Trailer {
         last_object_number: ObjectNumber,
         catalog_object_number: ObjectNumber,
     ) -> Result<Self, PdfError> {
-        let mut trailer = Trailer {
-            dictionary: PdfDictionaryObject::new(),
-        };
+        let mut dictionary = PdfDictionaryObject::new();
+        dictionary.add("Size", last_object_number.value() + 1)?;
+        dictionary.add("Root", catalog_object_number)?;
 
-        trailer
-            .dictionary
-            .add("Size", last_object_number.value() + 1)?;
-        trailer
-            .dictionary
-            .add("Root", catalog_object_number)?;
-
-        Ok(trailer)
+        Ok(Self{dictionary})
     }
 
     pub fn encrypted(&mut self, config: &EncryptionConfig) -> Result<&mut Self, PdfError> {
@@ -68,7 +61,12 @@ impl Trailer {
         Ok(self)
     }
 
-    pub fn serialize(&self, version: Version, xref: &XRefOps, file: &mut File) -> Result<(), PdfError> {
+    pub fn serialize(
+        &mut self,
+        version: Version,
+        xref: &XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError> {
         let mut bytes: Vec<u8> = vec![];
         bytes.extend(b"\ntrailer\n");
         bytes.extend(self.dictionary.encode(version)?);
