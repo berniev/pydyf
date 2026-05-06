@@ -25,8 +25,8 @@ impl Pdf {
         let mut page_ops = PageOps::new(Rc::clone(&object_ops))?;
         let graphics_ops = GraphicsOps::new(Rc::clone(&object_ops));
         let catalog_object_number = object_ops.borrow_mut().next_object_number();
-        let catalog_ops = CatalogOps::new(catalog_object_number.clone(), &mut page_ops)?;
-        let trailer = Trailer::new(object_ops.borrow_mut().next_object_number())?;
+        let catalog_ops = CatalogOps::new(catalog_object_number, &mut page_ops)?;
+        let trailer = Trailer::new(catalog_object_number)?;
 
         let pdf = Pdf {
             version: Version::default(),
@@ -34,7 +34,7 @@ impl Pdf {
             page_ops,
             graphics_ops,
             catalog_ops,
-            xref_ops:XRefOps::new(),
+            xref_ops: XRefOps::new(),
             trailer,
         };
 
@@ -56,18 +56,22 @@ impl Pdf {
     pub fn finalize(&mut self, path: &str) -> Result<(), PdfError> {
         let mut build = || {
             self.trailer
-                .set_last_object_number(self.object_ops.borrow().last_object_number())?;
-            let mut xref_ops = XRefOps::new();
+                .set_size(self.object_ops.borrow().last_object_number().value() + 1)?;
+
             let mut file = File::create(path)?;
 
             header::serialize(self.version, &mut file)?;
+
             self.catalog_ops
-                .serialize(self.version, &mut xref_ops, &mut file)?;
+                .serialize(self.version, &mut self.xref_ops, &mut file)?;
+
             self.page_ops
-                .serialize(self.version, &mut xref_ops, &mut file)?;
-            xref_ops.serialize(&mut file)?;
+                .serialize(self.version, &mut self.xref_ops, &mut file)?;
+
+            self.xref_ops.serialize(&mut file)?;
+
             self.trailer
-                .serialize(self.version, &mut xref_ops, &mut file)?;
+                .serialize(self.version, &mut self.xref_ops, &mut file)?;
 
             Ok(())
         };

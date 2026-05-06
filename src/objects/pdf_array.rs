@@ -18,14 +18,6 @@ impl PdfArrayObject {
         }
     }
 
-    pub fn from_vec(values: Vec<PdfObject>) -> PdfArrayObject {
-        PdfArrayObject {
-            object_number: None,
-            generation_number: None,
-            values,
-        }
-    }
-
     pub fn from_vec_u32(values: Vec<u32>) -> PdfArrayObject {
         PdfArrayObject {
             object_number: None,
@@ -51,18 +43,28 @@ impl PdfArrayObject {
     }
 
     pub fn to_vec_f64(&self) -> Result<Vec<f64>, PdfError> {
-        self.values.iter().map(|v| v.as_f64()).collect()
+        self.values
+            .iter()
+            .map(|v| match v {
+                PdfObject::Number(n) => Ok(n.as_real()),
+                _ => Err(PdfError::StructureError("expected Number".to_string())),
+            })
+            .collect()
+    }
+
+    pub fn to_pdf_object(&self) -> PdfObject {
+        PdfObject::Array(self.clone())
     }
 
     pub fn push(&mut self, value: impl Into<PdfObject>) {
         self.values.push(value.into());
     }
 
-    pub fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError> {
         let mut arr = vec![];
         arr.push(b'[');
         arr.push(b' ');
-        for pdf_object in &self.values {
+        for pdf_object in &mut self.values {
             arr.extend(pdf_object.encode(version)?);
             arr.push(b' ');
         }
@@ -79,7 +81,7 @@ mod tests {
 
     #[test]
     fn encode_empty_array() {
-        let arr = PdfArrayObject::new();
+        let mut arr = PdfArrayObject::new();
         assert_eq!(arr.encode(Version::V1_5).unwrap(), b"[ ]");
     }
 

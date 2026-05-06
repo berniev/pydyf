@@ -27,16 +27,19 @@ pub struct Trailer {
 
 impl Trailer {
     pub fn new(
-        last_object_number: ObjectNumber,
         catalog_object_number: ObjectNumber,
     ) -> Result<Self, PdfError> {
         let mut dictionary = PdfDictionaryObject::new();
-        dictionary.add("Size", last_object_number.value() + 1)?;
         dictionary.add("Root", catalog_object_number)?;
 
         Ok(Self{dictionary})
     }
 
+    pub fn set_size(&mut self, size:u64) -> Result<(), PdfError>{
+        self.dictionary.add("Size", size)?;
+        Ok(())
+    }
+    
     pub fn encrypted(&mut self, config: &EncryptionConfig) -> Result<&mut Self, PdfError> {
         let (_hash_hex, file_id_bytes) = compute_data_hash(&[]);
         let vals = compute_encryption_values(config, &file_id_bytes);

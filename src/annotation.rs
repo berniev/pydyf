@@ -3,16 +3,19 @@
 //! Annotations are interactive elements that can be added to PDF pages, including
 //! text notes, links, highlights, and form widgets.
 
-use crate::annotation_support::{AdditionalActions, AppearanceCharacteristics, CaptionPosition, FreeTextIntent, HighlightingMode, Poly, Quadding, Shape, TextMarkupType};
+use crate::AnnotationFlags;
+use crate::annotation_support::{
+    AdditionalActions, AppearanceCharacteristics, CaptionPosition, FreeTextIntent,
+    HighlightingMode, Poly, Quadding, Shape, TextMarkupType,
+};
 use crate::color::ColorsInSpace;
 use crate::date::Date;
+use crate::object_ops::PdfObject;
 use crate::util::{Line, Rectangle};
-use crate::AnnotationFlags;
 use crate::{
     Intent, PdfArrayObject, PdfDictionaryObject, PdfError, PdfNameObject, PdfReferenceObject,
     PdfStreamObject,
 };
-use crate::object_ops::PdfObject;
 
 pub fn make_annotation_dict(
     subtype: &str,
@@ -153,8 +156,7 @@ impl TextAnnotation {
     }
 
     pub fn with_state_model(mut self, state_model: &str) -> Result<Self, PdfError> {
-        self.dict
-            .add("StateModel", state_model)?;
+        self.dict.add("StateModel", state_model)?;
         Ok(self)
     }
 }
@@ -352,8 +354,7 @@ impl LineAnnotation {
     }
 
     pub fn with_intent(mut self, intent: Intent) -> Result<Self, PdfError> {
-        self.dict
-            .add("IT", PdfObject::name(&*intent.to_string()))?;
+        self.dict.add("IT", PdfObject::name(&*intent.to_string()))?;
         Ok(self)
     }
 
@@ -393,11 +394,13 @@ impl LineAnnotation {
 
 pub struct ShapeAnnotation {
     dict: PdfDictionaryObject,
+    rect: Rectangle, // tmp
 }
 impl ShapeAnnotation {
     pub fn new(rect: Rectangle, shape: Shape) -> Result<Self, PdfError> {
         Ok(Self {
             dict: make_annotation_dict(&*shape.to_string(), rect)?,
+            rect,
         })
     }
 
@@ -431,11 +434,10 @@ impl ShapeAnnotation {
                 "Boundary offsets cannot be negative".to_string(),
             ));
         }
-        let rect_arr = self.dict.get("Rect").unwrap().as_vec_f64()?;
-        let rleft = rect_arr[0];
-        let rtop = rect_arr[1];
-        let rright = rect_arr[2];
-        let rbottom = rect_arr[3];
+        let rleft = self.rect.x1;
+        let rtop = self.rect.x2;
+        let rright = self.rect.y1;
+        let rbottom = self.rect.y1;
         if top + bottom >= rtop - rbottom || left + right >= rleft - rright {
             return Err(PdfError::InvalidArgument(
                 "Boundary offsets cannot be outside of the rectangle".to_string(),
@@ -517,8 +519,7 @@ impl PolyLineAnnotation {
     }
 
     pub fn with_intent(mut self, intent: Intent) -> Result<Self, PdfError> {
-        self.dict
-            .add("IT", PdfObject::name(&*intent.to_string()))?;
+        self.dict.add("IT", PdfObject::name(&*intent.to_string()))?;
         Ok(self)
     }
 
@@ -555,12 +556,13 @@ impl TextMarkupAnnotation {
 
 pub struct CaretAnnotation {
     dict: PdfDictionaryObject,
+    rect: Rectangle,
 }
 impl CaretAnnotation {
     pub fn new(rect: Rectangle) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("Caret", rect)?;
         dict.add("Sy", PdfObject::name("None"))?;
-        Ok(Self { dict })
+        Ok(Self { dict, rect })
     }
 
     pub fn with_rec_offsets(
@@ -575,11 +577,10 @@ impl CaretAnnotation {
                 "Rec offsets cannot be negative".to_string(),
             ));
         }
-        let rect_arr = self.dict.get("Rect").unwrap().as_vec_f64()?;
-        let rleft = rect_arr[0];
-        let rtop = rect_arr[1];
-        let rright = rect_arr[2];
-        let rbottom = rect_arr[3];
+        let rleft = self.rect.x1;
+        let rtop = self.rect.x2;
+        let rright = self.rect.y1;
+        let rbottom = self.rect.y2;
         if left > rright || right < rleft || top > rtop || bottom < rbottom {
             return Err(PdfError::InvalidArgument(
                 "Rec offsets are outside of annotation rectangle".to_string(),
@@ -852,8 +853,9 @@ impl TrapNetworkAnnotation {
         })
     }
 
-    pub fn with_last_modified(mut self, last_modified: Date)  -> Result<Self, PdfError> {
-        self.dict.add("LastModified", last_modified.to_pdf_string())?;
+    pub fn with_last_modified(mut self, last_modified: Date) -> Result<Self, PdfError> {
+        self.dict
+            .add("LastModified", last_modified.to_pdf_string())?;
         Ok(self)
     }
 }

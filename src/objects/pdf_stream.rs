@@ -1,12 +1,14 @@
 use crate::PdfDictionaryObject;
 use crate::error::PdfError;
-use crate::object_ops::{ObjectNumber, PdfObject};
+use crate::object_ops::{ObjectNumber, PdfObject, write_indirect_object};
 pub use crate::util::{
     CompressionMethod, Dims, Matrix, Posn, StreamString, StrokeOrFill, WindingRule,
 };
 use crate::version::Version;
+use crate::xref_ops::XRefOps;
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
+use std::fs::File;
 use std::io::Write as IoWrite;
 
 /// PDF content stream
@@ -111,8 +113,7 @@ impl PdfStreamObject {
 
     pub fn compressed(mut self) -> Result<Self, PdfError> {
         self.compression_method = CompressionMethod::Flate;
-        self.dict
-            .add("Filter", PdfObject::name("FlateDecode"))?;
+        self.dict.add("Filter", PdfObject::name("FlateDecode"))?;
 
         Ok(self)
     }
@@ -131,26 +132,43 @@ impl PdfStreamObject {
         self.content.extend(bytes);
     }
 
-    pub fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
-        let stream_bytes: Vec<u8> = match self.compression_method {
-            CompressionMethod::None => self.content.clone(),
+    pub fn encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError> {
+        let compressed: Vec<u8>;
+        let stream_bytes: &Vec<u8> = match self.compression_method {
+            CompressionMethod::None => &self.content,
             CompressionMethod::Flate => {
                 let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
                 encoder.write_all(&self.content)?;
-                encoder.finish()?
+                compressed = encoder.finish()?;
+                &compressed
             }
         };
 
-        let mut dict = self.dict.clone();
-        dict.add("Length", stream_bytes.len() as f64)?;
+        self.dict.add("Length", stream_bytes.len() as f64)?;
 
         let mut vec = vec![];
-        vec.extend(dict.encode(version)?);
+        vec.extend(self.dict.encode(version)?);
         vec.extend(b"stream\n");
         vec.extend(stream_bytes);
         vec.extend(b"\nendstream\n");
 
         Ok(vec)
+    }
+
+    pub fn serialize(
+        &mut self,
+        version: Version,
+        xref: &mut XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError> {
+        write_indirect_object(
+            self.object_number.unwrap(),
+            self.encode(version)?,
+            xref,
+            file,
+        )?;
+
+        Ok(())
     }
 }
 
@@ -160,7 +178,7 @@ mod tests {
 
     #[test]
     fn encode_empty_stream() {
-        let stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
+        let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
         let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains("/Length 0"));
         assert!(output.contains("stream\n"));

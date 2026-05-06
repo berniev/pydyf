@@ -3,8 +3,8 @@ use crate::objects::pdf_number::PdfNumberObject;
 use crate::version::Version;
 use crate::xref_ops::{ObjectStatus, XRefEntry, XRefOps};
 use crate::{
-    NumberType, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject,
-    PdfNullObject, PdfReferenceObject, PdfStreamObject, PdfStringObject,
+    PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject, PdfNullObject,
+    PdfNumberType, PdfReferenceObject, PdfStreamObject, PdfStringObject,
 };
 use std::fs::File;
 use std::io::{Seek, Write};
@@ -81,6 +81,14 @@ impl Ord for ObjectNumber {
     }
 }
 
+//--------------------------- trait -------------------------//
+
+pub trait PdfEncode {
+    fn encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError>;
+    fn object_number(&self) -> Option<ObjectNumber> { None }
+    fn is_indirect(&self) -> bool { self.object_number().is_some() }
+}
+
 //--------------------------- PdfObject -------------------------//
 #[derive(Clone)]
 pub enum PdfObject {
@@ -126,55 +134,8 @@ impl PdfObject {
         }
     }
 
-    pub fn as_integer(&self) -> Result<i64, PdfError> {
-        match self {
-            PdfObject::Number(n) => Ok(n.as_int()),
-            other => Err(Self::unexpected_type(other)),
-        }
-    }
-
-    pub fn as_f64(&self) -> Result<f64, PdfError> {
-        match self {
-            PdfObject::Number(n) => Ok(n.as_real()),
-            other => Err(Self::unexpected_type(other)),
-        }
-    }
-
-    pub fn as_vec_f64(&self) -> Result<Vec<f64>, PdfError> {
-        match self {
-            PdfObject::Array(a) => a.to_vec_f64(),
-            other => Err(Self::unexpected_type(other)),
-        }
-    }
-
-    pub fn as_string(&self) -> Result<&str, PdfError> {
-        match self {
-            PdfObject::String(s) => Ok(s.value.as_str()),
-            other => Err(Self::unexpected_type(other)),
-        }
-    }
-
-    pub fn as_name(&self) -> Result<Vec<u8>, PdfError> {
-        match self {
-            PdfObject::Name(n) => Ok(n.value.clone()),
-            other => Err(Self::unexpected_type(other)),
-        }
-    }
-
-    pub fn as_dict(&self) -> Result<&PdfDictionaryObject, PdfError> {
-        match self {
-            PdfObject::Dictionary(d) => Ok(d),
-            other => Err(Self::unexpected_type(other)),
-        }
-    }
-
-    fn unexpected_type(&self) -> PdfError {
-        PdfError::StructureError(format!("Unexpected type: {}", self.type_name()))
-    }
-
-    // only used by PdfDictionaryObject to gain access to the object number
     pub fn serialize(
-        &self,
+        &mut self,
         version: Version,
         xref: &mut XRefOps,
         file: &mut File,
@@ -192,12 +153,12 @@ impl PdfObject {
         )
     }
 
-    pub fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
+    pub fn encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError> {
         if self.is_indirect() && !self.is_reference() {
             return PdfReferenceObject::new(self.get_object_number().unwrap()).encode(version);
         }
 
-        match_pdf_object!(&self, x => x.encode(version))
+        match_pdf_object!(self, x => x.encode(version))
     }
 
     pub fn get_object_number(&self) -> Option<ObjectNumber> {
@@ -222,13 +183,13 @@ impl PdfObject {
         !self.is_indirect()
     }
 
-    // ----------------- builders ----------------------
+    // ----------------- disambiguating builders ----------------------
 
-    pub fn num(value: impl Into<NumberType>) -> PdfObject {
+    pub fn num(value: impl Into<PdfNumberType>) -> PdfObject {
         PdfObject::Number(PdfNumberObject::new(value.into()))
     }
 
-    pub fn num_or_null<T: Into<NumberType>>(value: Option<T>) -> PdfObject {
+    pub fn num_or_null<T: Into<PdfNumberType>>(value: Option<T>) -> PdfObject {
         match value {
             Some(v) => PdfObject::Number(PdfNumberObject::new(v.into())),
             None => PdfObject::Null(PdfNullObject::new()),
@@ -341,57 +302,57 @@ impl From<bool> for PdfObject {
     }
 }
 
-impl From<NumberType> for PdfObject {
-    fn from(v: NumberType) -> Self {
+impl From<PdfNumberType> for PdfObject {
+    fn from(v: PdfNumberType) -> Self {
         PdfObject::Number(PdfNumberObject::new(v))
     }
 }
 
 impl From<u8> for PdfObject {
     fn from(v: u8) -> Self {
-        PdfObject::from(NumberType::from(v))
+        PdfObject::from(PdfNumberType::from(v))
     }
 }
 
 impl From<u32> for PdfObject {
     fn from(v: u32) -> Self {
-        PdfObject::from(NumberType::from(v))
+        PdfObject::from(PdfNumberType::from(v))
     }
 }
 
 impl From<usize> for PdfObject {
     fn from(v: usize) -> Self {
-        PdfObject::from(NumberType::from(v))
+        PdfObject::from(PdfNumberType::from(v))
     }
 }
 
 impl From<u64> for PdfObject {
     fn from(v: u64) -> Self {
-        PdfObject::from(NumberType::from(v))
+        PdfObject::from(PdfNumberType::from(v))
     }
 }
 
 impl From<i32> for PdfObject {
     fn from(v: i32) -> Self {
-        PdfObject::from(NumberType::from(v))
+        PdfObject::from(PdfNumberType::from(v))
     }
 }
 
 impl From<i64> for PdfObject {
     fn from(v: i64) -> Self {
-        PdfObject::from(NumberType::from(v))
+        PdfObject::from(PdfNumberType::from(v))
     }
 }
 
 impl From<f32> for PdfObject {
     fn from(v: f32) -> Self {
-        PdfObject::from(NumberType::from(v))
+        PdfObject::from(PdfNumberType::from(v))
     }
 }
 
 impl From<f64> for PdfObject {
     fn from(v: f64) -> Self {
-        PdfObject::from(NumberType::from(v))
+        PdfObject::from(PdfNumberType::from(v))
     }
 }
 

@@ -156,7 +156,7 @@ impl PdfDictionaryObject {
     }
 
     pub fn serialize(
-        &self,
+        &mut self,
         version: Version,
         xref: &mut XRefOps,
         file: &mut File,
@@ -169,31 +169,31 @@ impl PdfDictionaryObject {
         )?;
 
         // serialize any indirect values (e.g. streams embedded in this dict)
-        for (_name, value) in &self.values {
+        for (_name, value) in &mut self.values {
             if value.is_indirect() {
-                value.serialize(version, xref, file)?;
+                value.serialize(version, xref, file)?; // the only call to object_ops.serialize()
             }
         }
 
-        for child in &self.children {
+        for child in &mut self.children {
             child.serialize(version, xref, file)?;
         }
 
         Ok(())
     }
 
-    pub fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
-        let mut arr = vec![];
-        arr.extend(b"<<\n");
-        for (pdf_name_obj, pdf_object) in &self.values {
-            arr.extend(pdf_name_obj.encode(version)?);
-            arr.push(b' ');
-            arr.extend(pdf_object.encode(version)?);
-            arr.extend(b"\n");
+    pub fn encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError> {
+        let mut bytes: Vec<u8> = vec![];
+        bytes.extend(b"<<\n");
+        for (pdf_name_obj, pdf_object) in &mut self.values {
+            bytes.extend(pdf_name_obj.encode(version)?);
+            bytes.push(b' ');
+            bytes.extend(pdf_object.encode(version)?);
+            bytes.extend(b"\n");
         }
-        arr.extend(b">>\n");
+        bytes.extend(b">>\n");
 
-        Ok(arr)
+        Ok(bytes)
     }
 }
 
@@ -223,7 +223,7 @@ mod tests {
 
     #[test]
     fn encode_empty_dictionary() {
-        let dict = PdfDictionaryObject::new();
+        let mut dict = PdfDictionaryObject::new();
         assert_eq!(dict.encode(Version::V1_5).unwrap(), b"<<\n>>\n");
     }
 
