@@ -139,7 +139,7 @@ use crate::object_ops::ObjectNumber;
 use crate::page_ops::PageOps;
 use crate::version::Version;
 use crate::xref_ops::XRefOps;
-use crate::{PdfDictionaryObject, PdfError};
+use crate::{PdfDictionaryObject, PdfError, PdfReferenceObject};
 use std::fs::File;
 
 pub struct CatalogOps {
@@ -152,7 +152,7 @@ impl CatalogOps {
             .typed("Catalog")?
             .with_object_number(object_number);
 
-        dictionary.add("Pages", page_ops.root_tree().object_number())?;
+        dictionary.add("Pages", PdfReferenceObject::new(page_ops.root_tree().object_number()));
 
         Ok(Self { dictionary })
     }

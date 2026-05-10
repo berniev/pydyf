@@ -5,6 +5,12 @@ use crate::version::Version;
 pub struct PdfStringObject {
     pub(crate) value: String,
 }
+enum PdfStringType {
+    Text,
+    PdfDoc,
+    Ascii,
+    Byte
+}
 
 impl PdfStringObject {
     pub fn new(value: &str) -> Self {
@@ -15,6 +21,10 @@ impl PdfStringObject {
 
     pub fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
         Ok(encode_text_string(&*self.value, version))
+    }
+
+    pub fn value(&self) -> &str {
+        &self.value
     }
 }
 
@@ -28,6 +38,9 @@ fn encode_text_string(string: &str, version: Version) -> Vec<u8> {
         encode_utf16(string)
     }
 }
+
+const BOM_UTF16: [u8; 2] = [0xFE, 0xFF];
+const BOM_UTF8: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
 fn encode_ascii(string: &str) -> Vec<u8> {
     let mut result: Vec<u8> = vec![];
@@ -44,7 +57,6 @@ fn encode_ascii(string: &str) -> Vec<u8> {
 }
 
 fn encode_utf16(string: &str) -> Vec<u8> {
-    const BOM_UTF16: [u8; 2] = [0xFE, 0xFF];
     let mut bytes = Vec::with_capacity(2 + string.len() * 2);
     bytes.extend(&BOM_UTF16);
     for unit in string.encode_utf16() {
@@ -54,7 +66,6 @@ fn encode_utf16(string: &str) -> Vec<u8> {
 }
 
 fn encode_utf8(string: &str) -> Vec<u8> {
-    const BOM_UTF8: [u8; 3] = [0xEF, 0xBB, 0xBF];
     let mut bytes = Vec::with_capacity(3 + string.len());
     bytes.extend(&BOM_UTF8);
     bytes.extend(string.as_bytes());

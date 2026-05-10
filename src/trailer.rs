@@ -14,10 +14,10 @@ Encrypt  Dictionary  Reqd*  If doc is encrypted. Specifies how the document is e
 use crate::encryption_ops::{
     EncryptionConfig, bytes_to_pdf_hex_string, compute_data_hash, compute_encryption_values,
 };
-use crate::object_ops::{ObjectNumber, PdfObject};
+use crate::object_ops::{ObjectNumber};
 use crate::version::Version;
 use crate::xref_ops::XRefOps;
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfNameObject, PdfReferenceObject, PdfStringObject};
 use std::fs::File;
 use std::io::Write;
 
@@ -30,36 +30,36 @@ impl Trailer {
         catalog_object_number: ObjectNumber,
     ) -> Result<Self, PdfError> {
         let mut dictionary = PdfDictionaryObject::new();
-        dictionary.add("Root", catalog_object_number)?;
+        dictionary.add("Root", PdfReferenceObject::new(catalog_object_number));
 
         Ok(Self{dictionary})
     }
 
     pub fn set_size(&mut self, size:u64) -> Result<(), PdfError>{
-        self.dictionary.add("Size", size)?;
+        self.dictionary.update_or_add("Size", size);
         Ok(())
     }
-    
+
     pub fn encrypted(&mut self, config: &EncryptionConfig) -> Result<&mut Self, PdfError> {
         let (_hash_hex, file_id_bytes) = compute_data_hash(&[]);
         let vals = compute_encryption_values(config, &file_id_bytes);
 
         // Build /Encrypt dictionary
         let mut encrypt_dict = PdfDictionaryObject::new();
-        encrypt_dict.add("Filter", PdfObject::name("Standard"))?;
-        encrypt_dict.add("V", 1_i64)?;
-        encrypt_dict.add("R", 2_i64)?;
-        encrypt_dict.add("O", bytes_to_pdf_hex_string(&vals.o_value))?;
-        encrypt_dict.add("U", bytes_to_pdf_hex_string(&vals.u_value))?;
-        encrypt_dict.add("P", vals.permissions as i64)?;
-        self.dictionary.add("Encrypt", encrypt_dict)?;
+        encrypt_dict.add("Filter", PdfNameObject::new("Standard"));
+        encrypt_dict.add("V", 1_i64);
+        encrypt_dict.add("R", 2_i64);
+        encrypt_dict.add("O", PdfStringObject::new(&*bytes_to_pdf_hex_string(&vals.o_value)));
+        encrypt_dict.add("U", PdfStringObject::new(&*bytes_to_pdf_hex_string(&vals.u_value)));
+        encrypt_dict.add("P", vals.permissions as i64);
+        self.dictionary.add("Encrypt", encrypt_dict);
 
         // Build /ID array
         let id_hex = bytes_to_pdf_hex_string(&file_id_bytes);
         let mut id_array = PdfArrayObject::new();
         id_array.push(id_hex.clone());
         id_array.push(id_hex);
-        self.dictionary.add("ID", id_array)?;
+        self.dictionary.add("ID", id_array);
 
         Ok(self)
     }

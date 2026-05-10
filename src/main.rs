@@ -45,7 +45,7 @@ fn main() -> Result<(), PdfError> {
     cmd.show_single_text_string("Third text line");
     cmd.end_text();
 
-    let root_tree = pdf.page_ops.root_tree();
+    let root_tree = pdf.page_ops.root_tree_mut();
 
     root_tree.add_page_using(cmd.read())?;
     root_tree.add_page_using(cmd.flush())?;

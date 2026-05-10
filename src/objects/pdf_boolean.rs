@@ -8,9 +8,7 @@ pub struct PdfBooleanObject {
 
 impl PdfBooleanObject {
     pub fn new(value: bool) -> Self {
-        Self {
-            value,
-        }
+        Self { value }
     }
 
     pub fn set(&mut self, value: bool) {
@@ -26,24 +24,25 @@ impl PdfBooleanObject {
 
 #[cfg(test)]
 mod tests {
+    use crate::object_ops::PdfEncode;
     use super::*;
 
     #[test]
     fn encode_true() {
-        let obj = PdfBooleanObject::new(true);
-        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"true");
+        let mut obj = PdfBooleanObject::new(true);
+        assert_eq!(obj.pdf_encode(Version::V1_5).unwrap(), b"true");
     }
 
     #[test]
     fn encode_false() {
-        let obj = PdfBooleanObject::new(false);
-        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"false");
+        let mut obj = PdfBooleanObject::new(false);
+        assert_eq!(obj.pdf_encode(Version::V1_5).unwrap(), b"false");
     }
 
     #[test]
     fn encode_after_set() {
         let mut obj = PdfBooleanObject::new(true);
         obj.set(false);
-        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"false");
+        assert_eq!(obj.pdf_encode(Version::V1_5).unwrap(), b"false");
     }
 }

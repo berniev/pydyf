@@ -24,7 +24,7 @@ impl Pdf {
         let object_ops = Rc::new(RefCell::new(ObjectOps::new()));
         let mut page_ops = PageOps::new(Rc::clone(&object_ops))?;
         let graphics_ops = GraphicsOps::new(Rc::clone(&object_ops));
-        let catalog_object_number = object_ops.borrow_mut().next_object_number();
+        let catalog_object_number = object_ops.borrow_mut().increment_object_number();
         let catalog_ops = CatalogOps::new(catalog_object_number, &mut page_ops)?;
         let trailer = Trailer::new(catalog_object_number)?;
 
@@ -56,7 +56,7 @@ impl Pdf {
     pub fn finalize(&mut self, path: &str) -> Result<(), PdfError> {
         let mut build = || {
             self.trailer
-                .set_size(self.object_ops.borrow().last_object_number().value() + 1)?;
+                .set_size(self.object_ops.borrow().object_number().value() + 1)?;
 
             let mut file = File::create(path)?;
 

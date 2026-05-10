@@ -1,5 +1,5 @@
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
-use crate::object_ops::PdfObject;
+use crate::object_ops::PdfEncode;
 //--------------------------- ShadingType ----------------------//
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -18,20 +18,20 @@ pub enum ShadingType {
 pub trait ShadingBase {
     fn dict_mut(&mut self) -> &mut PdfDictionaryObject;
 
-    fn with_background(mut self, background: PdfObject) -> Result<Self, PdfError>
+    fn with_background(mut self, background: impl Into<Box<dyn PdfEncode>>) -> Result<Self, PdfError>
     where
         Self: Sized,
     {
-        self.dict_mut().add("Background", background)?;
+        self.dict_mut().add("Background", background);
 
         Ok(self)
     }
 
-    fn with_bbox(mut self, bbox: PdfObject) -> Result<Self, PdfError>
+    fn with_bbox(mut self, bbox: impl Into<Box<dyn PdfEncode>>) -> Result<Self, PdfError>
     where
         Self: Sized,
     {
-        self.dict_mut().add("BBox", bbox)?;
+        self.dict_mut().add("BBox", bbox);
 
         Ok(self)
     }
@@ -40,7 +40,7 @@ pub trait ShadingBase {
     where
         Self: Sized,
     {
-        self.dict_mut().add("AntiAlias", value)?;
+        self.dict_mut().add("AntiAlias", value);
 
         Ok(self)
     }
@@ -48,10 +48,10 @@ pub trait ShadingBase {
 
 //--------------------------- builder ----------------------//
 
-fn make_shading(color_space: PdfObject, shading_type: ShadingType) -> Result<PdfDictionaryObject, PdfError> {
+fn make_shading(color_space: impl Into<Box<dyn PdfEncode>>, shading_type: ShadingType) -> Result<PdfDictionaryObject, PdfError> {
     let mut dict = PdfDictionaryObject::new();
-    dict.add("ShadingType", shading_type as i64)?;
-    dict.add("ColorSpace", color_space)?;
+    dict.add("ShadingType", shading_type as i64);
+    dict.add("ColorSpace", color_space);
 
     Ok(dict)
 }
@@ -69,21 +69,21 @@ impl ShadingBase for Shading1Function {
 }
 
 impl Shading1Function {
-    pub fn new(color_space: PdfObject, function: PdfDictionaryObject) -> Result<Self, PdfError> {
+    pub fn new(color_space: impl Into<Box<dyn PdfEncode>>, function: PdfDictionaryObject) -> Result<Self, PdfError> {
         let mut dictionary = make_shading(color_space, ShadingType::Function)?;
-        dictionary.add("Function", function)?;
+        dictionary.add("Function", function);
 
         Ok(Self { dictionary })
     }
 
     pub fn with_domain(mut self, domain: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Domain", domain)?;
+        self.dictionary.add("Domain", domain);
 
         Ok(self)
     }
 
     pub fn with_matrix(mut self, matrix: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Matrix", matrix)?;
+        self.dictionary.add("Matrix", matrix);
 
         Ok(self)
     }
@@ -103,25 +103,25 @@ impl ShadingBase for Shading2Axial {
 
 impl Shading2Axial {
     pub fn new(
-        color_space: PdfObject,
+        color_space: impl Into<Box<dyn PdfEncode>>,
         coords: PdfArrayObject,
         function: PdfDictionaryObject,
     ) -> Result<Self, PdfError> {
         let mut dictionary = make_shading(color_space, ShadingType::Axial)?;
-        dictionary.add("Coords", coords)?;
-        dictionary.add("Function", function)?;
+        dictionary.add("Coords", coords);
+        dictionary.add("Function", function);
 
         Ok(Self { dictionary })
     }
 
     pub fn with_domain(mut self, domain: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Domain", domain)?;
+        self.dictionary.add("Domain", domain);
 
         Ok(self)
     }
 
     pub fn with_extend(mut self, extend: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Extend", extend)?;
+        self.dictionary.add("Extend", extend);
 
         Ok(self)
     }
@@ -140,21 +140,21 @@ impl ShadingBase for Shading3Radial {
 }
 
 impl Shading3Radial {
-    pub fn new(color_space: PdfObject, function: PdfDictionaryObject) -> Result<Self, PdfError> {
+    pub fn new(color_space: impl Into<Box<dyn PdfEncode>>, function: PdfDictionaryObject) -> Result<Self, PdfError> {
         let mut dictionary = make_shading(color_space, ShadingType::Radial)?;
-        dictionary.add("Function", function)?;
+        dictionary.add("Function", function);
 
         Ok(Self { dictionary })
     }
 
     pub fn with_domain(mut self, domain: PdfArrayObject) -> Result<Self,PdfError> {
-        self.dictionary.add("Domain", domain)?;
+        self.dictionary.add("Domain", domain);
 
         Ok(self)
     }
 
     pub fn with_extend(mut self, extend: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Extend", extend)?;
+        self.dictionary.add("Extend", extend);
 
         Ok(self)
     }
@@ -174,23 +174,23 @@ impl ShadingBase for Shading4FreeFormGouraud {
 
 impl Shading4FreeFormGouraud {
     pub fn new(
-        color_space: PdfObject,
+        color_space: impl Into<Box<dyn PdfEncode>>,
         bits_per_coordinate: u64,
         bits_per_component: u64,
         bits_per_flag: u64,
         decode: PdfArrayObject,
     ) -> Result<Self, PdfError> {
         let mut dictionary = make_shading(color_space, ShadingType::FreeFormGouraud)?;
-        dictionary.add("BitsPerCordinate", bits_per_component)?;
-        dictionary.add("BitsPerComponent", bits_per_coordinate)?;
-        dictionary.add("BitsPerFlag", bits_per_flag)?;
-        dictionary.add("Decode", decode)?;
+        dictionary.add("BitsPerCordinate", bits_per_component);
+        dictionary.add("BitsPerComponent", bits_per_coordinate);
+        dictionary.add("BitsPerFlag", bits_per_flag);
+        dictionary.add("Decode", decode);
 
         Ok(Self { dictionary })
     }
 
     pub fn with(mut self, function: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Function", function)?;
+        self.dictionary.add("Function", function);
 
         Ok(self)
     }
@@ -210,23 +210,23 @@ impl ShadingBase for Shading5LatticeGouraud {
 
 impl Shading5LatticeGouraud {
     pub fn new(
-        color_space: PdfObject,
+        color_space: impl Into<Box<dyn PdfEncode>>,
         bits_per_coordinate: u64,
         bits_per_component: u64,
         vertices_per_row: u64,
         decode: PdfArrayObject,
     ) -> Result<Self, PdfError> {
         let mut dictionary = make_shading(color_space, ShadingType::LatticeGouraud)?;
-        dictionary.add("BitsPerCordinate", bits_per_component)?;
-        dictionary.add("BitsPerComponent", bits_per_coordinate)?;
-        dictionary.add("VerticesPerRow", vertices_per_row)?;
-        dictionary.add("Decode", decode)?;
+        dictionary.add("BitsPerCordinate", bits_per_component);
+        dictionary.add("BitsPerComponent", bits_per_coordinate);
+        dictionary.add("VerticesPerRow", vertices_per_row);
+        dictionary.add("Decode", decode);
 
         Ok(Self { dictionary })
     }
 
     pub fn with(mut self, function: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Function", function)?;
+        self.dictionary.add("Function", function);
 
         Ok(self)
     }
@@ -235,16 +235,16 @@ impl Shading5LatticeGouraud {
 //--------------------------- patch shading ----------------------//
 
 fn make_patch_shading(
-    color_space: PdfObject,
+    color_space: impl Into<Box<dyn PdfEncode>>,
     shading_type: ShadingType,
     bits_per_coordinate: i64,
     bits_per_component: i64,
     bits_per_flag: i64,
 ) -> Result<PdfDictionaryObject, PdfError> {
     let mut dictionary = make_shading(color_space, shading_type)?;
-    dictionary.add("BitsPerCoordinate", bits_per_coordinate)?;
-    dictionary.add("BitsPerComponent", bits_per_component)?;
-    dictionary.add("BitsPerFlag", bits_per_flag)?;
+    dictionary.add("BitsPerCoordinate", bits_per_coordinate);
+    dictionary.add("BitsPerComponent", bits_per_component);
+    dictionary.add("BitsPerFlag", bits_per_flag);
 
     Ok(dictionary)
 }
@@ -263,7 +263,7 @@ impl ShadingBase for Shading6CoonsPatch {
 
 impl Shading6CoonsPatch {
     pub fn new(
-        color_space: PdfObject,
+        color_space: impl Into<Box<dyn PdfEncode>>,
         bits_per_coordinate: i64,
         bits_per_component: i64,
         bits_per_flag: i64,
@@ -280,13 +280,13 @@ impl Shading6CoonsPatch {
     }
 
     pub fn with_decode(mut self, decode: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Decode", decode)?;
+        self.dictionary.add("Decode", decode);
 
         Ok(self)
     }
 
     pub fn with_function(mut self, function: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Function", function)?;
+        self.dictionary.add("Function", function);
 
         Ok(self)
     }
@@ -306,7 +306,7 @@ impl ShadingBase for Shading7TensorPatch {
 
 impl Shading7TensorPatch {
     pub fn new(
-        color_space: PdfObject,
+        color_space: impl Into<Box<dyn PdfEncode>>,
         bits_per_coordinate: i64,
         bits_per_component: i64,
         bits_per_flag: i64,
@@ -323,13 +323,13 @@ impl Shading7TensorPatch {
     }
 
     pub fn with_decode(mut self, decode: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Decode", decode)?;
+        self.dictionary.add("Decode", decode);
 
         Ok(self)
     }
 
     pub fn with_function(mut self, function: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Function", function)?;
+        self.dictionary.add("Function", function);
 
         Ok(self)
     }

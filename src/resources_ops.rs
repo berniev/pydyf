@@ -77,8 +77,7 @@ Likewise, the XObject subdict associates the names Im1 and Im2 with objects 13 a
 
 */
 
-#[derive(Clone)]
-pub struct NamedResources { 
+pub struct NamedResources {
     dictionary: PdfDictionaryObject,
 }
 
@@ -91,24 +90,24 @@ impl NamedResources {
 
     pub fn with_standard_fonts() -> Result<Self, PdfError> {
         let mut res = Self::new();
-        res.dictionary.add("Font", fonts::standard_fonts_dict()?)?;
+        res.dictionary.add("Font", fonts::standard_fonts_dict()?);
 
         Ok(res)
     }
 
-    // returns generated resource name
     pub fn add(&mut self, cat: ResourceCategory, object_id: u64) -> String {
         let cat_str = cat.as_str();
         let name = format!("{}{}", cat.prefix(), self.category_count(cat));
-        let mut cat_dict = self
-            .dictionary
-            .get_dict(cat_str)
-            .ok()
-            .cloned()
-            .unwrap_or_else(PdfDictionaryObject::new);
 
-        cat_dict.update_or_add(&*name, object_id);
-        self.dictionary.update_or_add(cat_str, cat_dict);
+        if !self.dictionary.contains_key(cat_str) {
+            self.dictionary.add(cat_str, PdfDictionaryObject::new());
+        }
+
+        if let Some(entry) = self.dictionary.get_mut(cat_str) {
+            if let Some(cat_dict) = entry.as_any_mut().downcast_mut::<PdfDictionaryObject>() {
+                cat_dict.update_or_add(&name, object_id);
+            }
+        }
 
         name
     }
@@ -125,7 +124,6 @@ impl NamedResources {
         self.dictionary
             .get_dict(cat.as_str())
             .map_or(0, |d| d.len())
-        // todo bad to rely on len (eg an entry is deleted) use HashMap<ResourceCategory, usize> ?
     }
 
     pub fn is_empty(&self) -> bool {

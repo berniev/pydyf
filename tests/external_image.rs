@@ -30,8 +30,7 @@ fn test_external_image_from_file() {
     img.save("/tmp/pydyf_test/gradient.png").unwrap();
 
     let pdf = Pdf::new().expect("Failed to create PDF");
-    let mut _stream =
-        PdfStreamObject::new().with_object_number(pdf.object_ops.borrow_mut().next_object_number());
+    let _stream = PdfStreamObject::new(pdf.object_ops.borrow_mut().increment_object_number());
 
     let mut cmd = DrawingCommands::new();
     cmd.push();

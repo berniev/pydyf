@@ -32,6 +32,9 @@ impl PdfNameObject {
         result
     }
 
+    pub fn as_vec(&self) -> &Vec<u8> {
+        &self.value
+    }
     pub fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
         let mut result = vec![b'/'];
         result.extend(&self.value);

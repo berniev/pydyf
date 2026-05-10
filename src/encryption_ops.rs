@@ -22,7 +22,7 @@ need additional work in encryption_ops.rs and in encryption.rs (which currently 
 EncryptionAlgorithm enum).
 */
 use crate::file_identifier::FileIdentifierMode;
-use crate::object_ops::PdfObject;
+use crate::object_ops::PdfEncode;
 
 const PDF_PASSWORD_PADDING: [u8; 32] = [
     0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 0x64, 0x00, 0x4B, 0x49, 0xC1, 0xF1, 0x52, 0x28,
@@ -131,7 +131,7 @@ pub fn compute_encryption_values(
 }
 
 /// Computes MD5 hash of all non-free objects and returns both hex string and raw bytes.
-pub fn compute_data_hash(_objects: &[PdfObject]) -> (String, Vec<u8>) {
+pub fn compute_data_hash(_objects: &[Box<dyn PdfEncode>]) -> (String, Vec<u8>) {
     let context = md5::Context::new();
     /*  for obj in objects {
             if obj.metadata().status != ObjectStatus::Free {

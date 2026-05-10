@@ -60,62 +60,62 @@ pub struct AppearanceCharacteristics {
 impl AppearanceCharacteristics {
     pub fn new() -> Result<Self, PdfError> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("R", 0)?;
+        dict.add("R", 0);
         Ok(Self { dict })
     }
 
     pub fn with_rotation(&mut self, rotation: i32) -> Result<&mut Self, PdfError> {
-        self.dict.add("R", rotation)?;
+        self.dict.add("R", rotation);
         Ok(self)
     }
 
     pub fn with_border_color(&mut self, color: ColorsInSpace) -> Result<&mut Self, PdfError> {
-        self.dict.add("BC", color.as_pdf_array())?;
+        self.dict.add("BC", color.as_pdf_array());
         Ok(self)
     }
 
     pub fn with_background_color(&mut self, color: ColorsInSpace) -> Result<&mut Self, PdfError> {
-        self.dict.add("BG", color.as_pdf_array())?;
+        self.dict.add("BG", color.as_pdf_array());
         Ok(self)
     }
 
     pub fn with_caption(&mut self, caption: &str) -> Result<&mut Self, PdfError> {
-        self.dict.add("C", caption)?;
+        self.dict.add("C", PdfStringObject::new(caption));
         Ok(self)
     }
 
     pub fn with_rollover_caption(&mut self, caption: &str) -> Result<&mut Self, PdfError> {
-        self.dict.add("RC", caption)?;
+        self.dict.add("RC", PdfStringObject::new(caption));
         Ok(self)
     }
 
     pub fn with_alternate_caption(&mut self, caption: &str) -> Result<&mut Self, PdfError> {
-        self.dict.add("AC", caption)?;
+        self.dict.add("AC", PdfStringObject::new(caption));
         Ok(self)
     }
 
     pub fn with_normal_icon(&mut self, icon: PdfReferenceObject) -> Result<&mut Self, PdfError> {
-        self.dict.add("I", icon)?;
+        self.dict.add("I", icon);
         Ok(self)
     }
 
     pub fn with_rollover_icon(&mut self, icon: PdfReferenceObject) -> Result<&mut Self, PdfError> {
-        self.dict.add("RI", icon)?;
+        self.dict.add("RI", icon);
         Ok(self)
     }
 
     pub fn with_alternate_icon(&mut self, icon: PdfReferenceObject) -> Result<&mut Self, PdfError> {
-        self.dict.add("IX", icon)?;
+        self.dict.add("IX", icon);
         Ok(self)
     }
 
     pub fn with_icon_fir(mut self, icon_fir: PdfReferenceObject) -> Result<Self, PdfError> {
-        self.dict.add("IF", icon_fir)?;
+        self.dict.add("IF", icon_fir);
         Ok(self)
     }
 
     pub fn with_caption_posn(&mut self, posn: CaptionPosition) -> Result<&mut Self, PdfError> {
-        self.dict.add("CP", posn.to_string())?;
+        self.dict.add("CP", PdfStringObject::new(&*posn.to_string()));
         Ok(self)
     }
 }
@@ -272,12 +272,12 @@ impl BoxColorInformation {
     }
 
     pub fn with_crop_box(&mut self, box_style: BoxStyle) -> Result<&mut Self, PdfError> {
-        self.dict.add("C", box_style.dict)?;
+        self.dict.add("C", box_style.dict);
         Ok(self)
     }
 
     pub fn with_bleed_box(&mut self, box_style: BoxStyle) -> Result<&mut Self, PdfError> {
-        self.dict.add("B", box_style.dict)?;
+        self.dict.add("B", box_style.dict);
         Ok(self)
     }
 }
@@ -288,31 +288,38 @@ pub struct BoxStyle {
 impl BoxStyle {
     pub fn new() -> Result<Self, PdfError> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("C", RGB::BLACK.as_pdf_array())?;
-        dict.add("W", 1.0)?;
-        dict.add("S", GuidelineStyle::Solid.as_string())?;
-        dict.add("D", PdfArrayObject::from_vec_f32(vec![3.0]))?;
+        dict.add("C", RGB::BLACK.as_pdf_array());
+        dict.add("W", 1.0);
+        dict.add("S", PdfStringObject::new(GuidelineStyle::Solid.as_string()));
+        let mut arr = PdfArrayObject::new();
+        arr.push(3.0);
+        dict.add("D", arr);
 
         Ok(Self { dict })
     }
 
     pub fn with_color(&mut self, rgb: RGB) -> Result<&mut Self, PdfError> {
-        self.dict.add("C", rgb.as_pdf_array())?;
+        self.dict.add("C", rgb.as_pdf_array());
         Ok(self)
     }
 
     pub fn with_guideline_width(&mut self, width: f32) -> Result<&mut Self, PdfError> {
-        self.dict.add("W", width)?;
+        self.dict.add("W", width);
         Ok(self)
     }
 
     pub fn with_guideline_style(&mut self, style: GuidelineStyle) -> Result<&mut Self, PdfError> {
-        self.dict.add("S", style.as_string())?;
+        self.dict
+            .add("S", PdfStringObject::new(style.as_string()));
         Ok(self)
     }
 
     pub fn with_dash_pattern(&mut self, pattern: Vec<f32>) -> Result<&mut Self, PdfError> {
-        self.dict.add("D", PdfArrayObject::from_vec_f32(pattern))?;
+        let mut arr = PdfArrayObject::new();
+        for i in pattern {
+            arr.push(i);
+        }
+        self.dict.add("D", arr);
         Ok(self)
     }
 }
@@ -336,14 +343,14 @@ pub struct Separation {
 impl Separation {
     pub fn new(pages: PdfArrayObject, device_colorant: &str) -> Result<Self, PdfError> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("Pages", pages)?;
-        dict.add("DeviceColorant", device_colorant)?;
+        dict.add("Pages", pages);
+        dict.add("DeviceColorant", PdfStringObject::new(device_colorant));
 
         Ok(Self { dict })
     }
 
     pub fn with_color_space(&mut self, color_space: PdfArrayObject) -> Result<&mut Self, PdfError> {
-        self.dict.add("ColorSpace", color_space)?;
+        self.dict.add("ColorSpace", color_space);
         Ok(self)
     }
 }
@@ -357,23 +364,23 @@ impl OutputIntent {
         output_condition_identifier: &str,
     ) -> Result<Self, PdfError> {
         let mut dict = PdfDictionaryObject::new().typed("OutputIntent")?;
-        dict.add("S", subtype.as_string())?;
-        dict.add("OutputConditionIdentifier", output_condition_identifier)?;
+        dict.add("S", PdfStringObject::new(subtype.as_string()));
+        dict.add("OutputConditionIdentifier", PdfStringObject::new(output_condition_identifier));
         Ok(Self { dict })
     }
 
     pub fn with_output_condition(mut self, output_condition: &str) -> Result<Self, PdfError> {
-        self.dict.add("OutputCondition", output_condition)?;
+        self.dict.add("OutputCondition", PdfStringObject::new(output_condition));
         Ok(self)
     }
 
     pub fn with_registry_name(&mut self, registry_name: &str) -> Result<&mut Self, PdfError> {
-        self.dict.add("RegistryName", registry_name)?;
+        self.dict.add("RegistryName", PdfStringObject::new(registry_name));
         Ok(self)
     }
 
     pub fn with_info(&mut self, info: &str) -> Result<&mut Self, PdfError> {
-        self.dict.add("Info", info)?;
+        self.dict.add("Info", PdfStringObject::new(info));
         Ok(self)
     }
 
@@ -381,7 +388,7 @@ impl OutputIntent {
         &mut self,
         dest_output_profile: PdfStreamObject,
     ) -> Result<&mut Self, PdfError> {
-        self.dict.add("DestOutputProfile", dest_output_profile)?;
+        self.dict.add("DestOutputProfile", dest_output_profile);
         Ok(self)
     }
 }
@@ -438,4 +445,3 @@ impl Shape {
         }
     }
 }
-

@@ -1,11 +1,11 @@
-use crate::PdfDictionaryObject;
 use crate::error::PdfError;
-use crate::object_ops::{ObjectNumber, PdfObject, write_indirect_object};
+use crate::object_ops::{ObjectNumber, write_indirect_object};
 pub use crate::util::{
     CompressionMethod, Dims, Matrix, Posn, StreamString, StrokeOrFill, WindingRule,
 };
 use crate::version::Version;
 use crate::xref_ops::XRefOps;
+use crate::{PdfDictionaryObject, PdfNameObject};
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
 use std::fs::File;
@@ -83,23 +83,20 @@ use std::io::Write as IoWrite;
 /// obj and endobj, and their generation number shall be zero.
 ///
 
-#[derive(Clone)]
 pub struct PdfStreamObject {
     pub(crate) dict: PdfDictionaryObject,
     pub(crate) content: Vec<u8>,
-    pub(crate) object_number: Option<ObjectNumber>,
-    pub(crate) generation_number: Option<u16>,
+    pub(crate) object_number: ObjectNumber,
 
     pub(crate) compression_method: CompressionMethod,
 }
 
 impl PdfStreamObject {
-    pub fn new() -> Self {
+    pub fn new(object_number: ObjectNumber) -> Self {
         Self {
             dict: PdfDictionaryObject::new(),
             content: Vec::new(),
-            object_number: None, // all streams objects are indirect
-            generation_number: None,
+            object_number, // all streams objects are indirect, but included dict is not
             compression_method: CompressionMethod::None,
         }
     }
@@ -113,7 +110,7 @@ impl PdfStreamObject {
 
     pub fn compressed(mut self) -> Result<Self, PdfError> {
         self.compression_method = CompressionMethod::Flate;
-        self.dict.add("Filter", PdfObject::name("FlateDecode"))?;
+        self.dict.add("Filter", PdfNameObject::new("FlateDecode"));
 
         Ok(self)
     }
@@ -132,7 +129,18 @@ impl PdfStreamObject {
         self.content.extend(bytes);
     }
 
-    pub fn encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError> {
+    pub fn serialize(
+        &mut self,
+        version: Version,
+        xref: &mut XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError> {
+        write_indirect_object(self.object_number, self.encode(version)?, xref, file)?;
+
+        Ok(())
+    }
+
+    fn encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError> {
         let compressed: Vec<u8>;
         let stream_bytes: &Vec<u8> = match self.compression_method {
             CompressionMethod::None => &self.content,
@@ -144,31 +152,15 @@ impl PdfStreamObject {
             }
         };
 
-        self.dict.add("Length", stream_bytes.len() as f64)?;
+        self.dict.update_or_add("Length", stream_bytes.len() as f64);
 
         let mut vec = vec![];
-        vec.extend(self.dict.encode(version)?);
+        vec.extend(self.dict.encode(version)?); // dict must be direct object
         vec.extend(b"stream\n");
         vec.extend(stream_bytes);
         vec.extend(b"\nendstream\n");
 
         Ok(vec)
-    }
-
-    pub fn serialize(
-        &mut self,
-        version: Version,
-        xref: &mut XRefOps,
-        file: &mut File,
-    ) -> Result<(), PdfError> {
-        write_indirect_object(
-            self.object_number.unwrap(),
-            self.encode(version)?,
-            xref,
-            file,
-        )?;
-
-        Ok(())
     }
 }
 
@@ -178,7 +170,7 @@ mod tests {
 
     #[test]
     fn encode_empty_stream() {
-        let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
+        let mut stream = PdfStreamObject::new(ObjectNumber::new(1));
         let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains("/Length 0"));
         assert!(output.contains("stream\n"));
@@ -187,7 +179,7 @@ mod tests {
 
     #[test]
     fn encode_stream_with_content() {
-        let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
+        let mut stream = PdfStreamObject::new(ObjectNumber::new(1));
         stream.add(b"some data".to_vec());
 
         let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
@@ -197,7 +189,7 @@ mod tests {
 
     #[test]
     fn encode_stream_with_content2() {
-        let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
+        let mut stream = PdfStreamObject::new(ObjectNumber::new(1));
         stream.add(b"some data".to_vec());
         stream.add(b"BT /F1 12 Tf ET".to_vec());
         let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
@@ -207,7 +199,7 @@ mod tests {
 
     #[test]
     fn encode_stream_length_matches_content() {
-        let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
+        let mut stream = PdfStreamObject::new(ObjectNumber::new(1));
         let content = b"q 1 0 0 1 100 200 cm Q";
         stream.add(content.to_vec());
         let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
@@ -216,9 +208,7 @@ mod tests {
 
     #[test]
     fn encode_compressed_stream_has_filter() {
-        let stream = PdfStreamObject::new()
-            .with_object_number(ObjectNumber::new(1))
-            .compressed();
+        let stream = PdfStreamObject::new(ObjectNumber::new(1)).compressed();
         let encoded = stream.expect("REASON").encode(Version::V1_5).unwrap();
         let contains = |needle: &[u8]| encoded.windows(needle.len()).any(|w| w == needle);
         assert!(contains(b"/Filter /FlateDecode"));
@@ -228,11 +218,8 @@ mod tests {
 
     #[test]
     fn encode_stream_with_dict_entries() {
-        let mut stream = PdfStreamObject::new().with_object_number(ObjectNumber::new(1));
-        stream
-            .dict
-            .add("Type", PdfObject::name("XObject"))
-            .expect("fail");
+        let mut stream = PdfStreamObject::new(ObjectNumber::new(1));
+        stream.dict.add("Type", PdfNameObject::new("XObject"));
         stream.add(b"some data".to_vec());
         let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains("/Type /XObject"));

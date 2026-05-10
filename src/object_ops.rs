@@ -1,383 +1,40 @@
+use crate::encoding::f64_to_pdf_string;
 use crate::generation::Generation;
+pub(crate) use crate::object_number::ObjectNumber;
 use crate::objects::pdf_number::PdfNumberObject;
 use crate::version::Version;
 use crate::xref_ops::{ObjectStatus, XRefEntry, XRefOps};
 use crate::{
     PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject, PdfNullObject,
-    PdfNumberType, PdfReferenceObject, PdfStreamObject, PdfStringObject,
+    PdfReferenceObject, PdfStreamObject, PdfStringObject,
 };
 use std::fs::File;
 use std::io::{Seek, Write};
-
 //--------------------------- ObjectOps -------------------------//
 
 pub struct ObjectOps {
-    last_object_number: ObjectNumber,
+    object_number: ObjectNumber,
 }
 
 impl ObjectOps {
     pub fn new() -> Self {
         Self {
             // 0 is in xref table as 'free'. is gen# 65535, else 0 for new
-            last_object_number: ObjectNumber::new(0),
+            object_number: ObjectNumber::new(0),
         }
     }
 
-    pub fn last_object_number(&self) -> ObjectNumber {
-        self.last_object_number
-    }
-
-    pub fn next_object_number(&mut self) -> ObjectNumber {
-        self.last_object_number.object_number += 1;
-
-        self.last_object_number
-    }
-
-    pub fn make_obj<T: Into<PdfObject>>(&self, value: T) -> PdfObject {
-        value.into()
-    }
-}
-
-//--------------------------- ObjectNumber -------------------------//
-
-#[derive(Clone, Copy, Debug)]
-pub struct ObjectNumber {
-    object_number: u64,
-}
-
-impl ObjectNumber {
-    pub fn new(value: u64) -> Self {
-        Self {
-            object_number: value,
-        }
-    }
-
-    pub fn value(self) -> u64 {
+    pub fn object_number(&self) -> ObjectNumber {
         self.object_number
     }
 
-    pub fn to_string(&self) -> String {
-        self.object_number.to_string()
+    pub fn increment_object_number(&mut self) -> ObjectNumber {
+        self.object_number = self.object_number.next();
+        self.object_number
     }
 }
 
-impl PartialEq for ObjectNumber {
-    fn eq(&self, other: &Self) -> bool {
-        self.value() == other.value()
-    }
-}
-
-impl Eq for ObjectNumber {}
-
-impl PartialOrd for ObjectNumber {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for ObjectNumber {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.value().cmp(&other.value())
-    }
-}
-
-//--------------------------- trait -------------------------//
-
-pub trait PdfEncode {
-    fn encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError>;
-    fn object_number(&self) -> Option<ObjectNumber> { None }
-    fn is_indirect(&self) -> bool { self.object_number().is_some() }
-}
-
-//--------------------------- PdfObject -------------------------//
-#[derive(Clone)]
-pub enum PdfObject {
-    Array(PdfArrayObject),
-    Boolean(PdfBooleanObject),
-    Dictionary(PdfDictionaryObject),
-    Name(PdfNameObject),
-    Null(PdfNullObject),
-    Number(PdfNumberObject),
-    Reference(PdfReferenceObject),
-    Stream(PdfStreamObject),
-    String(PdfStringObject),
-}
-
-macro_rules! match_pdf_object {
-    ($self:expr, $x:ident => $body:expr) => {
-        match $self {
-            PdfObject::Array($x) => $body,
-            PdfObject::Boolean($x) => $body,
-            PdfObject::Dictionary($x) => $body,
-            PdfObject::Name($x) => $body,
-            PdfObject::Null($x) => $body,
-            PdfObject::Number($x) => $body,
-            PdfObject::Reference($x) => $body,
-            PdfObject::Stream($x) => $body,
-            PdfObject::String($x) => $body,
-        }
-    };
-}
-
-impl PdfObject {
-    pub fn type_name(&self) -> &'static str {
-        match self {
-            PdfObject::Array(_) => "Array",
-            PdfObject::Boolean(_) => "Boolean",
-            PdfObject::Dictionary(_) => "Dictionary",
-            PdfObject::Name(_) => "Name",
-            PdfObject::Null(_) => "Null",
-            PdfObject::Number(_) => "Number",
-            PdfObject::Reference(_) => "Reference",
-            PdfObject::Stream(_) => "Stream",
-            PdfObject::String(_) => "String",
-        }
-    }
-
-    pub fn serialize(
-        &mut self,
-        version: Version,
-        xref: &mut XRefOps,
-        file: &mut File,
-    ) -> Result<(), PdfError> {
-        if self.is_reference() || self.is_direct() {
-            return Ok(());
-        }
-
-        // indirect object
-        write_indirect_object(
-            self.get_object_number().unwrap(),
-            match_pdf_object!(self, x => x.encode(version))?,
-            xref,
-            file,
-        )
-    }
-
-    pub fn encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError> {
-        if self.is_indirect() && !self.is_reference() {
-            return PdfReferenceObject::new(self.get_object_number().unwrap()).encode(version);
-        }
-
-        match_pdf_object!(self, x => x.encode(version))
-    }
-
-    pub fn get_object_number(&self) -> Option<ObjectNumber> {
-        match self {
-            PdfObject::Array(x) => x.object_number,
-            PdfObject::Dictionary(x) => x.object_number,
-            PdfObject::Stream(x) => x.object_number,
-            PdfObject::Reference(x) => x.object_number,
-            _ => None,
-        }
-    }
-
-    pub fn is_indirect(&self) -> bool {
-        self.get_object_number().is_some()
-    }
-
-    pub fn is_reference(&self) -> bool {
-        matches!(self, PdfObject::Reference(_))
-    }
-
-    pub fn is_direct(&self) -> bool {
-        !self.is_indirect()
-    }
-
-    // ----------------- disambiguating builders ----------------------
-
-    pub fn num(value: impl Into<PdfNumberType>) -> PdfObject {
-        PdfObject::Number(PdfNumberObject::new(value.into()))
-    }
-
-    pub fn num_or_null<T: Into<PdfNumberType>>(value: Option<T>) -> PdfObject {
-        match value {
-            Some(v) => PdfObject::Number(PdfNumberObject::new(v.into())),
-            None => PdfObject::Null(PdfNullObject::new()),
-        }
-    }
-
-    // disambiguate name / string / text
-    pub fn name(value: &str) -> PdfObject {
-        PdfObject::Name(PdfNameObject::new(value))
-    }
-
-    pub fn string(value: &str) -> PdfObject {
-        PdfObject::String(PdfStringObject::new(value))
-    }
-
-    pub fn text(value: &str) -> PdfObject {
-        PdfObject::String(PdfStringObject::new(value))
-    }
-}
-
-//--------------------------- From<T> -------------------------//
-
-impl From<PdfArrayObject> for PdfObject {
-    fn from(v: PdfArrayObject) -> Self {
-        PdfObject::Array(v)
-    }
-}
-
-impl From<PdfBooleanObject> for PdfObject {
-    fn from(v: PdfBooleanObject) -> Self {
-        PdfObject::Boolean(v)
-    }
-}
-
-impl From<PdfDictionaryObject> for PdfObject {
-    fn from(v: PdfDictionaryObject) -> Self {
-        PdfObject::Dictionary(v)
-    }
-}
-
-impl From<PdfNameObject> for PdfObject {
-    fn from(v: PdfNameObject) -> Self {
-        PdfObject::Name(v)
-    }
-}
-
-impl From<PdfNullObject> for PdfObject {
-    fn from(v: PdfNullObject) -> Self {
-        PdfObject::Null(v)
-    }
-}
-
-impl From<PdfNumberObject> for PdfObject {
-    fn from(v: PdfNumberObject) -> Self {
-        PdfObject::Number(v)
-    }
-}
-
-impl From<PdfReferenceObject> for PdfObject {
-    fn from(v: PdfReferenceObject) -> Self {
-        PdfObject::Reference(v)
-    }
-}
-
-impl From<PdfStreamObject> for PdfObject {
-    fn from(v: PdfStreamObject) -> Self {
-        PdfObject::Stream(v)
-    }
-}
-
-impl From<PdfStringObject> for PdfObject {
-    fn from(v: PdfStringObject) -> Self {
-        PdfObject::String(v)
-    }
-}
-
-impl From<String> for PdfObject {
-    fn from(v: String) -> Self {
-        PdfObject::String(PdfStringObject::new(&v))
-    }
-}
-
-impl From<ObjectNumber> for PdfObject {
-    fn from(v: ObjectNumber) -> Self {
-        PdfObject::Reference(PdfReferenceObject::new(v))
-    }
-}
-
-impl From<()> for PdfObject {
-    fn from(_: ()) -> Self {
-        PdfObject::Null(PdfNullObject::new())
-    }
-}
-
-impl From<&str> for PdfObject {
-    fn from(v: &str) -> Self {
-        PdfObject::String(PdfStringObject::new(&v))
-    }
-}
-
-impl From<Vec<u32>> for PdfObject {
-    fn from(v: Vec<u32>) -> Self {
-        PdfObject::Array(PdfArrayObject::from_vec_u32(v))
-    }
-}
-
-impl From<bool> for PdfObject {
-    fn from(v: bool) -> Self {
-        PdfObject::Boolean(PdfBooleanObject::new(v))
-    }
-}
-
-impl From<PdfNumberType> for PdfObject {
-    fn from(v: PdfNumberType) -> Self {
-        PdfObject::Number(PdfNumberObject::new(v))
-    }
-}
-
-impl From<u8> for PdfObject {
-    fn from(v: u8) -> Self {
-        PdfObject::from(PdfNumberType::from(v))
-    }
-}
-
-impl From<u32> for PdfObject {
-    fn from(v: u32) -> Self {
-        PdfObject::from(PdfNumberType::from(v))
-    }
-}
-
-impl From<usize> for PdfObject {
-    fn from(v: usize) -> Self {
-        PdfObject::from(PdfNumberType::from(v))
-    }
-}
-
-impl From<u64> for PdfObject {
-    fn from(v: u64) -> Self {
-        PdfObject::from(PdfNumberType::from(v))
-    }
-}
-
-impl From<i32> for PdfObject {
-    fn from(v: i32) -> Self {
-        PdfObject::from(PdfNumberType::from(v))
-    }
-}
-
-impl From<i64> for PdfObject {
-    fn from(v: i64) -> Self {
-        PdfObject::from(PdfNumberType::from(v))
-    }
-}
-
-impl From<f32> for PdfObject {
-    fn from(v: f32) -> Self {
-        PdfObject::from(PdfNumberType::from(v))
-    }
-}
-
-impl From<f64> for PdfObject {
-    fn from(v: f64) -> Self {
-        PdfObject::from(PdfNumberType::from(v))
-    }
-}
-
-//--------------------------- misc -------------------------//
-
-// Array, Dictionary, Reference, Stream
-macro_rules! impl_obj_num_gen {
-    ($ty:ty) => {
-        impl $ty {
-            pub fn with_object_number(mut self, value: ObjectNumber) -> Self {
-                self.object_number = Some(value);
-                self
-            }
-            pub fn with_generation_number(mut self, value: u16) -> Self {
-                self.generation_number = Some(value);
-                self
-            }
-        }
-    };
-}
-
-impl_obj_num_gen!(PdfArrayObject);
-impl_obj_num_gen!(PdfDictionaryObject);
-impl_obj_num_gen!(PdfReferenceObject);
-impl_obj_num_gen!(PdfStreamObject);
+//--------------------------- WriteObject -------------------------//
 
 pub(crate) fn write_indirect_object(
     object_number: ObjectNumber,
@@ -400,5 +57,165 @@ pub(crate) fn write_indirect_object(
         Generation::Normal,
     );
     xref.add_entry(xref_ent);
+    Ok(())
+}
+
+//--------------------------- PdfEncode -------------------------//
+
+pub trait PdfEncode: std::any::Any {
+    fn pdf_encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError>;
+    fn as_any(&self) -> &dyn std::any::Any;
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
+    fn type_name(&self) -> &'static str {
+        std::any::type_name::<Self>()
+    }
+}
+
+impl PdfEncode for &'static str {
+    fn pdf_encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError> {
+        PdfStringObject::new(self).encode(version)
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+}
+
+//--------------------------- object -------------------------//
+
+macro_rules! encode_pdf_object {
+    ($ty:ty) => {
+        impl PdfEncode for $ty {
+            fn pdf_encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError> {
+                self.encode(version)
+            }
+            fn as_any(&self) -> &dyn std::any::Any {
+                self
+            }
+            fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+                self
+            }
+        }
+    };
+}
+encode_pdf_object!(PdfBooleanObject);
+encode_pdf_object!(PdfNameObject);
+encode_pdf_object!(PdfNullObject);
+encode_pdf_object!(PdfNumberObject);
+encode_pdf_object!(PdfStringObject);
+encode_pdf_object!(PdfArrayObject);
+encode_pdf_object!(PdfDictionaryObject);
+encode_pdf_object!(PdfReferenceObject);
+encode_pdf_object!(PdfStreamObject);
+
+//--------------------------- primitive -------------------------//
+
+macro_rules! encode_primitive {
+    ($ty:ty, $encode_expr:expr) => {
+        impl PdfEncode for $ty {
+            fn pdf_encode(&mut self, _version: Version) -> Result<Vec<u8>, PdfError> {
+                $encode_expr(self)
+            }
+            fn as_any(&self) -> &dyn std::any::Any {
+                self
+            }
+            fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+                self
+            }
+        }
+    };
+}
+
+encode_primitive!(bool, |s: &mut bool| Ok(if *s {
+    b"true".to_vec()
+} else {
+    b"false".to_vec()
+}));
+
+encode_primitive!(usize, |s: &mut usize| Ok(s.to_string().into_bytes()));
+encode_primitive!(i64, |s: &mut i64| Ok(s.to_string().into_bytes()));
+encode_primitive!(i32, |s: &mut i32| Ok(s.to_string().into_bytes()));
+encode_primitive!(f64, |s: &mut f64| Ok(f64_to_pdf_string(*s).into_bytes()));
+encode_primitive!(f32, |s: &mut f32| Ok(
+    f64_to_pdf_string(*s as f64).into_bytes()
+));
+encode_primitive!(u64, |s: &mut u64| Ok(s.to_string().into_bytes()));
+encode_primitive!(u32, |s: &mut u32| Ok(s.to_string().into_bytes()));
+encode_primitive!(u8, |s: &mut u8| Ok(s.to_string().into_bytes()));
+encode_primitive!(String, |s: &mut String| Ok(s.as_bytes().to_vec()));
+encode_primitive!(ObjectNumber, |s: &mut ObjectNumber| Ok(s
+    .value()
+    .to_string()
+    .into_bytes()));
+
+//--------------------------- deduced objects -------------------------//
+
+impl From<usize> for Box<dyn PdfEncode> { fn from(v: usize) -> Self { Box::new(PdfNumberObject::from(v)) } }
+impl From<i64> for Box<dyn PdfEncode> { fn from(v: i64) -> Self { Box::new(PdfNumberObject::from(v)) } }
+impl From<f64> for Box<dyn PdfEncode> { fn from(v: f64) -> Self { Box::new(PdfNumberObject::from(v)) } }
+impl From<u64> for Box<dyn PdfEncode> { fn from(v: u64) -> Self { Box::new(PdfNumberObject::from(v)) } }
+impl From<i32> for Box<dyn PdfEncode> { fn from(v: i32) -> Self { Box::new(PdfNumberObject::from(v)) } }
+impl From<f32> for Box<dyn PdfEncode> { fn from(v: f32) -> Self { Box::new(PdfNumberObject::from(v)) } }
+impl From<u32> for Box<dyn PdfEncode> { fn from(v: u32) -> Self { Box::new(PdfNumberObject::from(v)) } }
+impl From<u8> for Box<dyn PdfEncode> { fn from(v: u8) -> Self { Box::new(PdfNumberObject::from(v as  i64)) } }
+impl From<bool> for Box<dyn PdfEncode> { fn from(v: bool) -> Self { Box::new(PdfBooleanObject::new(v)) } }
+
+impl From<PdfNameObject> for Box<dyn PdfEncode> {
+    fn from(v: PdfNameObject) -> Self { Box::new(v) }
+}
+
+impl From<PdfStringObject> for Box<dyn PdfEncode> {
+    fn from(v: PdfStringObject) -> Self { Box::new(v) }
+}
+
+impl From<PdfArrayObject> for Box<dyn PdfEncode> {
+    fn from(v: PdfArrayObject) -> Self { Box::new(v) }
+}
+
+impl From<PdfDictionaryObject> for Box<dyn PdfEncode> {
+    fn from(v: PdfDictionaryObject) -> Self { Box::new(v) }
+}
+
+impl From<PdfStreamObject> for Box<dyn PdfEncode> {
+    fn from(v: PdfStreamObject) -> Self { Box::new(v) }
+}
+
+impl From<PdfReferenceObject> for Box<dyn PdfEncode> {
+    fn from(v: PdfReferenceObject) -> Self { Box::new(v) }
+}
+
+impl From<PdfNullObject> for Box<dyn PdfEncode> {
+    fn from(v: PdfNullObject) -> Self { Box::new(v) }
+}
+
+pub fn serialize_object(value:  &mut Box<dyn PdfEncode>, version: Version, xref: &mut XRefOps, file: &mut File) -> Result<(), PdfError> {
+    if let Some(stream) = value.as_any_mut().downcast_mut::<PdfStreamObject>() {
+        stream.serialize(version, xref, file)?;
+    } else if let Some(arr) = value.as_any_mut().downcast_mut::<PdfArrayObject>() {
+        arr.serialize(version, xref, file)?;
+    } else if let Some(dict) = value.as_any_mut().downcast_mut::<PdfDictionaryObject>() {
+        dict.serialize(version, xref, file)?;
+    }
+    else if let Some(ref_obj) = value.as_any_mut().downcast_mut::<PdfReferenceObject>() {
+        ref_obj.serialize(version, xref, file)?;
+    }
+    else if let Some(string) = value.as_any_mut().downcast_mut::<PdfStringObject>() {
+        string.serialize(version, xref, file)?;
+    }
+    else if let Some(number) = value.as_any_mut().downcast_mut::<PdfNumberObject>() {
+        number.serialize(version, xref, file)?;
+    }
+    else if let Some(bool) = value.as_any_mut().downcast_mut::<PdfBooleanObject>() {
+        bool.serialize(version, xref, file)?;
+    }
+    else if let Some(name) = value.as_any_mut().downcast_mut::<PdfNameObject>() {
+        name.serialize(version, xref, file)?;
+    }   
+    else if let Some(null) = value.as_any_mut().downcast_mut::<PdfNullObject>() {
+        null.serialize(version, xref, file)?;
+    }
+
     Ok(())
 }

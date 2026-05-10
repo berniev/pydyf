@@ -2,8 +2,8 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 use crate::util::{Matrix, Rectangle};
-use crate::{PdfError, PdfStreamObject};
-use crate::object_ops::PdfObject;
+use crate::{PdfError, PdfNameObject, PdfStreamObject};
+use crate::object_number::ObjectNumber;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PatternType {
@@ -26,7 +26,6 @@ pub enum PaintType {
 
 //----------------------------- TilingPattern --------------------------//
 
-#[derive(Clone)]
 pub struct TilingPattern {
     stream: PdfStreamObject,
     x_step: f64,
@@ -36,6 +35,7 @@ pub struct TilingPattern {
 
 impl TilingPattern {
     pub fn new(
+        object_number: ObjectNumber,
         bbox: Rectangle,
         x_step: f64,
         y_step: f64,
@@ -44,26 +44,26 @@ impl TilingPattern {
         content: Vec<u8>,
     ) -> Result<Self, PdfError> {
         let mut pat = TilingPattern {
-            stream: PdfStreamObject::new(),
+            stream: PdfStreamObject::new(object_number),
             x_step,
             y_step,
             paint_type,
         };
         pat.stream
             .dict
-            .add("Type", PdfObject::name("Pattern"))?;
-        pat.stream.dict.add("BBox", bbox.as_pdf_array_object())?;
-        pat.stream.dict.add("XStep", x_step)?;
-        pat.stream.dict.add("YStep", y_step)?;
-        pat.stream.dict.add("PaintType", paint_type as i64)?;
-        pat.stream.dict.add("TilingType", tiling_type as i64)?;
+            .add("Type", PdfNameObject::new("Pattern"));
+        pat.stream.dict.add("BBox", bbox.as_pdf_array_object());
+        pat.stream.dict.add("XStep", x_step);
+        pat.stream.dict.add("YStep", y_step);
+        pat.stream.dict.add("PaintType", paint_type as i64);
+        pat.stream.dict.add("TilingType", tiling_type as i64);
         pat.stream.content = content;
 
         Ok(pat)
     }
 
     pub fn with_matrix(mut self, matrix: Matrix) -> Result<Self, PdfError> {
-        self.stream.dict.add("Matrix", matrix.as_pdf_array())?;
+        self.stream.dict.add("Matrix", matrix.as_pdf_array());
 
         Ok(self)
     }

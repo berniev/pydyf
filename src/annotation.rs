@@ -3,15 +3,14 @@
 //! Annotations are interactive elements that can be added to PDF pages, including
 //! text notes, links, highlights, and form widgets.
 
-use crate::AnnotationFlags;
 use crate::annotation_support::{
     AdditionalActions, AppearanceCharacteristics, CaptionPosition, FreeTextIntent,
     HighlightingMode, Poly, Quadding, Shape, TextMarkupType,
 };
 use crate::color::ColorsInSpace;
 use crate::date::Date;
-use crate::object_ops::PdfObject;
 use crate::util::{Line, Rectangle};
+use crate::{AnnotationFlags, PdfStringObject};
 use crate::{
     Intent, PdfArrayObject, PdfDictionaryObject, PdfError, PdfNameObject, PdfReferenceObject,
     PdfStreamObject,
@@ -22,12 +21,12 @@ pub fn make_annotation_dict(
     rect: Rectangle,
 ) -> Result<PdfDictionaryObject, PdfError> {
     let mut dict = PdfDictionaryObject::new().typed("Annot")?;
-    dict.add("Subtype", subtype)?;
-    dict.add("Rect", rect.as_pdf_array_object())?;
+    dict.add("Subtype", PdfStringObject::new(subtype));
+    dict.add("Rect", rect.as_pdf_array_object());
     dict.add(
         "Border",
-        PdfArrayObject::from_vec_u32(Vec::from([0u32, 0u32, 1u32])),
-    )?;
+        PdfArrayObject::from_vec_number(Vec::from([0u32, 0u32, 1u32])),
+    );
     Ok(dict)
 }
 
@@ -59,7 +58,7 @@ impl_annotation!(
     SoundAnnotation,
     MovieAnnotation,
     WidgetAnnotation,
-    ScrenAnnotation,
+    ScreenAnnotation,
     PrintersMarkAnnotation,
     TrapNetworkAnnotation,
     WatermarkAnnotation,
@@ -73,57 +72,66 @@ pub trait Annotation: Sized {
     fn dict(&mut self) -> &mut PdfDictionaryObject;
 
     fn with_contents(mut self, contents: &str) -> Result<Self, PdfError> {
-        self.dict().add("Contents", contents)?;
+        self.dict().add("Contents", PdfStringObject::new(contents));
         Ok(self)
     }
 
     fn with_page_indirect_ref(mut self, page_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict().add("Name", page_dict)?;
+        self.dict().add("Name", page_dict);
         Ok(self)
     }
 
     fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict().add("NM", PdfObject::name(name))?;
+        self.dict().add("NM", PdfNameObject::new(name));
         Ok(self)
     }
 
     fn with_date_time(mut self, date_time: &str) -> Result<Self, PdfError> {
-        self.dict().add("StateModel", date_time)?;
+        self.dict().add("StateModel", PdfStringObject::new(date_time));
         Ok(self)
     }
 
     fn with_flags(mut self, flags: AnnotationFlags) -> Result<Self, PdfError> {
-        self.dict().add("F", flags.bits())?;
+        self.dict().add("F", flags.bits());
         Ok(self)
     }
 
     fn with_appearance_dict(mut self, app_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict().add("AP", app_dict)?;
+        self.dict().add("AP", app_dict);
         Ok(self)
     }
 
     fn with_appearance_state(mut self, app_state: &str) -> Result<Self, PdfError> {
-        self.dict().add("AS", PdfObject::name(app_state))?;
+        self.dict().add("AS", PdfStringObject::new(app_state));
         Ok(self)
     }
 
-    fn with_border(mut self, border: Vec<u32>) -> Result<Self, PdfError> {
-        self.dict().add("Border", border)?;
+    fn with_border(
+        mut self,
+        horizontal_radius: f64,
+        vertical_radius: f64,
+        width: f64,
+    ) -> Result<Self, PdfError> {
+        let mut arr = PdfArrayObject::new();
+        arr.push(horizontal_radius);
+        arr.push(vertical_radius);
+        arr.push(width);
+        self.dict().add("Border", arr);
         Ok(self)
     }
 
     fn with_color(mut self, color: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dict().add("C", color)?;
+        self.dict().add("C", color);
         Ok(self)
     }
 
     fn with_struct_parent(mut self, parent_num: u64) -> Result<Self, PdfError> {
-        self.dict().add("StructParent", parent_num)?;
+        self.dict().add("StructParent", parent_num);
         Ok(self)
     }
 
     fn with_content_group(mut self, dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict().add("OC", dict)?;
+        self.dict().add("OC", dict);
         Ok(self)
     }
 }
@@ -141,22 +149,22 @@ impl TextAnnotation {
     }
 
     pub fn with_open(mut self, open: bool) -> Result<Self, PdfError> {
-        self.dict.add("Open", open)?;
+        self.dict.add("Open", open);
         Ok(self)
     }
 
     pub fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict.add("Name", PdfObject::name(name))?;
+        self.dict.add("Name", PdfNameObject::new(name));
         Ok(self)
     }
 
     pub fn with_state(mut self, state: &str) -> Result<Self, PdfError> {
-        self.dict.add("State", state)?;
+        self.dict.add("State", PdfStringObject::new(state));
         Ok(self)
     }
 
     pub fn with_state_model(mut self, state_model: &str) -> Result<Self, PdfError> {
-        self.dict.add("StateModel", state_model)?;
+        self.dict.add("StateModel", PdfStringObject::new(state_model));
         Ok(self)
     }
 }
@@ -174,22 +182,22 @@ impl LinkAnnotation {
     }
 
     pub fn with_action(mut self, action_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("A", action_dict)?;
+        self.dict.add("A", action_dict);
         Ok(self)
     }
 
     pub fn with_dest_array(mut self, dest_arr: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dict.add("Dest", dest_arr)?;
+        self.dict.add("Dest", dest_arr);
         Ok(self)
     }
 
     pub fn with_dest_string(mut self, dest: &str) -> Result<Self, PdfError> {
-        self.dict.add("Dest", dest)?;
+        self.dict.add("Dest", PdfStringObject::new(dest));
         Ok(self)
     }
 
     pub fn with_dest_name(mut self, name: PdfNameObject) -> Result<Self, PdfError> {
-        self.dict.add("Dest", name)?;
+        self.dict.add("Dest", name);
         Ok(self)
     }
 
@@ -197,7 +205,7 @@ impl LinkAnnotation {
         mut self,
         mode_dict: PdfDictionaryObject,
     ) -> Result<Self, PdfError> {
-        self.dict.add("H", mode_dict)?;
+        self.dict.add("H", mode_dict);
         Ok(self)
     }
 
@@ -205,17 +213,17 @@ impl LinkAnnotation {
         mut self,
         uri_action_dict: PdfDictionaryObject,
     ) -> Result<Self, PdfError> {
-        self.dict.add("PA", uri_action_dict)?;
+        self.dict.add("PA", uri_action_dict);
         Ok(self)
     }
 
     pub fn with_quad_points(mut self, quad_points_arr: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dict.add("QuadPoints", quad_points_arr)?;
+        self.dict.add("QuadPoints", quad_points_arr);
         Ok(self)
     }
 
     pub fn with_border_style(mut self, style_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("BS", style_dict)?;
+        self.dict.add("BS", style_dict);
         Ok(self)
     }
 }
@@ -228,20 +236,20 @@ pub struct FreeTextAnnotation {
 impl FreeTextAnnotation {
     pub fn new(rect: Rectangle, default_appearance: &str) -> Result<Self, PdfError> {
         let mut ann_dict = make_annotation_dict("FreeText", rect)?;
-        ann_dict.add("DA", default_appearance)?;
-        ann_dict.add("IT", FreeTextIntent::FreeText as u8)?; // default
-        ann_dict.add("LE", PdfObject::name("None"))?; // default
+        ann_dict.add("DA", PdfNameObject::new(default_appearance));
+        ann_dict.add("IT", FreeTextIntent::FreeText as u8); // default
+        ann_dict.add("LE", PdfNameObject::new("None")); // default
 
         Ok(Self { dict: ann_dict })
     }
 
     pub fn with_quadding(mut self, quadding: Quadding) -> Result<Self, PdfError> {
-        self.dict.add("Q", quadding as u8)?;
+        self.dict.add("Q", quadding as u8);
         Ok(self)
     }
 
     pub fn with_rich_text_string(mut self, rich_text_string: &str) -> Result<Self, PdfError> {
-        self.dict.add("RC", rich_text_string)?;
+        self.dict.add("RC", PdfStringObject::new(rich_text_string));
         Ok(self)
     }
 
@@ -249,12 +257,12 @@ impl FreeTextAnnotation {
         mut self,
         rich_text_stream: PdfStreamObject,
     ) -> Result<Self, PdfError> {
-        self.dict.add("RC", rich_text_stream)?;
+        self.dict.add("RC", PdfReferenceObject::new(rich_text_stream.object_number));
         Ok(self)
     }
 
     pub fn with_style_string(mut self, styler_str: &str) -> Result<Self, PdfError> {
-        self.dict.add("DS", styler_str)?;
+        self.dict.add("DS", PdfStringObject::new(styler_str));
         Ok(self)
     }
 
@@ -262,7 +270,7 @@ impl FreeTextAnnotation {
         mut self,
         callout_line_arr: PdfArrayObject,
     ) -> Result<Self, PdfError> {
-        self.dict.add("CL", callout_line_arr)?;
+        self.dict.add("CL", callout_line_arr);
         Ok(self)
     }
 
@@ -275,22 +283,22 @@ impl FreeTextAnnotation {
         mut self,
         border_effects_dict: PdfDictionaryObject,
     ) -> Result<Self, PdfError> {
-        self.dict.add("BE", border_effects_dict)?;
+        self.dict.add("BE", border_effects_dict);
         Ok(self)
     }
 
     pub fn with_rectangle_diffs(mut self, rect_diffs_arr: Rectangle) -> Result<Self, PdfError> {
-        self.dict.add("RD", rect_diffs_arr.as_pdf_array_object())?;
+        self.dict.add("RD", rect_diffs_arr.as_pdf_array_object());
         Ok(self)
     }
 
     pub fn with_border_style(mut self, style_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("BS", style_dict)?;
+        self.dict.add("BS", style_dict);
         Ok(self)
     }
 
     pub fn with_line_ending_style(mut self, style: &str) -> Result<Self, PdfError> {
-        self.dict.add("LE", PdfObject::name(style))?;
+        self.dict.add("LE", PdfNameObject::new(style));
         Ok(self)
     }
 }
@@ -303,17 +311,17 @@ pub struct LineAnnotation {
 impl LineAnnotation {
     pub fn new(rect: Rectangle, line: Line) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("Line", rect)?;
-        dict.add("L", line.as_pdf_array_object())?;
+        dict.add("L", line.as_pdf_array_object());
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfObject::name("None"));
-        arr.push(PdfObject::name("None"));
+        arr.push(PdfNameObject::new("None"));
+        arr.push(PdfNameObject::new("None"));
         // defaults
-        dict.add("LE", arr)?;
-        dict.add("LL", PdfObject::num(0))?;
-        dict.add("LLE", PdfObject::num(0))?;
-        dict.add("Cap", false)?;
-        dict.add("CP", PdfObject::name("Inline"))?;
-        dict.add("CO", PdfArrayObject::from_vec_f64(vec![0.0, 0.0]))?;
+        dict.add("LE", arr);
+        dict.add("LL", 0);
+        dict.add("LLE", 0);
+        dict.add("Cap", false);
+        dict.add("CP", PdfNameObject::new("Inline"));
+        dict.add("CO", PdfArrayObject::from_vec_number(vec![0.0, 0.0]));
 
         Ok(Self {
             dict: make_annotation_dict("Line", rect)?,
@@ -321,51 +329,51 @@ impl LineAnnotation {
     }
 
     pub fn with_border_style(mut self, style_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("BS", style_dict)?;
+        self.dict.add("BS", style_dict);
         Ok(self)
     }
 
     pub fn with_line_ending_style(mut self, first: &str, second: &str) -> Result<Self, PdfError> {
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfObject::name(first));
-        arr.push(PdfObject::name(second));
-        self.dict.add("LE", arr)?;
+        arr.push(PdfNameObject::new(first));
+        arr.push(PdfNameObject::new(second));
+        self.dict.add("LE", arr);
         Ok(self)
     }
 
     pub fn with_interior_colors(mut self, colors: ColorsInSpace) -> Result<Self, PdfError> {
-        self.dict.add("IC", colors.as_pdf_array())?;
+        self.dict.add("IC", colors.as_pdf_array());
         Ok(self)
     }
 
     pub fn with_leader_lines_length(mut self, length: f64) -> Result<Self, PdfError> {
-        self.dict.add("LL", PdfObject::num(length))?;
+        self.dict.add("LL", length);
         Ok(self)
     }
 
     pub fn with_leader_lines_extension_length(mut self, length: f64) -> Result<Self, PdfError> {
-        self.dict.add("LLE", PdfObject::num(length))?;
+        self.dict.add("LLE", length);
         Ok(self)
     }
 
     pub fn with_caption(mut self, make_caption: bool) -> Result<Self, PdfError> {
-        self.dict.add("Cap", make_caption)?;
+        self.dict.add("Cap", make_caption);
         Ok(self)
     }
 
     pub fn with_intent(mut self, intent: Intent) -> Result<Self, PdfError> {
-        self.dict.add("IT", PdfObject::name(&*intent.to_string()))?;
+        self.dict.add("IT", PdfNameObject::new(&*intent.to_string()));
         Ok(self)
     }
 
     pub fn with_leader_line_offset_length(mut self, length: u64) -> Result<Self, PdfError> {
-        self.dict.add("LLO", PdfObject::num(length))?;
+        self.dict.add("LLO", length);
         Ok(self)
     }
 
     pub fn with_caption_position(mut self, position: CaptionPosition) -> Result<Self, PdfError> {
         self.dict
-            .add("CP", PdfObject::name(&*position.to_string()))?;
+            .add("CP", PdfNameObject::new(&*position.to_string()));
         Ok(self)
     }
 
@@ -373,7 +381,7 @@ impl LineAnnotation {
         mut self,
         measure_dict: PdfDictionaryObject,
     ) -> Result<Self, PdfError> {
-        self.dict.add("Measure", measure_dict)?;
+        self.dict.add("Measure", measure_dict);
         Ok(self)
     }
 
@@ -384,8 +392,8 @@ impl LineAnnotation {
     ) -> Result<Self, PdfError> {
         self.dict.add(
             "CO",
-            PdfArrayObject::from_vec_f64(Vec::from([horizontal, vertical])),
-        )?;
+            PdfArrayObject::from_vec_number(Vec::from([horizontal, vertical])),
+        );
         Ok(self)
     }
 }
@@ -405,12 +413,12 @@ impl ShapeAnnotation {
     }
 
     pub fn with_border_style(mut self, style_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("BS", style_dict)?;
+        self.dict.add("BS", style_dict);
         Ok(self)
     }
 
     pub fn with_interior_style(mut self, colors: ColorsInSpace) -> Result<Self, PdfError> {
-        self.dict.add("IC", colors.as_pdf_array())?;
+        self.dict.add("IC", colors.as_pdf_array());
         Ok(self)
     }
 
@@ -418,7 +426,7 @@ impl ShapeAnnotation {
         mut self,
         border_effects_dict: PdfDictionaryObject,
     ) -> Result<Self, PdfError> {
-        self.dict.add("BE", border_effects_dict)?;
+        self.dict.add("BE", border_effects_dict);
         Ok(self)
     }
 
@@ -445,8 +453,8 @@ impl ShapeAnnotation {
         }
         self.dict.add(
             "RD",
-            PdfArrayObject::from_vec_f64(Vec::from([left, top, right, bottom])),
-        )?;
+            PdfArrayObject::from_vec_number(Vec::from([left, top, right, bottom])),
+        );
         Ok(self)
     }
 }
@@ -474,11 +482,11 @@ pub struct PolyLineAnnotation {
 impl PolyLineAnnotation {
     pub fn new(rect: Rectangle, vertices: PdfArrayObject) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("PolyLine", rect)?;
-        dict.add("Vertices", vertices)?;
+        dict.add("Vertices", vertices);
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfObject::name("None"));
-        arr.push(PdfObject::name("None"));
-        dict.add("LE", arr)?;
+        arr.push(PdfNameObject::new("None"));
+        arr.push(PdfNameObject::new("None"));
+        dict.add("LE", arr);
         Ok(Self { dict })
     }
 
@@ -489,19 +497,19 @@ impl PolyLineAnnotation {
             ));
         }
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfObject::name(first));
-        arr.push(PdfObject::name(second));
-        self.dict.add("LE", arr)?;
+        arr.push(PdfNameObject::new(first));
+        arr.push(PdfNameObject::new(second));
+        self.dict.add("LE", arr);
         Ok(self)
     }
 
     pub fn with_border_styles(mut self, style_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("BS", style_dict)?;
+        self.dict.add("BS", style_dict);
         Ok(self)
     }
 
     pub fn with_interior_colors(mut self, colors: ColorsInSpace) -> Result<Self, PdfError> {
-        self.dict.add("IC", colors.as_pdf_array())?;
+        self.dict.add("IC", colors.as_pdf_array());
         Ok(self)
     }
 
@@ -514,17 +522,17 @@ impl PolyLineAnnotation {
                 "Cannot set border effects for a polyline annotation".to_string(),
             ));
         }
-        self.dict.add("BE", border_effects_dict)?;
+        self.dict.add("BE", border_effects_dict);
         Ok(self)
     }
 
     pub fn with_intent(mut self, intent: Intent) -> Result<Self, PdfError> {
-        self.dict.add("IT", PdfObject::name(&*intent.to_string()))?;
+        self.dict.add("IT", PdfNameObject::new(&*intent.to_string()));
         Ok(self)
     }
 
     pub fn with_measure(mut self, measure_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("Measure", measure_dict)?;
+        self.dict.add("Measure", measure_dict);
         Ok(self)
     }
 }
@@ -542,12 +550,12 @@ impl TextMarkupAnnotation {
     }
 
     pub fn with_quad_points(mut self, quad_points: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dict.add("QuadPoints", quad_points)?;
+        self.dict.add("QuadPoints", quad_points);
         Ok(self)
     }
 
     pub fn with_text_string(mut self, text_string: &str) -> Result<Self, PdfError> {
-        self.dict.add("Contents", text_string)?;
+        self.dict.add("Contents", PdfStringObject::new(text_string));
         Ok(self)
     }
 }
@@ -561,7 +569,7 @@ pub struct CaretAnnotation {
 impl CaretAnnotation {
     pub fn new(rect: Rectangle) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("Caret", rect)?;
-        dict.add("Sy", PdfObject::name("None"))?;
+        dict.add("Sy", PdfNameObject::new("None"));
         Ok(Self { dict, rect })
     }
 
@@ -588,14 +596,14 @@ impl CaretAnnotation {
         }
         self.dict.add(
             "RD",
-            PdfArrayObject::from_vec_f64(Vec::from([left, top, right, bottom])),
-        )?;
+            PdfArrayObject::from_vec_number(Vec::from([left, top, right, bottom])),
+        );
 
         Ok(self)
     }
 
     pub fn with_symbol(mut self) -> Result<Self, PdfError> {
-        self.dict.add("Symbol", PdfObject::name("P"))?;
+        self.dict.add("Symbol", PdfNameObject::new("P"));
         Ok(self)
     }
 }
@@ -608,12 +616,12 @@ pub struct StampAnnotation {
 impl StampAnnotation {
     pub fn new(rect: Rectangle) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("Stamp", rect)?;
-        dict.add("Name", PdfObject::name("Draft"))?;
+        dict.add("Name", PdfNameObject::new("Draft"));
         Ok(Self { dict })
     }
 
     pub fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict.add("Name", PdfObject::name(name))?;
+        self.dict.add("Name", PdfNameObject::new(name));
         Ok(self)
     }
 }
@@ -631,12 +639,12 @@ impl InkAnnotation {
     }
 
     pub fn with_ink_list(mut self, ink_list: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dict.add("InkList", ink_list)?;
+        self.dict.add("InkList", ink_list);
         Ok(self)
     }
 
     pub fn with_border_style(mut self, style_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("BS", style_dict)?;
+        self.dict.add("BS", style_dict);
         Ok(self)
     }
 }
@@ -649,17 +657,17 @@ pub struct PopUpAnnotation {
 impl PopUpAnnotation {
     pub fn new(rect: Rectangle) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("Popup", rect)?;
-        dict.add("Open", false)?;
+        dict.add("Open", false);
         Ok(Self { dict })
     }
 
     pub fn with_parent(mut self, parent: PdfReferenceObject) -> Result<Self, PdfError> {
-        self.dict.add("Parent", parent)?;
+        self.dict.add("Parent", parent);
         Ok(self)
     }
 
     pub fn with_open(mut self, open: bool) -> Result<Self, PdfError> {
-        self.dict.add("Open", open)?;
+        self.dict.add("Open", open);
         Ok(self)
     }
 }
@@ -672,12 +680,12 @@ pub struct FileAttachmentAnnotation {
 impl FileAttachmentAnnotation {
     pub fn new(rect: Rectangle, file_spec: &str) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("FileAttachment", rect)?;
-        dict.add("FS", PdfObject::name(file_spec))?;
+        dict.add("FS", PdfNameObject::new(file_spec));
         Ok(Self { dict })
     }
 
     pub fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict.add("Name", PdfObject::name(name))?;
+        self.dict.add("Name", PdfNameObject::new(name));
         Ok(self)
     }
 }
@@ -690,12 +698,12 @@ pub struct SoundAnnotation {
 impl SoundAnnotation {
     pub fn new(rect: Rectangle, sound_stream: PdfStreamObject) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("Sound", rect)?;
-        dict.add("Sound", sound_stream)?;
+        dict.add("Sound", sound_stream);
         Ok(Self { dict })
     }
 
     pub fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict.add("Name", PdfObject::name(name))?;
+        self.dict.add("Name", PdfNameObject::new(name));
         Ok(self)
     }
 }
@@ -708,18 +716,18 @@ pub struct MovieAnnotation {
 impl MovieAnnotation {
     pub fn new(rect: Rectangle, movie_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("Movie", rect)?;
-        dict.add("Movie", movie_dict)?;
-        dict.add("A", true)?;
+        dict.add("Movie", movie_dict);
+        dict.add("A", true);
         Ok(Self { dict })
     }
 
     pub fn with_title(mut self, title: &str) -> Result<Self, PdfError> {
-        self.dict.add("T", title)?;
+        self.dict.add("T", PdfStringObject::new(title));
         Ok(self)
     }
 
     pub fn with_play_method_bool(mut self, play_method_bool: bool) -> Result<Self, PdfError> {
-        self.dict.add("A", play_method_bool)?;
+        self.dict.add("A", play_method_bool);
         Ok(self)
     }
 
@@ -727,17 +735,17 @@ impl MovieAnnotation {
         mut self,
         play_method_dict: PdfDictionaryObject,
     ) -> Result<Self, PdfError> {
-        self.dict.add("A", play_method_dict)?;
+        self.dict.add("A", play_method_dict);
         Ok(self)
     }
 }
 
 //-------------------ScreenAnnotation ----------------------//
 
-pub struct ScrenAnnotation {
+pub struct ScreenAnnotation {
     dict: PdfDictionaryObject,
 }
-impl ScrenAnnotation {
+impl ScreenAnnotation {
     pub fn new(rect: Rectangle) -> Result<Self, PdfError> {
         Ok(Self {
             dict: make_annotation_dict("Screen", rect)?,
@@ -745,7 +753,7 @@ impl ScrenAnnotation {
     }
 
     pub fn with_title(mut self, title: &str) -> Result<Self, PdfError> {
-        self.dict.add("T", title)?;
+        self.dict.add("T", PdfStringObject::new(title));
         Ok(self)
     }
 
@@ -753,12 +761,12 @@ impl ScrenAnnotation {
         mut self,
         appearance_characteristics: AppearanceCharacteristics,
     ) -> Result<Self, PdfError> {
-        self.dict.add("MK", appearance_characteristics.dict)?;
+        self.dict.add("MK", appearance_characteristics.dict);
         Ok(self)
     }
 
     pub fn with_action(mut self, action: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("A", action)?;
+        self.dict.add("A", action);
         Ok(self)
     }
 
@@ -766,7 +774,7 @@ impl ScrenAnnotation {
         mut self,
         additional_actions: AdditionalActions,
     ) -> Result<Self, PdfError> {
-        self.dict.add("AA", additional_actions.dict)?;
+        self.dict.add("AA", additional_actions.dict);
         Ok(self)
     }
 }
@@ -787,7 +795,7 @@ impl WidgetAnnotation {
         mut self,
         highlighting_mode: HighlightingMode,
     ) -> Result<Self, PdfError> {
-        self.dict.add("H", highlighting_mode.to_pdf_string())?;
+        self.dict.add("H", highlighting_mode.to_pdf_string());
         Ok(self)
     }
 
@@ -795,12 +803,12 @@ impl WidgetAnnotation {
         mut self,
         appearance_characteristics: AppearanceCharacteristics,
     ) -> Result<Self, PdfError> {
-        self.dict.add("MK", appearance_characteristics.dict)?;
+        self.dict.add("MK", appearance_characteristics.dict);
         Ok(self)
     }
 
     pub fn with_action(mut self, action: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("A", action)?;
+        self.dict.add("A", action);
         Ok(self)
     }
 
@@ -808,17 +816,17 @@ impl WidgetAnnotation {
         mut self,
         additional_actions: AdditionalActions,
     ) -> Result<Self, PdfError> {
-        self.dict.add("AA", additional_actions.dict)?;
+        self.dict.add("AA", additional_actions.dict);
         Ok(self)
     }
 
     pub fn with_border_style(mut self, style_dict: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("BS", style_dict)?;
+        self.dict.add("BS", style_dict);
         Ok(self)
     }
 
     pub fn with_parent(mut self, parent: PdfReferenceObject) -> Result<Self, PdfError> {
-        self.dict.add("Parent", parent)?;
+        self.dict.add("Parent", parent);
         Ok(self)
     }
 }
@@ -836,7 +844,7 @@ impl PrintersMarkAnnotation {
     }
 
     pub fn with_type(mut self, type_: &str) -> Result<Self, PdfError> {
-        self.dict.add("MN", PdfObject::name(type_))?;
+        self.dict.add("MN", PdfNameObject::new(type_));
         Ok(self)
     }
 }
@@ -855,7 +863,7 @@ impl TrapNetworkAnnotation {
 
     pub fn with_last_modified(mut self, last_modified: Date) -> Result<Self, PdfError> {
         self.dict
-            .add("LastModified", last_modified.to_pdf_string())?;
+            .add("LastModified", PdfStringObject::new(&*last_modified.to_pdf_string()));
         Ok(self)
     }
 }
@@ -873,7 +881,7 @@ impl WatermarkAnnotation {
     }
 
     pub fn with_fixed_print(mut self, fixed_print: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dict.add("FixedPrint", fixed_print)?;
+        self.dict.add("FixedPrint", fixed_print);
         Ok(self)
     }
 }

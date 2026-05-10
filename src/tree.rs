@@ -28,8 +28,9 @@
  Direct:   Null, Number, Boolean, Name
  =====================================
  */
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
-use crate::object_ops::{ObjectNumber, PdfObject};
+use crate::object_ops::{ObjectNumber, PdfEncode};
+use crate::objects::pdf_number::PdfNumberObject;
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfNumberType, PdfStringObject};
 
 ///Usage:
 ///
@@ -60,21 +61,21 @@ impl Tree {
         for new_kid in new_kids {
             arr.push(new_kid);
         }
-        self.dict.add("Kids", arr)?;
+        self.dict.add("Kids", arr);
 
         Ok(())
     }
 
     pub fn set_entries<K: TreeKey>(
         &mut self,
-        entries: Vec<(K, PdfObject)>,
+        entries: Vec<(K, impl PdfEncode + 'static)>,
     ) -> Result<(), PdfError> {
         let mut arr = PdfArrayObject::new();
         for (key, val) in entries {
             arr.push(key.to_pdf_obj());
             arr.push(val);
         }
-        self.dict.add(K::entry_key_name(), arr)?;
+        self.dict.add(K::entry_key_name(), arr);
 
         Ok(())
     }
@@ -83,7 +84,7 @@ impl Tree {
         let mut arr = PdfArrayObject::new();
         arr.push(least.to_pdf_obj());
         arr.push(greatest.to_pdf_obj());
-        self.dict.add("Limits", arr)?;
+        self.dict.add("Limits", arr);
 
         Ok(())
     }
@@ -92,25 +93,29 @@ impl Tree {
 //------------------------ TreeKey -----------------------------//
 
 pub trait TreeKey: Sized {
-    fn to_pdf_obj(self) -> PdfObject;
+    type PdfObj: PdfEncode + 'static;
+    fn to_pdf_obj(self) -> Self::PdfObj;
     fn entry_key_name() -> &'static str;
 }
 
 impl TreeKey for String {
-    fn to_pdf_obj(self) -> PdfObject {
-        PdfObject::string(&self)
+    type PdfObj = PdfStringObject;
+    fn to_pdf_obj(self) -> PdfStringObject {
+        PdfStringObject::new(&self)
     }
+
     fn entry_key_name() -> &'static str {
         "Names"
     }
 }
 
 impl TreeKey for i64 {
-    fn to_pdf_obj(self) -> PdfObject {
-        PdfObject::num(self)
+    type PdfObj = PdfNumberObject;
+    fn to_pdf_obj(self) -> PdfNumberObject {
+        PdfNumberObject::new(PdfNumberType::from(self))
     }
+
     fn entry_key_name() -> &'static str {
         "Nums"
     }
 }
-

@@ -5,8 +5,7 @@
 /// Actions specify responses to various events in PDF documents, such as
 /// user interactions with annotations or form fields.
 use crate::util::Rectangle;
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfResult};
-use crate::object_ops::PdfObject;
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfNameObject, PdfResult, PdfStringObject};
 //------------------------ Action -------------------------------//
 
 pub trait Action {
@@ -37,11 +36,11 @@ impl Action for UriAction {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("S", PdfObject::name(self.action_type()))?;
-        dict.add("URI", self.uri.clone())?;
+        dict.add("S", PdfNameObject::new(self.action_type()));
+        dict.add("URI", PdfStringObject::new(&*self.uri));
 
         if self.is_map {
-            dict.add("IsMap", true)?;
+            dict.add("IsMap", true);
         }
 
         Ok(dict)
@@ -65,9 +64,9 @@ impl Action for GoToAction {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("S", PdfObject::name(self.action_type()))?;
-        dict.add("D", self.destination.to_pdf_array())?;
-        
+        dict.add("S", PdfNameObject::new(self.action_type()));
+        dict.add("D", self.destination.to_pdf_array());
+
         Ok(dict)
     }
 }
@@ -89,8 +88,8 @@ impl Action for JavaScriptAction {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("S", PdfObject::name(self.action_type()))?;
-        dict.add("JS", self.script.clone())?;
+        dict.add("S", PdfNameObject::new(self.action_type()));
+        dict.add("JS", PdfStringObject::new(&*self.script));
 
         Ok(dict)
     }
@@ -122,14 +121,14 @@ impl Action for LaunchAction {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("S", PdfObject::name(self.action_type()))?;
+        dict.add("S", PdfNameObject::new(self.action_type()));
 
         let mut file_dict = PdfDictionaryObject::new().typed("Filespec")?;
-        file_dict.add("F", self.file.clone())?;
-        dict.add("F", file_dict)?;
+        file_dict.add("F", PdfStringObject::new(&*self.file));
+        dict.add("F", file_dict);
 
         if let Some(new_win) = self.new_window {
-            dict.add("NewWindow", new_win)?;
+            dict.add("NewWindow", new_win);
         }
 
         Ok(dict)
@@ -172,8 +171,8 @@ impl Action for NamedAction {
 
     fn to_dict(&self) -> PdfResult<PdfDictionaryObject> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("S", PdfObject::name(self.action_type()))?;
-        dict.add("N", PdfObject::name(self.name.as_str()))?;
+        dict.add("S", PdfNameObject::new(self.action_type()));
+        dict.add("N", PdfNameObject::new(self.name.as_str()));
 
         Ok(dict)
     }
@@ -236,32 +235,32 @@ impl FitDestination {
                 zoom,
             } => {
                 arr.push(*page);
-                arr.push(PdfObject::name("XYZ"));
-                arr.push(PdfObject::num_or_null(*left));
-                arr.push(PdfObject::num_or_null(*top));
-                arr.push(PdfObject::num_or_null(*zoom));
+                arr.push(PdfNameObject::new("XYZ"));
+                arr.push_num_or_null(*left);
+                arr.push_num_or_null(*top);
+                arr.push_num_or_null(*zoom);
             }
 
             FitDestination::Fit { page } => {
                 arr.push(*page);
-                arr.push(PdfObject::name("Fit"));
+                arr.push(PdfNameObject::new("Fit"));
             }
 
             FitDestination::FitH { page, top } => {
                 arr.push(*page);
-                arr.push(PdfObject::name("FitH"));
-                arr.push(PdfObject::num_or_null(*top));
+                arr.push(PdfNameObject::new("FitH"));
+                arr.push_num_or_null(*top);
             }
 
             FitDestination::FitV { page, left } => {
                 arr.push(*page);
-                arr.push(PdfObject::name("FitV"));
-                arr.push(PdfObject::num_or_null(*left));
+                arr.push(PdfNameObject::new("FitV"));
+                arr.push_num_or_null(*left);
             }
 
             FitDestination::FitR { page, rect } => {
                 arr.push(*page);
-                arr.push(PdfObject::name("FitR"));
+                arr.push(PdfNameObject::new("FitR"));
                 arr.push(rect.x1);
                 arr.push(rect.y1);
                 arr.push(rect.x2);

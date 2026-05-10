@@ -1,7 +1,7 @@
-use crate::object_ops::{ObjectNumber, PdfObject};
+use crate::object_ops::{ObjectNumber};
 use crate::version::Version;
 use crate::xref_ops::XRefOps;
-use crate::{PdfDictionaryObject, PdfError, PdfStreamObject};
+use crate::{PdfDictionaryObject, PdfError, PdfStreamObject, PdfStringObject};
 use std::fs::File;
 
 const XMP_HEADER: &str = r#"<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?>
@@ -59,7 +59,7 @@ impl MetadataOps {
     pub fn new(info_object_number: ObjectNumber, xmp_object_number: ObjectNumber) -> Self {
         Self {
             dict: PdfDictionaryObject::new().with_object_number(info_object_number),
-            xmp: PdfStreamObject::new().with_object_number(xmp_object_number),
+            xmp: PdfStreamObject::new(xmp_object_number),
             xmp_body: String::new(),
         }
     }
@@ -88,36 +88,36 @@ fn xdate(&mut self, tag: &str, value: &str) ->String{
 }
 
    pub fn add_title(&mut self, title: &str) -> Result<(), PdfError> {
-        self.dict.add("Title", PdfObject::string(title))?;
+        self.dict.add("Title", PdfStringObject::new(title));
        //self.xmp_add(&*self.xalt(title));
         Ok(())
     }
     pub fn add_author(&mut self, author: &str) -> Result<(), PdfError> {
-        self.dict.add("Author", PdfObject::string(author))?;
+        self.dict.add("Author", PdfStringObject::new(author));
         Ok(())
     }
     pub fn add_subject(&mut self, subject: &str) -> Result<(), PdfError> {
-        self.dict.add("Subject", PdfObject::string(subject))?;
+        self.dict.add("Subject", PdfStringObject::new(subject));
         Ok(())
     }
     pub fn add_keywords(&mut self, keywords: &str) -> Result<(), PdfError> {
-        self.dict.add("Keywords", PdfObject::string(keywords))?;
+        self.dict.add("Keywords", PdfStringObject::new(keywords));
         Ok(())
     }
     pub fn add_creator(&mut self, creator: &str) -> Result<(), PdfError> {
-        self.dict.add("Creator", PdfObject::string(creator))?;
+        self.dict.add("Creator", PdfStringObject::new(creator));
         Ok(())
     }
     pub fn add_producer(&mut self, producer: &str) -> Result<(), PdfError> {
-        self.dict.add("Producer", PdfObject::string(producer))?;
+        self.dict.add("Producer", PdfStringObject::new(producer));
         Ok(())
     }
     pub fn add_creation_date(&mut self, date: &str) -> Result<(), PdfError> {
-        self.dict.add("CreationDate", PdfObject::string(date))?;
+        self.dict.add("CreationDate", PdfStringObject::new(date));
         Ok(())
     }
     pub fn add_mod_date(&mut self, date: &str) -> Result<(), PdfError> {
-        self.dict.add("ModDate", PdfObject::string(date))?;
+        self.dict.add("ModDate", PdfStringObject::new(date));
         Ok(())
     }
 

@@ -46,9 +46,9 @@ impl GraphicsOps {
         self.resource_counter += 1;
 
         let mut gs_dict = PdfDictionaryObject::new().typed("/ExtGState")?;
-        gs_dict.add("CA", alpha as f64)?; // Stroke alpha
-        gs_dict.add("ca", alpha as f64)?; // Fill alpha
-        let obj_num = self.object_ops.borrow_mut().next_object_number();
+        gs_dict.add("CA", alpha as f64); // Stroke alpha
+        gs_dict.add("ca", alpha as f64); // Fill alpha
+        let obj_num = self.object_ops.borrow_mut().increment_object_number();
         self.opacity_states.insert(opacity_key, obj_num);
 
         Ok(resource_name)

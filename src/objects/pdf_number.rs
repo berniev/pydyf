@@ -1,5 +1,5 @@
-use crate::{PdfNumberType, PdfError};
 use crate::version::Version;
+use crate::{PdfError, PdfNumberType};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PdfNumberObject {
@@ -62,6 +62,18 @@ impl From<i64> for PdfNumberObject {
     }
 }
 
+impl From<u64> for PdfNumberObject {
+    fn from(i: u64) -> Self {
+        Self::new(PdfNumberType::Integer(i as i64))
+    }
+}
+
+impl From<usize> for PdfNumberObject {
+    fn from(i: usize) -> Self {
+        Self::new(PdfNumberType::Integer(i as i64))
+    }
+}
+
 impl From<f64> for PdfNumberObject {
     fn from(f: f64) -> Self {
         Self::new(PdfNumberType::Real(f))
@@ -77,6 +89,12 @@ impl From<i32> for PdfNumberObject {
 impl From<f32> for PdfNumberObject {
     fn from(f: f32) -> Self {
         Self::new(PdfNumberType::Real(f as f64))
+    }
+}
+
+impl From<u32> for PdfNumberObject {
+    fn from(f: u32) -> Self {
+        Self::new(PdfNumberType::Integer(f as i64))
     }
 }
 
