@@ -95,7 +95,7 @@ impl NamedResources {
         Ok(res)
     }
 
-    pub fn add(&mut self, cat: ResourceCategory, object_id: u64) -> String {
+    pub fn add(&mut self, cat: ResourceCategory, object_id: u64) -> Result<String, PdfError> {
         let cat_str = cat.as_str();
         let name = format!("{}{}", cat.prefix(), self.category_count(cat));
 
@@ -103,17 +103,16 @@ impl NamedResources {
             self.dictionary.add(cat_str, PdfDictionaryObject::new());
         }
 
-        if let Some(entry) = self.dictionary.get_mut(cat_str) {
-            if let Some(cat_dict) = entry.as_any_mut().downcast_mut::<PdfDictionaryObject>() {
-                cat_dict.update_or_add(&name, object_id);
-            }
-        }
+        let entry = self.dictionary.get_t_mut::<PdfDictionaryObject>(cat_str)?;
+        entry.update(&name, object_id)?;
 
-        name
+        Ok(name)
     }
 
     pub fn get(&self, cat: ResourceCategory) -> Option<&PdfDictionaryObject> {
-        self.dictionary.get_dict_value(cat.as_str()).ok()
+        self.dictionary
+            .get_t::<PdfDictionaryObject>(cat.as_str())
+            .ok()
     }
 
     pub fn contains(&self, cat: ResourceCategory) -> bool {
@@ -122,7 +121,7 @@ impl NamedResources {
 
     pub fn category_count(&self, cat: ResourceCategory) -> usize {
         self.dictionary
-            .get_dict_value(cat.as_str())
+            .get_t::<PdfDictionaryObject>(cat.as_str())
             .map_or(0, |d| d.len())
     }
 
@@ -151,16 +150,16 @@ mod tests {
     #[test]
     fn test_add_resources() {
         let mut res_dict = NamedResources::new();
-        let name = res_dict.add(ResourceCategory::Font, 1);
+        let name = res_dict.add(ResourceCategory::Font, 1).unwrap();
         assert_eq!(name, "F0");
 
-        let name = res_dict.add(ResourceCategory::ExtGState, 5);
+        let name = res_dict.add(ResourceCategory::ExtGState, 5).unwrap();
         assert_eq!(name, "GS0");
         assert_eq!(res_dict.get(ResourceCategory::ExtGState).unwrap().len(), 1);
 
-        let name = res_dict.add(ResourceCategory::Pattern, 8);
+        let name = res_dict.add(ResourceCategory::Pattern, 8).unwrap();
         assert_eq!(name, "P0");
-        let name = res_dict.add(ResourceCategory::Pattern, 18);
+        let name = res_dict.add(ResourceCategory::Pattern, 18).unwrap();
         assert_eq!(name, "P1");
         assert_eq!(res_dict.get(ResourceCategory::Pattern).unwrap().len(), 2);
 

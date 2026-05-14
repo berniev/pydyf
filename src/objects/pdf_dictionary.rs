@@ -1,6 +1,6 @@
+use mockall::Any;
 use crate::object_ops::{ObjectNumber, PdfObject};
-use crate::objects::pdf_number::PdfNumberObject;
-use crate::{PdfArrayObject, PdfError, PdfNameObject, PdfStringObject};
+use crate::{PdfArrayObject, PdfError, PdfNameObject};
 
 /// Spec:
 /// Dictionary:
@@ -25,6 +25,14 @@ pub struct PdfDictionaryObject {
     pub(crate) object_number: Option<ObjectNumber>,
 }
 
+fn bad_type_error<T>(key: &str) -> PdfError {
+    PdfError::StructureError(format!(
+        "Key '{}' is not of type {}",
+        key,
+        std::any::type_name::<T>()
+    ))
+}
+
 impl PdfDictionaryObject {
     pub fn new() -> Self {
         Self {
@@ -34,9 +42,9 @@ impl PdfDictionaryObject {
     }
 
     pub(crate) fn typed(mut self, name: &str) -> Self {
-    self.add("Type", PdfNameObject::new(name));
+        self.add("Type", PdfNameObject::new(name));
 
-    self
+        self
     }
 
     pub fn with_object_number(mut self, value: ObjectNumber) -> Self {
@@ -52,31 +60,18 @@ impl PdfDictionaryObject {
         self.entries.is_empty()
     }
 
-    pub fn push_to_array(
-        &mut self,
-        key: &str,
-        value: impl PdfObject,
-    ) -> Result<(), PdfError> {
-        if let Some(entry) = self.get_mut(key) {
-            if let Some(arr) = entry.as_any_mut().downcast_mut::<PdfArrayObject>() {
-                arr.elements.push(Box::new(value));
-                Ok(())
-            } else {
-                Err(PdfError::StructureError(format!(
-                    "Key '{}' is not an array",
-                    key
-                )))
-            }
-        } else {
-            Err(PdfError::StructureError(format!("Key '{}' not found", key)))
-        }
+    pub fn push_to_array(&mut self, key: &str, value: impl PdfObject) -> Result<(), PdfError> {
+        let arr = self.get_t_mut::<PdfArrayObject>(key)?;
+        arr.elements.push(Box::new(value));
+
+        Ok(())
     }
 
     pub fn contains_key(&self, key: &str) -> bool {
         self.get(key).is_some()
     }
 
-    pub fn get(&self, key: &str) -> Option<&Box<dyn PdfObject>> {
+    fn get(&self, key: &str) -> Option<&Box<dyn PdfObject>> {
         self.entries
             .iter()
             .find_map(|(k, v)| if k == key { Some(v) } else { None })
@@ -93,58 +88,25 @@ impl PdfDictionaryObject {
             .ok_or_else(|| PdfError::StructureError(format!("Key '{}' not found", key)))
     }
 
+    fn require_key_mut(&mut self, key: &str) -> Result<&mut Box<dyn PdfObject>, PdfError> {
+        self.get_mut(key)
+            .ok_or_else(|| PdfError::StructureError(format!("Key '{}' not found", key)))
+    }
+
     pub fn get_t<T: PdfObject>(&self, key: &str) -> Result<&T, PdfError> {
         let value = self.require_key(key)?;
-        value.as_any().downcast_ref::<T>().ok_or_else(|| {
-            PdfError::StructureError(format!(
-                "Key '{}' is not of type {}",
-                key,
-                std::any::type_name::<T>()
-            ))
-        })
-    }
-
-    pub fn get_integer_value(&self, key: &str) -> Result<i64, PdfError> {
-        let value = self.require_key(key)?;
         value
             .as_any()
-            .downcast_ref::<PdfNumberObject>()
-            .ok_or_else(|| PdfError::StructureError(format!("Key '{}' is not a number", key)))
-            .map(|n| n.as_int())
+            .downcast_ref::<T>()
+            .ok_or_else(|| bad_type_error::<T>(key))
     }
 
-    pub fn get_string_value(&self, key: &str) -> Result<&str, PdfError> {
-        let value = self.require_key(key)?;
+    pub fn get_t_mut<T: PdfObject>(&mut self, key: &str) -> Result<&mut T, PdfError> {
+        let value = self.require_key_mut(key)?;
         value
-            .as_any()
-            .downcast_ref::<PdfStringObject>()
-            .ok_or_else(|| PdfError::StructureError(format!("Key '{}' is not a string", key)))
-            .map(|n| n.value())
-    }
-
-    pub fn get_name_value(&self, key: &str) -> Result<&Vec<u8>, PdfError> {
-        let value = self.require_key(key)?;
-        value
-            .as_any()
-            .downcast_ref::<PdfNameObject>()
-            .ok_or_else(|| PdfError::StructureError(format!("Key '{}' is not a name", key)))
-            .map(|n| n.value())
-    }
-
-    pub fn get_dict_value(&self, key: &str) -> Result<&PdfDictionaryObject, PdfError> {
-        let value = self.require_key(key)?;
-        value
-            .as_any()
-            .downcast_ref::<PdfDictionaryObject>()
-            .ok_or_else(|| PdfError::StructureError(format!("Key '{}' is not a dictionary", key)))
-    }
-
-    pub fn get_array_value(&self, key: &str) -> Result<&PdfArrayObject, PdfError> {
-        let value = self.require_key(key)?;
-        value
-            .as_any()
-            .downcast_ref::<PdfArrayObject>()
-            .ok_or_else(|| PdfError::StructureError(format!("Key '{}' is not an array", key)))
+            .as_any_mut()
+            .downcast_mut::<T>()
+            .ok_or_else(|| bad_type_error::<T>(key))
     }
 
     pub fn add(&mut self, key: &str, value: impl Into<Box<dyn PdfObject>>) {
@@ -159,7 +121,11 @@ impl PdfDictionaryObject {
         }
     }
 
-    pub fn update(&mut self, key: &str, value: impl Into<Box<dyn PdfObject>>) -> Result<(), PdfError> {
+    pub fn update(
+        &mut self,
+        key: &str,
+        value: impl Into<Box<dyn PdfObject>>,
+    ) -> Result<(), PdfError> {
         if let Some(existing) = self.entries.iter_mut().find(|(k, _)| k == key) {
             existing.1 = value.into();
 
