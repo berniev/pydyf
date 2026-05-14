@@ -93,7 +93,7 @@ impl Tree {
 //------------------------ TreeKey -----------------------------//
 
 pub trait TreeKey: Sized {
-    type PdfObj: PdfObject + 'static;
+    type PdfObj: PdfObject;
     fn to_pdf_obj(self) -> Self::PdfObj;
     fn entry_key_name() -> &'static str;
 }

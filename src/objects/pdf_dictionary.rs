@@ -55,7 +55,7 @@ impl PdfDictionaryObject {
     pub fn push_to_array(
         &mut self,
         key: &str,
-        value: impl PdfObject + 'static,
+        value: impl PdfObject,
     ) -> Result<(), PdfError> {
         if let Some(entry) = self.get_mut(key) {
             if let Some(arr) = entry.as_any_mut().downcast_mut::<PdfArrayObject>() {
