@@ -28,7 +28,7 @@
  Direct:   Null, Number, Boolean, Name
  =====================================
  */
-use crate::object_ops::{ObjectNumber, PdfEncode};
+use crate::object_ops::{ObjectNumber, PdfObject};
 use crate::objects::pdf_number::PdfNumberObject;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfNumberType, PdfStringObject};
 
@@ -66,14 +66,14 @@ impl Tree {
         Ok(())
     }
 
-    pub fn set_entries<K: TreeKey>(
+/*    pub fn set_entries<K: TreeKey>(
         &mut self,
-        entries: Vec<(K, impl PdfEncode + 'static)>,
+        entries: Vec<(K, impl PdfObject + 'static)>,
     ) -> Result<(), PdfError> {
         let mut arr = PdfArrayObject::new();
         for (key, val) in entries {
-            arr.push(key.to_pdf_obj());
-            arr.push(val);
+            arr.push(key.into());
+            arr.push(val.into());
         }
         self.dict.add(K::entry_key_name(), arr);
 
@@ -88,12 +88,12 @@ impl Tree {
 
         Ok(())
     }
-}
+*/}
 
 //------------------------ TreeKey -----------------------------//
 
 pub trait TreeKey: Sized {
-    type PdfObj: PdfEncode + 'static;
+    type PdfObj: PdfObject + 'static;
     fn to_pdf_obj(self) -> Self::PdfObj;
     fn entry_key_name() -> &'static str;
 }

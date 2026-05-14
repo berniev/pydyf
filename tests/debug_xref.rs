@@ -55,7 +55,7 @@ fn debug_xref_structure() {
     let path = "/tmp/pydyf_test/test_xref_debug.pdf";
     std::fs::create_dir_all("/tmp/pydyf_test").ok();
     let mut file = File::create(path).expect("Failed to create file");
-    file.write_all(&output).expect("Failed to write file");
+    file.write(&output).expect("Failed to write file");
 
     println!("\n=== PDF Structure ===");
     let pdf_str = String::from_utf8_lossy(&output);

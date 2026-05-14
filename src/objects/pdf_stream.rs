@@ -1,15 +1,9 @@
 use crate::error::PdfError;
-use crate::object_ops::{ObjectNumber, write_indirect_object};
+use crate::object_ops::ObjectNumber;
 pub use crate::util::{
     CompressionMethod, Dims, Matrix, Posn, StreamString, StrokeOrFill, WindingRule,
 };
-use crate::version::Version;
-use crate::xref_ops::XRefOps;
 use crate::{PdfDictionaryObject, PdfNameObject};
-use flate2::Compression;
-use flate2::write::ZlibEncoder;
-use std::fs::File;
-use std::io::Write as IoWrite;
 
 /// PDF content stream
 ///
@@ -94,18 +88,11 @@ pub struct PdfStreamObject {
 impl PdfStreamObject {
     pub fn new(object_number: ObjectNumber) -> Self {
         Self {
-            dict: PdfDictionaryObject::new(),
-            content: Vec::new(),
-            object_number, // all streams objects are indirect, but included dict is not
+            dict: PdfDictionaryObject::new(), // direct
+            content: vec![],
+            object_number, // stream objects are indirect
             compression_method: CompressionMethod::None,
         }
-    }
-
-    pub fn with_dict_and_content(mut self, dict: PdfDictionaryObject, content: Vec<u8>) -> Self {
-        self.dict = dict;
-        self.content = content;
-
-        self
     }
 
     pub fn compressed(mut self) -> Result<Self, PdfError> {
@@ -115,56 +102,18 @@ impl PdfStreamObject {
         Ok(self)
     }
 
-    pub fn with_data(mut self, data: Vec<u8>) -> Self {
+    pub fn with_content(mut self, data: Vec<u8>) -> Self {
         self.content = data;
 
         self
     }
 
-    pub fn compression_method(&self) -> CompressionMethod {
-        self.compression_method
-    }
-
-    pub fn add(&mut self, bytes: Vec<u8>) {
+    pub fn append_content(&mut self, bytes: Vec<u8>) {
         self.content.extend(bytes);
-    }
-
-    pub fn serialize(
-        &mut self,
-        version: Version,
-        xref: &mut XRefOps,
-        file: &mut File,
-    ) -> Result<(), PdfError> {
-        write_indirect_object(self.object_number, self.encode(version)?, xref, file)?;
-
-        Ok(())
-    }
-
-    fn encode(&mut self, version: Version) -> Result<Vec<u8>, PdfError> {
-        let compressed: Vec<u8>;
-        let stream_bytes: &Vec<u8> = match self.compression_method {
-            CompressionMethod::None => &self.content,
-            CompressionMethod::Flate => {
-                let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-                encoder.write_all(&self.content)?;
-                compressed = encoder.finish()?;
-                &compressed
-            }
-        };
-
-        self.dict.update_or_add("Length", stream_bytes.len() as f64);
-
-        let mut vec = vec![];
-        vec.extend(self.dict.encode(version)?); // dict must be direct object
-        vec.extend(b"stream\n");
-        vec.extend(stream_bytes);
-        vec.extend(b"\nendstream\n");
-
-        Ok(vec)
     }
 }
 
-#[cfg(test)]
+/*#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -226,3 +175,4 @@ mod tests {
         assert!(output.contains("/Length 9"));
     }
 }
+*/

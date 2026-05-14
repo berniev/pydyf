@@ -22,9 +22,9 @@ pub struct Pdf {
 impl Pdf {
     pub fn new() -> Result<Self, PdfError> {
         let object_ops = Rc::new(RefCell::new(ObjectOps::new()));
+        let catalog_object_number = object_ops.borrow_mut().next_object_number();
         let mut page_ops = PageOps::new(Rc::clone(&object_ops))?;
         let graphics_ops = GraphicsOps::new(Rc::clone(&object_ops));
-        let catalog_object_number = object_ops.borrow_mut().increment_object_number();
         let catalog_ops = CatalogOps::new(catalog_object_number, &mut page_ops)?;
         let trailer = Trailer::new(catalog_object_number)?;
 

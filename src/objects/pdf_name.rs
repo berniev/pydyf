@@ -1,7 +1,4 @@
-use crate::PdfError;
-use crate::version::Version;
-
-#[derive(Clone, PartialEq, Eq)]
+#[derive(PartialEq)]
 pub struct PdfNameObject {
     pub(crate) value: Vec<u8>,
 }
@@ -12,6 +9,10 @@ impl PdfNameObject {
         Self {
             value: Self::fix(value),
         }
+    }
+
+    pub fn value(&self) -> &Vec<u8> {
+        &self.value
     }
 
     // nb: all #'s will be encoded
@@ -31,36 +32,35 @@ impl PdfNameObject {
         }
         result
     }
-
-    pub fn as_vec(&self) -> &Vec<u8> {
-        &self.value
-    }
-    pub fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
-        let mut result = vec![b'/'];
-        result.extend(&self.value);
-        Ok(result)
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::object_ops::Encode;
+    use crate::version::Version;
 
     #[test]
     fn encode_simple_name() {
         let obj = PdfNameObject::new("Type");
-        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"/Type");
+        assert_eq!(
+            obj.encode(Version::V1_5).expect("REASON").to_vec(),
+            b"/Type"
+        );
     }
 
     #[test]
     fn encode_longer_name() {
         let obj = PdfNameObject::new("FlateDecode");
-        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"/FlateDecode");
+        assert_eq!(
+            obj.encode(Version::V1_5).expect("REASON").to_vec(),
+            b"/FlateDecode"
+        );
     }
 
     #[test]
     fn encode_empty_name() {
         let obj = PdfNameObject::new("");
-        assert_eq!(obj.encode(Version::V1_5).unwrap(), b"/");
+        assert_eq!(obj.encode(Version::V1_5).expect("REASON").to_vec(), b"/");
     }
 }

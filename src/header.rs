@@ -10,7 +10,7 @@ pub fn serialize(version: Version, file: &mut File) -> Result<(), PdfError> {
     arr.extend(b"\r\n");
     arr.extend("âãÏÓ\r\n".as_bytes());
 
-    file.write_all(&arr).map_err(PdfError::Io)?;
+    file.write(&arr).map_err(PdfError::Io)?;
 
     Ok(())
 }

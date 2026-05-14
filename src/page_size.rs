@@ -45,7 +45,7 @@ impl PageSize {
         }
     }
 
-    pub fn rect_to_pdf_array(&self) -> PdfArrayObject {
+    pub fn as_pdf_array(&self) -> PdfArrayObject {
         let Dims {width, height} = self.dims_points();
         let mut arr = PdfArrayObject::new();
         arr.push(0.0);

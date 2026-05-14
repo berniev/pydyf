@@ -1,15 +1,16 @@
-use crate::PdfError;
 use crate::version::Version;
 
 #[derive(Clone)]
 pub struct PdfStringObject {
     pub(crate) value: String,
 }
+
+#[allow(dead_code)]
 enum PdfStringType {
     Text,
     PdfDoc,
     Ascii,
-    Byte
+    Byte,
 }
 
 impl PdfStringObject {
@@ -19,16 +20,12 @@ impl PdfStringObject {
         }
     }
 
-    pub fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
-        Ok(encode_text_string(&*self.value, version))
-    }
-
     pub fn value(&self) -> &str {
         &self.value
     }
 }
 
-fn encode_text_string(string: &str, version: Version) -> Vec<u8> {
+pub(crate) fn encode_text_string(string: &str, version: Version) -> Vec<u8> {
     if string.is_ascii() {
         // < 128
         encode_ascii(string)
@@ -77,6 +74,7 @@ fn encode_utf8(string: &str) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::object_ops::Encode;
 
     #[test]
     fn encode_simple_string() {

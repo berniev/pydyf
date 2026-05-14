@@ -43,6 +43,7 @@ pub mod xref_ops;
 pub mod form;
 pub mod date;
 pub mod object_number;
+pub mod file_system;
 
 // Re-export main types for user API convenience
 pub use action::{

@@ -1,5 +1,4 @@
-use crate::version::Version;
-use crate::{PdfError, PdfNumberType};
+use crate::PdfNumberType;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PdfNumberObject {
@@ -8,9 +7,7 @@ pub struct PdfNumberObject {
 
 impl PdfNumberObject {
     pub fn new(value: PdfNumberType) -> Self {
-        Self {
-            value,
-        }
+        Self { value }
     }
 
     pub fn set_value<T: Into<PdfNumberType>>(&mut self, value: T) {
@@ -29,24 +26,6 @@ impl PdfNumberObject {
             PdfNumberType::Integer(i) => i as f64,
             PdfNumberType::Real(f) => f,
         }
-    }
-
-    pub fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
-        let mut arr = vec![];
-        arr = match self.value {
-            PdfNumberType::Integer(i) => Vec::from(&*i.to_string().into_bytes()),
-            PdfNumberType::Real(f) => {
-                Vec::from(
-                    &*format!("{:.4}", f) // use a reasonable precision
-                        .trim_end_matches('0')
-                        .trim_end_matches('.')
-                        .to_string()
-                        .into_bytes(),
-                )
-            }
-        };
-
-        Ok(arr)
     }
 }
 
@@ -101,6 +80,8 @@ impl From<u32> for PdfNumberObject {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::object_ops::Encode;
+    use crate::version::Version;
 
     #[test]
     fn encode_positive_integer() {

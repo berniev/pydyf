@@ -6,7 +6,7 @@ pub struct FileSpecification {
 
 impl FileSpecification {
     pub fn new() -> Result<Self, PdfError> {
-        let dict = PdfDictionaryObject::new().typed("FileSpec")?;
+        let dict = PdfDictionaryObject::new().typed("FileSpec");
         Ok(Self { dict })
     }
 

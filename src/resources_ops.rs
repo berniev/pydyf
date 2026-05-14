@@ -113,7 +113,7 @@ impl NamedResources {
     }
 
     pub fn get(&self, cat: ResourceCategory) -> Option<&PdfDictionaryObject> {
-        self.dictionary.get_dict(cat.as_str()).ok()
+        self.dictionary.get_dict_value(cat.as_str()).ok()
     }
 
     pub fn contains(&self, cat: ResourceCategory) -> bool {
@@ -122,7 +122,7 @@ impl NamedResources {
 
     pub fn category_count(&self, cat: ResourceCategory) -> usize {
         self.dictionary
-            .get_dict(cat.as_str())
+            .get_dict_value(cat.as_str())
             .map_or(0, |d| d.len())
     }
 

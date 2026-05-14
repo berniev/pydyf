@@ -1,21 +1,12 @@
-use crate::object_ops::{ObjectNumber, ObjectOps};
+use crate::PdfStreamObject;
+use crate::object_ops::{ObjectNumber, ObjectOps, Serialize};
 pub use crate::page_size::PageSize;
 use crate::version::Version;
 use crate::xref_ops::XRefOps;
 use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
-use crate::{PdfReferenceObject, PdfStreamObject};
 use std::cell::RefCell;
 use std::fs::File;
 use std::rc::Rc;
-
-/// Page: (pdf dictionary)
-///
-/// The attributes of a page, organized into various categories (e.g., Font, ColorSpace, Pattern)
-///
-///     A page object may not have children.
-///
-/// I = Can be inherited from parent pageTree heirarchy, which satisfies R (Reqd).
-///
 
 ///
 /// Page dict entries:
@@ -79,22 +70,40 @@ use std::rc::Rc;
 /// =============================================================================
 ///
 
+//--------------------------- PageFactory -------------------------
+
+pub struct PageFactory {
+    object_ops: Rc<RefCell<ObjectOps>>,
+}
+impl PageFactory {
+    pub fn new(object_ops: Rc<RefCell<ObjectOps>>) -> Self {
+        PageFactory { object_ops }
+    }
+
+    pub fn new_tree(&self) -> PageTree {
+        let object_number = self.object_ops.borrow_mut().next_object_number();
+        PageTree::new(object_number)
+    }
+
+    pub fn new_page(&self, content: Vec<u8>) -> Page {
+        Page::new(self.object_ops.clone(), content)
+    }
+}
+
+//--------------------------- PageOps -------------------------------
+
 pub struct PageOps {
     pub root_tree: PageTree,
 }
-
 impl PageOps {
     pub fn new(object_ops: Rc<RefCell<ObjectOps>>) -> Result<Self, PdfError> {
-        let mut root_tree = PageTree::new(
-            object_ops.clone(),
-            object_ops.borrow_mut().increment_object_number(),
-        )?;
+        let mut root_tree = PageFactory::new(object_ops).new_tree();
         let mut resources = PdfDictionaryObject::new();
         resources.add("Font", crate::fonts::standard_fonts_dict()?);
         root_tree.dictionary.add("Resources", resources);
         root_tree
             .dictionary
-            .add("MediaBox", PageSize::default().rect_to_pdf_array());
+            .add("MediaBox", PageSize::default().as_pdf_array());
 
         Ok(PageOps { root_tree })
     }
@@ -102,7 +111,7 @@ impl PageOps {
     pub fn set_default_page_size(&mut self, page_size: PageSize) {
         self.root_tree
             .dictionary
-            .update_or_add("MediaBox", page_size.rect_to_pdf_array());
+            .update_or_add("MediaBox", page_size.as_pdf_array());
     }
 
     pub fn root_tree_mut(&mut self) -> &mut PageTree {
@@ -119,143 +128,150 @@ impl PageOps {
         xref: &mut XRefOps,
         file: &mut File,
     ) -> Result<(), PdfError> {
-        PageTree::update_counts(&mut self.root_tree.dictionary);
-        self.root_tree.dictionary.serialize(version, xref, file)
+        let mut count: usize = 0;
+        self.root_tree.update_counts(&mut count);
+        self.root_tree.serialize(version, xref, file)
     }
 }
 
+//--------------------------- PageTree -------------------------------
+
 pub struct PageTree {
     dictionary: PdfDictionaryObject,
-    object_ops: Rc<RefCell<ObjectOps>>,
+    trees: Vec<PageTree>,
+    pages: Vec<Page>,
+    pub object_number: ObjectNumber,
 }
-
 impl PageTree {
-    fn new(
-        object_ops: Rc<RefCell<ObjectOps>>,
-        object_number: ObjectNumber,
-    ) -> Result<Self, PdfError> {
-        let mut dict = PdfDictionaryObject::new()
-            .typed("Pages")?
+    fn new(object_number: ObjectNumber) -> Self {
+        let dict = PdfDictionaryObject::new()
+            .typed("Pages")
             .with_object_number(object_number);
-        dict.add("Kids", PdfArrayObject::new());
-        dict.add("Count", 0u64);
 
-        Ok(PageTree {
+        PageTree {
             dictionary: dict,
-            object_ops,
-        })
+            trees: vec![],
+            pages: vec![],
+            object_number,
+        }
     }
 
     pub fn with_default_page_size(mut self, page_size: PageSize) -> Self {
         self.dictionary
-            .update_or_add("MediaBox", page_size.rect_to_pdf_array());
+            .update_or_add("MediaBox", page_size.as_pdf_array());
+
         self
     }
 
-    pub fn make_page(&self, content: Vec<u8>) -> Result<Page, PdfError> {
-        Page::new(self.object_ops.clone(), content)
-    }
-
-    pub fn make_tree(&self) -> Result<PageTree, PdfError> {
-        PageTree::new(
-            self.object_ops.clone(),
-            self.object_ops.borrow_mut().increment_object_number(),
-        )
-    }
-
-    // NB: Tree must be added AFTER its constituent pages are defined
     pub fn add_tree(&mut self, mut tree: PageTree) -> Result<(), PdfError> {
-        self.has_kids()?;
+        tree.dictionary.add("Parent", self.object_number);
 
-        tree.dictionary
-            .add("Parent", PdfReferenceObject::new(self.object_number()));
-
-        self.add_kid(Box::new(tree.dictionary))?;
+        //self.add_kid(Box::new(tree.dictionary))?;
+        self.trees.push(tree);
 
         Ok(())
     }
 
-    pub fn add_page(&mut self, mut page: Page) -> Result<(), PdfError> {
-        page.dictionary
-            .add("Parent", PdfReferenceObject::new(self.object_number()));
-        self.dictionary.update_or_add(
-            "Count",
-            self.dictionary.get_integer("Count").unwrap_or(0) + 1,
-        );
-        self.add_kid(Box::new(page.dictionary))?;
-
-        Ok(())
-    }
-
-    pub fn add_page_using(&mut self, data: Vec<u8>) -> Result<(), PdfError> {
-        self.add_page(self.make_page(data.clone())?)
+    pub fn add_page(&mut self, mut page: Page) {
+        page.set_parent(self.object_number);
+        self.pages.push(page);
     }
 
     pub fn add_resources() {}
 
-    fn add_kid(&mut self, kid_obj: Box<PdfDictionaryObject>) -> Result<(), PdfError> {
-        let object_number = kid_obj.object_number.unwrap(); // or propagate error
-        self.dictionary.children.push(kid_obj);
-        self.dictionary
-            .push_to_array("Kids", PdfReferenceObject::new(object_number))?;
-        Ok(())
-    }
-
-    fn has_kids(&self) -> Result<(), PdfError> {
-        if !self.dictionary.contains_key("Kids") {
-            return Err(PdfError::StructureError(
-                "Parent page tree must have a Kids array".to_string(),
-            ));
+    fn update_counts(&mut self, descendant_page_count: &mut usize) {
+        for tree in &mut self.trees {
+            tree.update_counts(descendant_page_count)
         }
-        Ok(())
+
+        *descendant_page_count += self.pages.len();
+
+        self.dictionary.add("Count", *descendant_page_count);
     }
 
-    pub fn object_number(&self) -> ObjectNumber {
-        self.dictionary.object_number.unwrap()
-    }
-
-    fn update_counts(dict: &mut PdfDictionaryObject) {
-        let mut count = 0i64;
-        for child in &mut dict.children {
-            match child.get_name("Type").map(|v| v.as_slice()) {
-                Ok(b"Page") => count += 1,
-                Ok(b"Pages") => {
-                    Self::update_counts(child);
-                    count += child.get_integer("Count").unwrap_or(0);
-                }
-                _ => {}
-            }
+    fn serialize(
+        &mut self,
+        version: Version,
+        xref: &mut XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError> {
+        let mut arr = PdfArrayObject::new();
+        for page in &mut self.pages {
+            arr.push(page.dictionary.object_number.unwrap());
         }
-        dict.update_or_add("Count", count);
+        for tree in &mut self.trees {
+            arr.push(tree.object_number);
+        }
+        self.dictionary.add("Kids", arr);
+
+        self.dictionary.serialize(version, xref, file)?;
+        for page in &mut self.pages {
+            page.serialize(version, xref, file)?;
+        }
+        for tree in &mut self.trees{
+            tree.serialize(version, xref, file)?;
+        }
+
+        Ok(())
     }
 }
 
-pub struct Page {
-    pub dictionary: PdfDictionaryObject,
-}
+//--------------------------- ContentsType -------------------------
 
-pub enum ContentsType{
+pub enum ContentsType {
     None,
     Stream,
-    Array
+    Array,
 }
 
+//--------------------------- Page ---------------------------------
+
+pub struct Page {
+    dictionary: PdfDictionaryObject,
+    stream: PdfStreamObject,
+    _content_type: ContentsType,
+}
 impl Page {
-    fn new(object_ops: Rc<RefCell<ObjectOps>>, content: Vec<u8>) -> Result<Self, PdfError> {
-        let stream = PdfStreamObject::new(object_ops.borrow_mut().increment_object_number())
-            .with_data(content);
+    fn new(object_ops: Rc<RefCell<ObjectOps>>, content: Vec<u8>) -> Self {
+        let object_number = object_ops.borrow_mut().next_object_number();
+        let stream_object_number = object_ops.borrow_mut().next_object_number();
         let mut dict = PdfDictionaryObject::new()
-            .typed("Page")?
-            .with_object_number(object_ops.clone().borrow_mut().increment_object_number());
+            .typed("Page")
+            .with_object_number(object_number);
 
-        dict.add("Contents", stream);
+        // Contents is content stream, or array of streams
+        dict.add("Contents", stream_object_number);
 
-        Ok(Page { dictionary: dict })
+        Page {
+            dictionary: dict,
+            stream:PdfStreamObject::new(stream_object_number).with_content(content),
+            _content_type: ContentsType::Stream,
+        }
     }
 
     pub fn with_page_size(mut self, page_size: PageSize) -> Self {
         self.dictionary
-            .update_or_add("MediaBox", page_size.rect_to_pdf_array());
+            .update_or_add("MediaBox", page_size.as_pdf_array());
         self
+    }
+
+    fn set_parent(&mut self, parent_object_number: ObjectNumber) {
+        self.dictionary.add("Parent", parent_object_number);
+    }
+
+    pub fn object_number(&self)->ObjectNumber{
+        self.dictionary.object_number.unwrap()
+    }
+
+    pub fn serialize(
+        &mut self,
+        version: Version,
+        xref: &mut XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError> {
+        self.dictionary.serialize(version, xref, file)?;
+        self.stream.serialize(version, xref, file)?;
+
+        Ok(())
     }
 }

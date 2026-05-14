@@ -1,5 +1,6 @@
 use rusty_pdf::color::RGB;
 use rusty_pdf::drawing_commands::DrawingCommands;
+use rusty_pdf::page_ops::PageFactory;
 use rusty_pdf::util::{Dims, Posn};
 use rusty_pdf::{PageSize, Pdf, PdfError};
 
@@ -10,6 +11,8 @@ fn main() -> Result<(), PdfError> {
     let mut pdf = Pdf::new()?.with_default_page_size(PageSize::A4);
 
     let mut cmd = DrawingCommands::new();
+
+    // page 1,2
     cmd.set_color_rgb_fill(RGB::BLUE);
     cmd.add_rectangle(
         Posn { x: 50.0, y: 50.0 },
@@ -19,7 +22,6 @@ fn main() -> Result<(), PdfError> {
         },
     );
     cmd.fill_even_odd();
-
     cmd.set_color_rgb_fill(RGB::RED);
     cmd.add_rectangle(
         Posn { x: 50.0, y: 100.0 },
@@ -28,9 +30,7 @@ fn main() -> Result<(), PdfError> {
             width: 300.0,
         },
     );
-
     cmd.fill_even_odd();
-
     cmd.begin_text();
     cmd.set_font_name_and_size("Helvetica-Bold", 16.0);
     cmd.set_color_rgb_fill(RGB::BLUE);
@@ -45,11 +45,14 @@ fn main() -> Result<(), PdfError> {
     cmd.show_single_text_string("Third text line");
     cmd.end_text();
 
-    let root_tree = pdf.page_ops.root_tree_mut();
+    let page_factory = PageFactory::new(pdf.object_ops.clone());
 
-    root_tree.add_page_using(cmd.read())?;
-    root_tree.add_page_using(cmd.flush())?;
+    let tree = pdf.page_ops.root_tree_mut();
 
+    tree.add_page(page_factory.new_page(cmd.read()));
+    tree.add_page(page_factory.new_page(cmd.flush()));
+
+    // page 3, A5
     cmd.set_color_rgb_fill(RGB::ORANGE);
     cmd.add_rectangle(
         Posn { x: 50.0, y: 50.0 },
@@ -59,7 +62,6 @@ fn main() -> Result<(), PdfError> {
         },
     );
     cmd.fill_even_odd();
-
     cmd.set_color_rgb_fill(RGB::GREEN);
     cmd.add_rectangle(
         Posn { x: 50.0, y: 100.0 },
@@ -68,7 +70,6 @@ fn main() -> Result<(), PdfError> {
             width: 300.0,
         },
     );
-
     cmd.begin_text();
     cmd.fill_even_odd();
     cmd.set_font_name_and_size("Helvetica-Bold", 16.0);
@@ -77,11 +78,12 @@ fn main() -> Result<(), PdfError> {
     cmd.show_single_text_string("Page 3, A5");
     cmd.end_text();
 
-    let mut new_tree = root_tree.make_tree()?.with_default_page_size(PageSize::A5);
-    new_tree.add_page_using(cmd.flush())?;
+    let mut new_tree = page_factory.new_tree().with_default_page_size(PageSize::A5);
+    new_tree.add_page(page_factory.new_page(cmd.read()));
 
-    root_tree.add_tree(new_tree)?;
+    tree.add_tree(new_tree)?;
 
+    // Save to file
     let path = "output.pdf";
     pdf.finalize(path)?;
 

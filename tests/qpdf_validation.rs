@@ -30,7 +30,7 @@ fn test_qpdf_validates_compressed_pdf() {
     let path = "/tmp/pydyf_test/test_compressed.pdf";
     std::fs::create_dir_all("/tmp/pydyf_test").ok();
     let mut file = File::create(path).expect("Failed to create file");
-    file.write_all(&output).expect("Failed to write file");
+    file.write(&output).expect("Failed to write file");
 
     // Validate with qpdf
     let result = Command::new("qpdf")
@@ -81,7 +81,7 @@ fn test_qpdf_validates_uncompressed_pdf() {
     let path = "/tmp/pydyf_test/test_uncompressed.pdf";
     std::fs::create_dir_all("/tmp/pydyf_test").ok();
     let mut file = File::create(path).expect("Failed to create file");
-    file.write_all(&output).expect("Failed to write file");
+    file.write(&output).expect("Failed to write file");
 
     // Validate with qpdf
     let result = Command::new("qpdf")

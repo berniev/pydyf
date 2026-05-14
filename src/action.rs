@@ -123,7 +123,7 @@ impl Action for LaunchAction {
         let mut dict = PdfDictionaryObject::new();
         dict.add("S", PdfNameObject::new(self.action_type()));
 
-        let mut file_dict = PdfDictionaryObject::new().typed("Filespec")?;
+        let mut file_dict = PdfDictionaryObject::new().typed("Filespec");
         file_dict.add("F", PdfStringObject::new(&*self.file));
         dict.add("F", file_dict);
 

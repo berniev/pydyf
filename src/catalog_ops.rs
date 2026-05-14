@@ -135,11 +135,11 @@ the things themselves (beyond trivial values).
 "Version",           1.4
 "ViewerPreferences", 1.2
 */
-use crate::object_ops::ObjectNumber;
+use crate::object_ops::{ObjectNumber, Serialize};
 use crate::page_ops::PageOps;
 use crate::version::Version;
 use crate::xref_ops::XRefOps;
-use crate::{PdfDictionaryObject, PdfError, PdfReferenceObject};
+use crate::{PdfDictionaryObject, PdfError};
 use std::fs::File;
 
 pub struct CatalogOps {
@@ -149,10 +149,10 @@ pub struct CatalogOps {
 impl CatalogOps {
     pub fn new(object_number: ObjectNumber, page_ops: &mut PageOps) -> Result<Self, PdfError> {
         let mut dictionary = PdfDictionaryObject::new()
-            .typed("Catalog")?
+            .typed("Catalog")
             .with_object_number(object_number);
 
-        dictionary.add("Pages", PdfReferenceObject::new(page_ops.root_tree().object_number()));
+        dictionary.add("Pages", page_ops.root_tree().object_number);
 
         Ok(Self { dictionary })
     }

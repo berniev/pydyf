@@ -81,7 +81,7 @@ impl OptionalContentGroup {
     }
 
     pub fn to_dict(&self) -> Result<PdfDictionaryObject, PdfError> {
-        let mut dict = PdfDictionaryObject::new().typed("OCG")?;
+        let mut dict = PdfDictionaryObject::new().typed("OCG");
         dict.add("Name", PdfStringObject::new(self.name.as_str()));
         //dict.add_name("Name", self.name.clone());
 

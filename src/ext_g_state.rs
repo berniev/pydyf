@@ -148,7 +148,7 @@ impl ExtGState {
     }
 
     pub fn to_dict(&self) -> Result<PdfDictionaryObject, PdfError> {
-        let mut dict = PdfDictionaryObject::new().typed("ExtGState")?;
+        let mut dict = PdfDictionaryObject::new().typed("ExtGState");
 
         if let Some(lw) = self.line_width {
             dict.add("LW", lw);

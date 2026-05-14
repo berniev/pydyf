@@ -145,7 +145,7 @@ impl DocumentOutline {
                     )?;
                 }
         */
-        let mut outline_dict = PdfDictionaryObject::new().typed("Outlines")?;
+        let mut outline_dict = PdfDictionaryObject::new().typed("Outlines");
 
         if !self.items.is_empty() {
             outline_dict.add("First", item_ids[0]);
@@ -187,7 +187,7 @@ impl DocumentOutline {
         let current_id = all_ids[*idx];
         *idx += 1;
 
-        let mut dict = PdfDictionaryObject::new().typed(&*item.title)?;
+        let mut dict = PdfDictionaryObject::new().typed(&*item.title);
 
         if let Some(prev) = prev_id {
             dict.add("Prev", prev);

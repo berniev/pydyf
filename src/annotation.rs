@@ -20,7 +20,7 @@ pub fn make_annotation_dict(
     subtype: &str,
     rect: Rectangle,
 ) -> Result<PdfDictionaryObject, PdfError> {
-    let mut dict = PdfDictionaryObject::new().typed("Annot")?;
+    let mut dict = PdfDictionaryObject::new().typed("Annot");
     dict.add("Subtype", PdfStringObject::new(subtype));
     dict.add("Rect", rect.as_pdf_array_object());
     dict.add(
@@ -257,7 +257,7 @@ impl FreeTextAnnotation {
         mut self,
         rich_text_stream: PdfStreamObject,
     ) -> Result<Self, PdfError> {
-        self.dict.add("RC", PdfReferenceObject::new(rich_text_stream.object_number));
+        self.dict.add("RC", rich_text_stream.object_number);
         Ok(self)
     }
 

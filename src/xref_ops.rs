@@ -109,7 +109,7 @@ impl XRefOps {
             vec.extend(entry.serialize());
         }
 
-        file.write_all(&vec)?;
+        file.write(&vec)?;
 
         Ok(())
     }

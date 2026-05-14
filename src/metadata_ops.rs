@@ -1,4 +1,4 @@
-use crate::object_ops::{ObjectNumber};
+use crate::object_ops::{ObjectNumber, Serialize};
 use crate::version::Version;
 use crate::xref_ops::XRefOps;
 use crate::{PdfDictionaryObject, PdfError, PdfStreamObject, PdfStringObject};
@@ -45,9 +45,8 @@ pub enum XmpType {
     Alt,
     Seq,
     Bag,
-    None
+    None,
 }
-
 
 pub struct MetadataOps {
     dict: PdfDictionaryObject,
@@ -55,6 +54,7 @@ pub struct MetadataOps {
     xmp_body: String,
 }
 
+#[allow(dead_code)]
 impl MetadataOps {
     pub fn new(info_object_number: ObjectNumber, xmp_object_number: ObjectNumber) -> Self {
         Self {
@@ -64,32 +64,33 @@ impl MetadataOps {
         }
     }
 
-    fn xmp_add(&mut self, str:&str){
+    fn xmp_add(&mut self, str: &str) {
         self.xmp_body.push_str(str);
     }
- fn xalt(&mut self, tag: &str, value: &str)->String {
-    format!("<{tag}><rdf:Alt><rdf:li xml:lang=\"x-default\">{value}</rdf:li></rdf:Alt></{tag}>")
-}
+    
+    fn xalt(&mut self, tag: &str, value: &str) -> String {
+        format!("<{tag}><rdf:Alt><rdf:li xml:lang=\"x-default\">{value}</rdf:li></rdf:Alt></{tag}>")
+    }
 
-fn xseq(&mut self, tag: &str, value: &str) ->String{
-    format!("<{tag}><rdf:Seq><rdf:li>{value}</rdf:li></rdf:Seq></{tag}>")
-}
+    fn xseq(&mut self, tag: &str, value: &str) -> String {
+        format!("<{tag}><rdf:Seq><rdf:li>{value}</rdf:li></rdf:Seq></{tag}>")
+    }
 
-fn xbag(&mut self, tag: &str, value: &str) ->String {
-    format!("<{tag}><rdf:Bag><rdf:li>{value}</rdf:li></rdf:Bag></{tag}>")
-}
+    fn xbag(&mut self, tag: &str, value: &str) -> String {
+        format!("<{tag}><rdf:Bag><rdf:li>{value}</rdf:li></rdf:Bag></{tag}>")
+    }
 
-fn xtext(&mut self, tag: &str, value: &str)->String {
-    format!("<{tag}>{value}</{tag}>")
-}
+    fn xtext(&mut self, tag: &str, value: &str) -> String {
+        format!("<{tag}>{value}</{tag}>")
+    }
 
-fn xdate(&mut self, tag: &str, value: &str) ->String{
-    format!("<{tag}>{value}</{tag}>")
-}
+    fn xdate(&mut self, tag: &str, value: &str) -> String {
+        format!("<{tag}>{value}</{tag}>")
+    }
 
-   pub fn add_title(&mut self, title: &str) -> Result<(), PdfError> {
+    pub fn add_title(&mut self, title: &str) -> Result<(), PdfError> {
         self.dict.add("Title", PdfStringObject::new(title));
-       //self.xmp_add(&*self.xalt(title));
+        //self.xmp_add(&*self.xalt(title));
         Ok(())
     }
     pub fn add_author(&mut self, author: &str) -> Result<(), PdfError> {
@@ -131,13 +132,14 @@ fn xdate(&mut self, tag: &str, value: &str) ->String{
 
         // build and serialise xmp stream
         self.xmp
-            .add(format!("{}{}{}", XMP_HEADER, self.xmp_body, XMP_FOOTER).into_bytes());
+            .append_content(format!("{}{}{}", XMP_HEADER, self.xmp_body, XMP_FOOTER).into_bytes());
         self.xmp.serialize(version, xref, file)?;
 
         Ok(())
     }
 }
 
+#[allow(dead_code)]
 fn escape_xml(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")

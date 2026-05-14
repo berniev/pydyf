@@ -363,7 +363,7 @@ impl OutputIntent {
         subtype: OutputIntentSubtype,
         output_condition_identifier: &str,
     ) -> Result<Self, PdfError> {
-        let mut dict = PdfDictionaryObject::new().typed("OutputIntent")?;
+        let mut dict = PdfDictionaryObject::new().typed("OutputIntent");
         dict.add("S", PdfStringObject::new(subtype.as_string()));
         dict.add("OutputConditionIdentifier", PdfStringObject::new(output_condition_identifier));
         Ok(Self { dict })
