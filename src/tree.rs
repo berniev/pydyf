@@ -65,6 +65,7 @@ impl Tree {
 
         Ok(())
     }
+}
 
 /*    pub fn set_entries<K: TreeKey>(
         &mut self,
@@ -88,7 +89,7 @@ impl Tree {
 
         Ok(())
     }
-*/}
+*/
 
 //------------------------ TreeKey -----------------------------//
 
