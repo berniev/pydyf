@@ -7,6 +7,7 @@ use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
 use std::cell::RefCell;
 use std::fs::File;
 use std::rc::Rc;
+use crate::fonts::standard_fonts_dict;
 
 ///
 /// Page dict entries:
@@ -99,7 +100,7 @@ impl PageOps {
     pub fn new(object_ops: Rc<RefCell<ObjectOps>>) -> Result<Self, PdfError> {
         let mut root_tree = PageFactory::new(object_ops).new_tree();
         let mut resources = PdfDictionaryObject::new();
-        resources.add("Font", crate::fonts::standard_fonts_dict()?);
+        resources.add("Font", standard_fonts_dict()?);
         root_tree.dictionary.add("Resources", resources);
         root_tree
             .dictionary
