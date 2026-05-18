@@ -256,7 +256,21 @@ pub trait Encode {
 
 impl Encode for PdfArrayObject {}
 impl Encode for PdfDictionaryObject {}
-impl Encode for PdfStreamObject {}
+
+impl Encode for PdfStreamObject {
+    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
+        let stream_bytes: Vec<u8> = match self.compression_method {
+            CompressionMethod::None => self.content.clone(),
+            CompressionMethod::Flate => {
+                let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+                encoder.write(&*self.content)?;
+                encoder.finish()?
+            }
+        };
+
+        Ok(stream_bytes)
+    }
+}
 
 impl Encode for PdfNameObject {
     fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
@@ -416,18 +430,11 @@ impl Serialize for PdfStreamObject {
         xref: &mut XRefOps,
         file: &mut File,
     ) -> Result<(), PdfError> {
+        let stream_bytes = self.encode(version)?;
+        self.dict.add("Length", stream_bytes.len())?;
+
         try_indirect_start(xref, file, Some(self.object_number))?;
 
-        let stream_bytes: Vec<u8> = match self.compression_method {
-            CompressionMethod::None => self.content.clone(),
-            CompressionMethod::Flate => {
-                let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-                encoder.write(&*self.content)?;
-                encoder.finish()?
-            }
-        };
-
-        self.dict.add("Length", stream_bytes.len())?;
         self.dict.serialize(version, xref, file)?; // dict is direct object (no object number)
 
         file.write(b"stream\n")?;
