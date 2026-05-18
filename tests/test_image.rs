@@ -46,7 +46,7 @@ fn test_inline_image() {
 
     let mut pdf = Pdf::new();
     let mut page_dict = pdf.page_ops.new_page();
-    page_dict.add("MediaBox", PageSize::A4.to_rect());
+    page_dict.add("MediaBox", PageSize::A4.to_rect())?;
     page_dict.add("Contents", stream);
     pdf.page_ops.add_page_to_tree(page_dict, &mut pdf.root_page_tree_dict).expect("fail");
 

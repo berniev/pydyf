@@ -97,7 +97,7 @@ impl PdfStreamObject {
 
     pub fn compressed(mut self) -> Result<Self, PdfError> {
         self.compression_method = CompressionMethod::Flate;
-        self.dict.add("Filter", PdfNameObject::new("FlateDecode"));
+        self.dict.add("Filter", PdfNameObject::new("FlateDecode"))?;
 
         Ok(self)
     }
@@ -168,7 +168,7 @@ mod tests {
     #[test]
     fn encode_stream_with_dict_entries() {
         let mut stream = PdfStreamObject::new(ObjectNumber::new(1));
-        stream.dict.add("Type", PdfNameObject::new("XObject"));
+        stream.dict.add("Type", PdfNameObject::new("XObject"))?;
         stream.add(b"some data".to_vec());
         let output = String::from_utf8(stream.encode(Version::V1_5).unwrap()).unwrap();
         assert!(output.contains("/Type /XObject"));

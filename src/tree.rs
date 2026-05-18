@@ -61,7 +61,7 @@ impl Tree {
         for new_kid in new_kids {
             arr.push(new_kid);
         }
-        self.dict.add("Kids", arr);
+        self.dict.add("Kids", arr)?;
 
         Ok(())
     }

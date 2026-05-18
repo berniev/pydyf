@@ -152,7 +152,7 @@ impl CatalogOps {
             .typed("Catalog")
             .with_object_number(object_number);
 
-        dictionary.add("Pages", page_ops.root_tree().object_number);
+        dictionary.add("Pages", page_ops.root_tree().object_number)?;
 
         Ok(Self { dictionary })
     }

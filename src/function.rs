@@ -84,29 +84,29 @@ impl Function0Sampled {
         let mut stream = PdfStreamObject::new(object_number).with_content(code);
         stream
             .dict
-            .add("FunctionType", FunctionType::Sampled as i64);
-        stream.dict.add("Domain", domain);
-        stream.dict.add("Size", size);
-        stream.dict.add("Range", range);
-        stream.dict.add("BitsPerSample", bits_per_sample as i64);
+            .add("FunctionType", FunctionType::Sampled as i64)?;
+        stream.dict.add("Domain", domain)?;
+        stream.dict.add("Size", size)?;
+        stream.dict.add("Range", range)?;
+        stream.dict.add("BitsPerSample", bits_per_sample as i64)?;
 
         Ok(Self { stream })
     }
 
     pub fn with_order(mut self, order: OrderType) -> Result<Self, PdfError> {
-        self.stream.dict.add("Order", order as i64);
+        self.stream.dict.add("Order", order as i64)?;
 
         Ok(self)
     }
 
     pub fn with_encode(mut self, encode: PdfArrayObject) -> Result<Self, PdfError> {
-        self.stream.dict.add("Encode", encode);
+        self.stream.dict.add("Encode", encode)?;
 
         Ok(self)
     }
 
     pub fn with_decode(mut self, decode: PdfArrayObject) -> Result<Self, PdfError> {
-        self.stream.dict.add("Decode", decode);
+        self.stream.dict.add("Decode", decode)?;
 
         Ok(self)
     }
@@ -118,15 +118,15 @@ pub struct Function2Exponential {
 impl Function2Exponential {
     pub fn new(domain: PdfArrayObject, interpolation_exponent: f64) -> Result<Self, PdfError> {
         let mut dictionary = PdfDictionaryObject::new();
-        dictionary.add("Function Type", FunctionType::Exponential as i64);
-        dictionary.add("Domain", domain);
-        dictionary.add("N", interpolation_exponent);
+        dictionary.add("Function Type", FunctionType::Exponential as i64)?;
+        dictionary.add("Domain", domain)?;
+        dictionary.add("N", interpolation_exponent)?;
 
         Ok(Self { dictionary })
     }
 
     pub fn with_range(mut self, range: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Range", range);
+        self.dictionary.add("Range", range)?;
 
         Ok(self)
     }
@@ -135,13 +135,13 @@ impl Function2Exponential {
         mut self,
         values_at_start: PdfArrayObject,
     ) -> Result<Self, PdfError> {
-        self.dictionary.add("C0", values_at_start);
+        self.dictionary.add("C0", values_at_start)?;
 
         Ok(self)
     }
 
     pub fn with_values_at_end(mut self, values_at_end: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dictionary.add("C1", values_at_end);
+        self.dictionary.add("C1", values_at_end)?;
 
         Ok(self)
     }
@@ -158,17 +158,17 @@ impl Function3Stitching {
         encode: PdfArrayObject,
     ) -> Result<Self, PdfError> {
         let mut dictionary = PdfDictionaryObject::new();
-        dictionary.add("FunctionType", FunctionType::Stitching as i64);
-        dictionary.add("Functions", functions);
-        dictionary.add("Domain", domain);
-        dictionary.add("Bounds", bounds);
-        dictionary.add("Encode", encode);
+        dictionary.add("FunctionType", FunctionType::Stitching as i64)?;
+        dictionary.add("Functions", functions)?;
+        dictionary.add("Domain", domain)?;
+        dictionary.add("Bounds", bounds)?;
+        dictionary.add("Encode", encode)?;
 
         Ok(Self { dictionary })
     }
 
     pub fn with_range(mut self, range: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dictionary.add("Range", range);
+        self.dictionary.add("Range", range)?;
 
         Ok(self)
     }
@@ -187,9 +187,9 @@ impl Function4PostScript {
         let mut stream = PdfStreamObject::new(object_number).with_content(code);
         stream
             .dict
-            .add("FunctionType", FunctionType::PostScript as i64);
-        stream.dict.add("Domain", domain);
-        stream.dict.add("Range", range);
+            .add("FunctionType", FunctionType::PostScript as i64)?;
+        stream.dict.add("Domain", domain)?;
+        stream.dict.add("Range", range)?;
 
         Ok(Self { stream })
     }

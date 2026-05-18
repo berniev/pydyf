@@ -1,4 +1,5 @@
-use crate::{PdfDictionaryObject, PdfError, ResourceCategory, fonts};
+use crate::fonts::ALL_STANDARD_FONTS;
+use crate::{PdfDictionaryObject, PdfError, PdfNameObject, ResourceCategory};
 /*
 The operands supplied to operators in a content stream shall be direct objects.
 
@@ -88,11 +89,20 @@ impl NamedResources {
         }
     }
 
-    pub fn with_standard_fonts() -> Result<Self, PdfError> {
-        let mut res = Self::new();
-        res.dictionary.add("Font", fonts::standard_fonts_dict()?);
+    pub fn with_standard_fonts() -> Self {
+        let mut fonts_dict = PdfDictionaryObject::new();
 
-        Ok(res)
+        for font in ALL_STANDARD_FONTS {
+            let name = font.as_str();
+            let mut dict = PdfDictionaryObject::new().typed("Font");
+            dict.add("Subtype", PdfNameObject::new("Type1")).unwrap();
+            dict.add("BaseFont", PdfNameObject::new(name)).unwrap();
+            fonts_dict.add(name, dict).unwrap();
+        }
+
+        Self {
+            dictionary: fonts_dict,
+        }
     }
 
     pub fn add(&mut self, cat: ResourceCategory, object_id: u64) -> Result<String, PdfError> {
@@ -100,7 +110,7 @@ impl NamedResources {
         let name = format!("{}{}", cat.prefix(), self.category_count(cat));
 
         if !self.dictionary.contains_key(cat_str) {
-            self.dictionary.add(cat_str, PdfDictionaryObject::new());
+            self.dictionary.add(cat_str, PdfDictionaryObject::new())?;
         }
 
         let entry = self.dictionary.get_t_mut::<PdfDictionaryObject>(cat_str)?;

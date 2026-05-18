@@ -24,32 +24,32 @@ impl SoftMask {
             dictionary: PdfDictionaryObject::new(),
         };
         msk.dictionary
-            .add("S", PdfNameObject::new(sub_type.as_str()));
-        msk.dictionary.add("G", stream);
+            .add("S", PdfNameObject::new(sub_type.as_str()))?;
+        msk.dictionary.add("G", stream)?;
 
         Ok(msk)
     }
 
     pub fn typed(mut self) -> Result<Self, PdfError> {
-        self.dictionary.add("Type", PdfNameObject::new("Mask"));
+        self.dictionary.add("Type", PdfNameObject::new("Mask"))?;
 
         Ok(self)
     }
 
     pub fn with_backdrop(mut self, backdrop: PdfArrayObject) -> Result<Self, PdfError> {
-        self.dictionary.add("BG", backdrop);
+        self.dictionary.add("BG", backdrop)?;
 
         Ok(self)
     }
 
     pub fn with_function(mut self, function: PdfDictionaryObject) -> Result<Self, PdfError> {
-        self.dictionary.add("TR", function);
+        self.dictionary.add("TR", function)?;
 
         Ok(self)
     }
 
     pub fn with_function_identity(mut self) -> Result<Self, PdfError> {
-        self.dictionary.add("TR", PdfNameObject::new("Identity"));
+        self.dictionary.add("TR", PdfNameObject::new("Identity"))?;
 
         Ok(self)
     }

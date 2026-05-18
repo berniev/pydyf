@@ -11,31 +11,31 @@ impl FileSpecification {
     }
 
     pub fn with_name(mut self, name: &str) -> Result<Self, PdfError> {
-        self.dict.add("FS", PdfNameObject::new(name));        Ok(self)
+        self.dict.add("FS", PdfNameObject::new(name))?;        Ok(self)
     }
 
     pub fn with_spec_string(mut self, spec: &str) -> Result<Self, PdfError> {
-        self.dict.add("F", PdfStringObject::new(spec));
+        self.dict.add("F", PdfStringObject::new(spec))?;
         Ok(self)
     }
 
     pub fn with_doc_encoding(mut self, encoding: &str) -> Result<Self, PdfError> {
-        self.dict.add("UF", PdfStringObject::new(encoding));
+        self.dict.add("UF", PdfStringObject::new(encoding))?;
         Ok(self)
     }
 
     pub fn with_dos_name(mut self, dos_name: &str) -> Result<Self, PdfError> {
-        self.dict.add("EF", PdfStringObject::new(dos_name));
+        self.dict.add("EF", PdfStringObject::new(dos_name))?;
         Ok(self)
     }
 
     pub fn with_mac_name(mut self, mac_name: &str) -> Result<Self, PdfError> {
-        self.dict.add("Mac", PdfStringObject::new(mac_name));
+        self.dict.add("Mac", PdfStringObject::new(mac_name))?;
         Ok(self)
     }
 
     pub fn with_unix_name(mut self, unix_name: &str) -> Result<Self, PdfError> {
-        self.dict.add("Unix", PdfStringObject::new(unix_name));
+        self.dict.add("Unix", PdfStringObject::new(unix_name))?;
         Ok(self)
     }
 
@@ -43,13 +43,13 @@ impl FileSpecification {
         let mut arr = PdfArrayObject::new();
         arr.push(PdfStringObject::new(id1));
         arr.push(PdfStringObject::new(id2));
-        self.dict.add("ID", arr);
+        self.dict.add("ID", arr)?;
 
         Ok(self)
     }
 
     pub fn with_volatile(mut self, volatile: bool) -> Result<Self, PdfError> {
-        self.dict.add("V", volatile);
+        self.dict.add("V", volatile)?;
         Ok(self)
     }
 
@@ -57,7 +57,7 @@ impl FileSpecification {
         mut self,
         embedded_file_streams: EmbeddedFileStreams,
     ) -> Result<Self, PdfError> {
-        self.dict.add("EF", embedded_file_streams.dict);
+        self.dict.add("EF", embedded_file_streams.dict)?;
         Ok(self)
     }
 
@@ -65,12 +65,12 @@ impl FileSpecification {
         mut self,
         related_file_streams: RelatedFileStreams,
     ) -> Result<Self, PdfError> {
-        self.dict.add("RF", related_file_streams.dict);
+        self.dict.add("RF", related_file_streams.dict)?;
         Ok(self)
     }
 
     pub fn with_description(mut self, description: &str) -> Result<Self, PdfError> {
-        self.dict.add("Desc", PdfStringObject::new(description));
+        self.dict.add("Desc", PdfStringObject::new(description))?;
         Ok(self)
     }
 
@@ -78,7 +78,7 @@ impl FileSpecification {
         mut self,
         collection_items: CollectionItems,
     ) -> Result<Self, PdfError> {
-        self.dict.add("Collection", collection_items.dict);
+        self.dict.add("Collection", collection_items.dict)?;
         Ok(self)
     }
 }

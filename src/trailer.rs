@@ -31,7 +31,7 @@ pub struct Trailer {
 impl Trailer {
     pub fn new(catalog_object_number: ObjectNumber) -> Result<Self, PdfError> {
         let mut dictionary = PdfDictionaryObject::new();
-        dictionary.add("Root", catalog_object_number);
+        dictionary.add("Root", catalog_object_number)?;
 
         Ok(Self { dictionary })
     }
@@ -47,26 +47,26 @@ impl Trailer {
 
         // Build /Encrypt dictionary
         let mut encrypt_dict = PdfDictionaryObject::new();
-        encrypt_dict.add("Filter", PdfNameObject::new("Standard"));
-        encrypt_dict.add("V", 1_i64);
-        encrypt_dict.add("R", 2_i64);
+        encrypt_dict.add("Filter", PdfNameObject::new("Standard"))?;
+        encrypt_dict.add("V", 1_i64)?;
+        encrypt_dict.add("R", 2_i64)?;
         encrypt_dict.add(
             "O",
             PdfStringObject::new(&*bytes_to_pdf_hex_string(&vals.o_value)),
-        );
+        )?;
         encrypt_dict.add(
             "U",
             PdfStringObject::new(&*bytes_to_pdf_hex_string(&vals.u_value)),
-        );
-        encrypt_dict.add("P", vals.permissions as i64);
-        self.dictionary.add("Encrypt", encrypt_dict);
+        )?;
+        encrypt_dict.add("P", vals.permissions as i64)?;
+        self.dictionary.add("Encrypt", encrypt_dict)?;
 
         // Build /ID array
         let id_hex = bytes_to_pdf_hex_string(&file_id_bytes);
         let mut id_array = PdfArrayObject::new();
         id_array.push(PdfStringObject::new(&*id_hex.clone()));
         id_array.push(PdfStringObject::new(&*id_hex));
-        self.dictionary.add("ID", id_array);
+        self.dictionary.add("ID", id_array)?;
 
         Ok(self)
     }

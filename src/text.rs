@@ -1,6 +1,5 @@
-//---------------------- StandardFont -----------------------
+use crate::{PdfDictionaryObject, PdfError, PdfNameObject};
 
-/// Standard PDF fonts (built into all PDF readers).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StandardFont {
     Helvetica, // sans-serif
@@ -18,7 +17,7 @@ pub enum StandardFont {
 }
 
 impl StandardFont {
-    pub fn pdf_name(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             StandardFont::Helvetica => "Helvetica",
             StandardFont::HelveticaBold => "Helvetica-Bold",
@@ -33,6 +32,36 @@ impl StandardFont {
             StandardFont::CourierOblique => "Courier-Oblique",
             StandardFont::CourierBoldOblique => "Courier-BoldOblique",
         }
+    }
+
+    const ALL_STANDARD_FONTS: [StandardFont; 12] = [
+        StandardFont::Helvetica,
+        StandardFont::HelveticaBold,
+        StandardFont::HelveticaOblique,
+        StandardFont::HelveticaBoldOblique,
+        StandardFont::TimesRoman,
+        StandardFont::TimesBold,
+        StandardFont::TimesItalic,
+        StandardFont::TimesBoldItalic,
+        StandardFont::Courier,
+        StandardFont::CourierBold,
+        StandardFont::CourierOblique,
+        StandardFont::CourierBoldOblique,
+    ];
+
+    /// Build a Font resource dictionary containing all 12 standard Type 1 fonts.
+    pub fn standard_fonts_dict() -> Result<PdfDictionaryObject, PdfError> {
+        let mut fonts_dict = PdfDictionaryObject::new();
+
+        for font in Self::ALL_STANDARD_FONTS {
+            let name = font.as_str();
+            let mut dict = PdfDictionaryObject::new().typed("Font");
+            dict.add("Subtype", PdfNameObject::new("Type1"))?;
+            dict.add("BaseFont", PdfNameObject::new(name))?;
+            fonts_dict.add(name, dict)?;
+        }
+
+        Ok(fonts_dict)
     }
 
     /// Measure the approximate width of text in PDF points.
@@ -229,9 +258,9 @@ mod tests {
 
     #[test]
     fn test_font_pdf_name() {
-        assert_eq!(StandardFont::Helvetica.pdf_name(), "Helvetica");
-        assert_eq!(StandardFont::TimesBold.pdf_name(), "Times-Bold");
-        assert_eq!(StandardFont::Courier.pdf_name(), "Courier");
+        assert_eq!(StandardFont::Helvetica.as_str(), "Helvetica");
+        assert_eq!(StandardFont::TimesBold.as_str(), "Times-Bold");
+        assert_eq!(StandardFont::Courier.as_str(), "Courier");
     }
 
     #[test]

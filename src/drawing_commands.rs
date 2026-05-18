@@ -108,54 +108,6 @@ impl DrawingCommands {
         }
     }
 
-    //-------------------------- Helper Methods --------------------------
-
-    fn add(&mut self, cmd: Vec<u8>) {
-        self.cmds_arr.extend(cmd);
-        self.cmds_arr.extend(b"\n".to_vec());
-    }
-
-    pub fn read(&self) -> Vec<u8> {
-        self.cmds_arr.clone()
-    }
-
-    pub fn flush(&mut self) -> Vec<u8> {
-        let buff = self.cmds_arr.clone();
-        self.cmds_arr = vec![];
-
-        buff
-    }
-
-    //-------------------------- Drawing Command Helper Methods --------------------------//
-
-    fn add_windable_cmd(&mut self, cmd: char, even_odd: WindingRule) {
-        let mut op_bytes = vec![cmd as u8];
-        match even_odd {
-            WindingRule::EvenOdd => op_bytes.push(b'*'),
-            WindingRule::NonZero => op_bytes.push(b' '),
-        }
-        self.add(op_bytes);
-    }
-
-    fn add_cmd(&mut self, cmd: char) {
-        self.add(vec![cmd as u8]);
-    }
-
-    fn add_parts(&mut self, operands: &[&dyn StreamString], operator: &str) {
-        let mut cmd_parts: Vec<String> = operands.iter().map(|n| n.to_stream_string()).collect();
-        cmd_parts.push(operator.to_string());
-
-        self.add(cmd_parts.join(" ").into_bytes());
-    }
-
-    fn add_float_cmd(&mut self, string: &str, value: f64) {
-        self.add(format!("{} {}", f64_to_pdf_string(value), string).into_bytes());
-    }
-
-    fn add_int_cmd(&mut self, string: &str, value: i32) {
-        self.add_float_cmd(string, value as f64)
-    }
-
     //-------------------------- Drawing Commands --------------------------
 
     pub fn begin_marked_content(&mut self, tag: &str, property_list: Option<Vec<u8>>) {
@@ -584,4 +536,53 @@ impl DrawingCommands {
         self.set_color_space("Pattern", stroke);
         self.set_color_special(Some(pattern_name), stroke, &[]);
     }
+
+    //-------------------------- Helper Methods --------------------------
+
+    fn add(&mut self, cmd: Vec<u8>) {
+        self.cmds_arr.extend(cmd);
+        self.cmds_arr.extend(b"\n".to_vec());
+    }
+
+    pub fn read(&self) -> Vec<u8> {
+        self.cmds_arr.clone()
+    }
+
+    pub fn flush(&mut self) -> Vec<u8> {
+        let buff = self.cmds_arr.clone();
+        self.cmds_arr = vec![];
+
+        buff
+    }
+
+    //-------------------------- Drawing Command Helper Methods --------------------------//
+
+    fn add_windable_cmd(&mut self, cmd: char, even_odd: WindingRule) {
+        let mut op_bytes = vec![cmd as u8];
+        match even_odd {
+            WindingRule::EvenOdd => op_bytes.push(b'*'),
+            WindingRule::NonZero => op_bytes.push(b' '),
+        }
+        self.add(op_bytes);
+    }
+
+    fn add_cmd(&mut self, cmd: char) {
+        self.add(vec![cmd as u8]);
+    }
+
+    fn add_parts(&mut self, operands: &[&dyn StreamString], operator: &str) {
+        let mut cmd_parts: Vec<String> = operands.iter().map(|n| n.to_stream_string()).collect();
+        cmd_parts.push(operator.to_string());
+
+        self.add(cmd_parts.join(" ").into_bytes());
+    }
+
+    fn add_float_cmd(&mut self, string: &str, value: f64) {
+        self.add(format!("{} {}", f64_to_pdf_string(value), string).into_bytes());
+    }
+
+    fn add_int_cmd(&mut self, string: &str, value: i32) {
+        self.add_float_cmd(string, value as f64)
+    }
+
 }

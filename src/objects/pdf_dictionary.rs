@@ -37,6 +37,10 @@ fn not_found_error(key: &str) -> PdfError {
     PdfError::StructureError(format!("Key '{}' not found", key))
 }
 
+fn duplicate_key_error(key: &str) -> PdfError {
+    PdfError::StructureError(format!("Key '{}' already exists", key))
+}
+
 impl PdfDictionaryObject {
     pub fn new() -> Self {
         Self {
@@ -46,7 +50,7 @@ impl PdfDictionaryObject {
     }
 
     pub(crate) fn typed(mut self, name: &str) -> Self {
-        self.add("Type", PdfNameObject::new(name));
+        self.add("Type", PdfNameObject::new(name)).unwrap();
 
         self
     }
@@ -113,8 +117,13 @@ impl PdfDictionaryObject {
             .ok_or_else(|| bad_type_error::<T>(key))
     }
 
-    pub fn add(&mut self, key: &str, value: impl Into<Box<dyn PdfObject>>) {
+    pub fn add(&mut self, key: &str, value: impl Into<Box<dyn PdfObject>>) ->Result<(), PdfError>{
+        if self.contains_key(key) {
+            return Err(duplicate_key_error(key));
+        }
         self.entries.push((key.to_string(), value.into()));
+        
+        Ok(())
     }
 
     pub fn update_or_add(&mut self, key: &str, value: impl Into<Box<dyn PdfObject>>) {
@@ -159,13 +168,13 @@ mod tests {
         assert!(dict.is_empty());
         assert_eq!(dict.len(), 0);
 
-        dict.add("Key1", PdfNameObject::new("Value1"));
+        dict.add("Key1", PdfNameObject::new("Value1")).unwrap();
         assert!(!dict.is_empty());
         assert_eq!(dict.len(), 1);
         assert!(dict.contains_key("Key1"));
         assert!(!dict.contains_key("Key2"));
 
-        dict.add("Key2", PdfNameObject::new("Value2"));
+        dict.add("Key2", PdfNameObject::new("Value2")).unwrap();
         assert_eq!(dict.len(), 2);
         assert!(dict.contains_key("Key2"));
     }

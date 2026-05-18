@@ -418,7 +418,7 @@ impl Serialize for PdfStreamObject {
             }
         };
 
-        self.dict.add("Length", stream_bytes.len());
+        self.dict.add("Length", stream_bytes.len())?;
         self.dict.serialize(version, xref, file)?; // dict is direct object (no object number)
 
         file.write(b"stream\n")?;

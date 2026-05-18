@@ -10,7 +10,7 @@ impl Form {
     }
 
     pub fn with_type(mut self, type_str: &str) -> Result<Self, PdfError> {
-        self.dict.add("Type", PdfStringObject::new(type_str));
+        self.dict.add("Type", PdfStringObject::new(type_str))?;
         Ok(self)
     }
 

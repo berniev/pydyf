@@ -32,7 +32,7 @@ impl Metadata {
     }
 
     fn add(mut self, key: &str, value: &str) -> Result<Self, PdfError> {
-        self.dictionary.add(key, PdfStringObject::new(value));
+        self.dictionary.add(key, PdfStringObject::new(value))?;
 
         Ok(self)
     }

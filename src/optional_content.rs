@@ -82,18 +82,18 @@ impl OptionalContentGroup {
 
     pub fn to_dict(&self) -> Result<PdfDictionaryObject, PdfError> {
         let mut dict = PdfDictionaryObject::new().typed("OCG");
-        dict.add("Name", PdfStringObject::new(self.name.as_str()));
+        dict.add("Name", PdfStringObject::new(self.name.as_str()))?;
         //dict.add_name("Name", self.name.clone());
 
         if let Some(ref intent) = self.intent {
             if intent.len() == 1 {
-                dict.add("Intent", PdfNameObject::new(&intent[0]));
+                dict.add("Intent", PdfNameObject::new(&intent[0]))?;
             } else {
                 let mut arr = PdfArrayObject::new();
                 for i in intent {
                     arr.push(PdfNameObject::new(i.as_str()));
                 }
-                dict.add("Intent", arr);
+                dict.add("Intent", arr)?;
             }
         }
 
@@ -108,14 +108,14 @@ impl OptionalContentGroup {
                         VisibilityInitialState::On => "ON",
                         VisibilityInitialState::Off => "OFF",
                     }),
-                );
-                usage_dict.add("Print", print_dict);
+                )?;
+                usage_dict.add("Print", print_dict)?;
             }
 
             if let Some(ref view) = usage.view {
                 let mut view_dict = PdfDictionaryObject::new();
-                view_dict.add("ViewState", PdfNameObject::new(&*view.state.to_string()));
-                usage_dict.add("View", view_dict);
+                view_dict.add("ViewState", PdfNameObject::new(&*view.state.to_string()))?;
+                usage_dict.add("View", view_dict)?;
             }
 
             if let Some(ref export) = usage.export {
@@ -126,11 +126,11 @@ impl OptionalContentGroup {
                         VisibilityInitialState::On => "ON",
                         VisibilityInitialState::Off => "OFF",
                     }),
-                );
-                usage_dict.add("Export", export_dict);
+                )?;
+                usage_dict.add("Export", export_dict)?;
             }
 
-            dict.add("Usage", usage_dict);
+            dict.add("Usage", usage_dict)?;
         }
 
         Ok(dict)
@@ -195,10 +195,10 @@ impl OptionalContentConfig {
     pub fn to_dict(&self) -> Result<PdfDictionaryObject, PdfError> {
         let mut dict = PdfDictionaryObject::new();
 
-        dict.add("Name", PdfStringObject::new(self.name.as_str()));
+        dict.add("Name", PdfStringObject::new(self.name.as_str()))?;
 
         if let Some(ref creator) = self.creator {
-            dict.add("Creator", PdfStringObject::new(creator.as_str()));
+            dict.add("Creator", PdfStringObject::new(creator.as_str()))?;
         }
 
         dict.add(
@@ -207,14 +207,14 @@ impl OptionalContentConfig {
                 VisibilityInitialState::On => "ON",
                 VisibilityInitialState::Off => "OFF",
             }),
-        );
+        )?;
 
         if !self.on_list.is_empty() {
             let arr = PdfArrayObject::new();
             /*for &id in &self.on_list {
                 //arr.push(Pdf::indirect(id));
             }*/
-            dict.add("ON", arr);
+            dict.add("ON", arr)?;
         }
 
         if !self.off_list.is_empty() {
@@ -222,12 +222,12 @@ impl OptionalContentConfig {
             //for &id in &self.off_list {
             //arr.push(Pdf::indirect(id));
             //}
-            dict.add("OFF", arr);
+            dict.add("OFF", arr)?;
         }
 
         // Order array (simplified - full implementation would handle nested groups)
         if !self.order.is_empty() {
-            dict.add("Order", self.build_order_array(&self.order));
+            dict.add("Order", self.build_order_array(&self.order))?;
         }
 
         Ok(dict)

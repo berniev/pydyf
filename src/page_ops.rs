@@ -7,7 +7,6 @@ use crate::{PdfArrayObject, PdfDictionaryObject, PdfError};
 use std::cell::RefCell;
 use std::fs::File;
 use std::rc::Rc;
-use crate::fonts::standard_fonts_dict;
 
 ///
 /// Page dict entries:
@@ -99,12 +98,11 @@ pub struct PageOps {
 impl PageOps {
     pub fn new(object_ops: Rc<RefCell<ObjectOps>>) -> Result<Self, PdfError> {
         let mut root_tree = PageFactory::new(object_ops).new_tree();
-        let mut resources = PdfDictionaryObject::new();
-        resources.add("Font", standard_fonts_dict()?);
-        root_tree.dictionary.add("Resources", resources);
+        let resources = PdfDictionaryObject::new();
+        root_tree.dictionary.add("Resources", resources)?;
         root_tree
             .dictionary
-            .add("MediaBox", PageSize::default().as_pdf_array());
+            .add("MediaBox", PageSize::default().as_pdf_array())?;
 
         Ok(PageOps { root_tree })
     }
@@ -165,7 +163,7 @@ impl PageTree {
     }
 
     pub fn add_tree(&mut self, mut tree: PageTree) -> Result<(), PdfError> {
-        tree.dictionary.add("Parent", self.object_number);
+        tree.dictionary.add("Parent", self.object_number)?;
 
         //self.add_kid(Box::new(tree.dictionary))?;
         self.trees.push(tree);
@@ -174,7 +172,7 @@ impl PageTree {
     }
 
     pub fn add_page(&mut self, mut page: Page) {
-        page.set_parent(self.object_number);
+        page.set_parent(self.object_number).unwrap();
         self.pages.push(page);
     }
 
@@ -187,7 +185,7 @@ impl PageTree {
 
         *descendant_page_count += self.pages.len();
 
-        self.dictionary.add("Count", *descendant_page_count);
+        self.dictionary.add("Count", *descendant_page_count).unwrap();
     }
 
     fn serialize(
@@ -203,13 +201,13 @@ impl PageTree {
         for tree in &mut self.trees {
             arr.push(tree.object_number);
         }
-        self.dictionary.add("Kids", arr);
+        self.dictionary.add("Kids", arr)?;
 
         self.dictionary.serialize(version, xref, file)?;
         for page in &mut self.pages {
             page.serialize(version, xref, file)?;
         }
-        for tree in &mut self.trees{
+        for tree in &mut self.trees {
             tree.serialize(version, xref, file)?;
         }
 
@@ -241,11 +239,11 @@ impl Page {
             .with_object_number(object_number);
 
         // Contents is content stream, or array of streams
-        dict.add("Contents", stream_object_number);
+        dict.add("Contents", stream_object_number).unwrap();
 
         Page {
             dictionary: dict,
-            stream:PdfStreamObject::new(stream_object_number).with_content(content),
+            stream: PdfStreamObject::new(stream_object_number).with_content(content),
             _content_type: ContentsType::Stream,
         }
     }
@@ -256,11 +254,13 @@ impl Page {
         self
     }
 
-    fn set_parent(&mut self, parent_object_number: ObjectNumber) {
-        self.dictionary.add("Parent", parent_object_number);
+    fn set_parent(&mut self, parent_object_number: ObjectNumber) -> Result<(), PdfError> {
+        self.dictionary.add("Parent", parent_object_number)?;
+
+        Ok(())
     }
 
-    pub fn object_number(&self)->ObjectNumber{
+    pub fn object_number(&self) -> ObjectNumber {
         self.dictionary.object_number.unwrap()
     }
 
