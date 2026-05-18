@@ -4,9 +4,8 @@ use crate::objects::pdf_number::PdfNumberObject;
 use crate::version::Version;
 use crate::xref_ops::{ObjectStatus, XRefEntry, XRefOps};
 use crate::{
-    PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError,
-    PdfNameObject, PdfNullObject, PdfReferenceObject, PdfStreamObject,
-    PdfStringObject,
+    PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError, PdfNameObject, PdfNullObject,
+    PdfReferenceObject, PdfStreamObject, PdfStringObject,
 };
 use std::fs::File;
 use std::io::{Seek, Write};
@@ -59,7 +58,10 @@ pub(crate) fn try_indirect_start(
     Ok(())
 }
 
-pub(crate) fn try_indirect_end(file: &mut File, object_number: Option<ObjectNumber>) -> Result<(), PdfError> {
+pub(crate) fn try_indirect_end(
+    file: &mut File,
+    object_number: Option<ObjectNumber>,
+) -> Result<(), PdfError> {
     if object_number.is_some() {
         file.write("endobj\n\n".to_string().as_bytes())?;
     }
@@ -67,11 +69,26 @@ pub(crate) fn try_indirect_end(file: &mut File, object_number: Option<ObjectNumb
     Ok(())
 }
 
+pub fn serialize_pdf_object(
+    value: &mut Box<dyn PdfObject>,
+    version: Version,
+    xref: &mut XRefOps,
+    file: &mut File,
+) -> Result<(), PdfError> {
+    value.serialize_object(version, xref, file)
+}
+
 //--------------------------- PdfObject -------------------------//
 
 pub trait PdfObject: std::any::Any {
     fn as_any(&self) -> &dyn std::any::Any;
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
+    fn serialize_object(
+        &mut self,
+        version: Version,
+        xref: &mut XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError>;
 }
 
 macro_rules! pdf_object {
@@ -80,8 +97,18 @@ macro_rules! pdf_object {
             fn as_any(&self) -> &dyn std::any::Any {
                 self
             }
+
             fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
                 self
+            }
+
+            fn serialize_object(
+                &mut self,
+                version: Version,
+                xref: &mut XRefOps,
+                file: &mut File,
+            ) -> Result<(), PdfError> {
+                self.serialize(version, xref, file)
             }
         }
     };
@@ -95,43 +122,6 @@ pdf_object!(PdfArrayObject);
 pdf_object!(PdfDictionaryObject);
 pdf_object!(PdfReferenceObject);
 pdf_object!(PdfStreamObject);
-
-//--------------------------- primitive -------------------------//
-
-macro_rules! primitive {
-    ($ty:ty, $encode_expr:expr) => {
-        impl PdfObject for $ty {
-            fn as_any(&self) -> &dyn std::any::Any {
-                self
-            }
-            fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-                self
-            }
-        }
-    };
-}
-
-primitive!(bool, |s: &mut bool| Ok(if *s {
-    b"true".to_vec()
-} else {
-    b"false".to_vec()
-}));
-
-primitive!(usize, |s: &mut usize| Ok(s.to_string().into_bytes()));
-primitive!(i64, |s: &mut i64| Ok(s.to_string().into_bytes()));
-primitive!(i32, |s: &mut i32| Ok(s.to_string().into_bytes()));
-primitive!(f64, |s: &mut f64| Ok(f64_to_pdf_string(*s).into_bytes()));
-primitive!(f32, |s: &mut f32| Ok(
-    f64_to_pdf_string(*s as f64).into_bytes()
-));
-primitive!(u64, |s: &mut u64| Ok(s.to_string().into_bytes()));
-primitive!(u32, |s: &mut u32| Ok(s.to_string().into_bytes()));
-primitive!(u8, |s: &mut u8| Ok(s.to_string().into_bytes()));
-primitive!(String, |s: &mut String| Ok(s.as_bytes().to_vec()));
-primitive!(ObjectNumber, |s: &mut ObjectNumber| Ok(s
-    .value()
-    .to_string()
-    .into_bytes()));
 
 //--------------------------- deduced objects -------------------------//
 
@@ -255,35 +245,6 @@ pub trait Serialize: Encode {
 
         Ok(())
     }
-}
-
-pub fn serialize_pdf_object(
-    value: &mut Box<dyn PdfObject>,
-    version: Version,
-    xref: &mut XRefOps,
-    file: &mut File,
-) -> Result<(), PdfError> {
-    if let Some(stream) = value.as_any_mut().downcast_mut::<PdfStreamObject>() {
-        stream.serialize(version, xref, file)?;
-    } else if let Some(arr) = value.as_any_mut().downcast_mut::<PdfArrayObject>() {
-        arr.serialize(version, xref, file)?;
-    } else if let Some(dict) = value.as_any_mut().downcast_mut::<PdfDictionaryObject>() {
-        dict.serialize(version, xref, file)?;
-    } else if let Some(ref_obj) = value.as_any_mut().downcast_mut::<PdfReferenceObject>() {
-        ref_obj.serialize(version, xref, file)?;
-    } else if let Some(string) = value.as_any_mut().downcast_mut::<PdfStringObject>() {
-        string.serialize(version, xref, file)?;
-    } else if let Some(number) = value.as_any_mut().downcast_mut::<PdfNumberObject>() {
-        number.serialize(version, xref, file)?;
-    } else if let Some(bool) = value.as_any_mut().downcast_mut::<PdfBooleanObject>() {
-        bool.serialize(version, xref, file)?;
-    } else if let Some(name) = value.as_any_mut().downcast_mut::<PdfNameObject>() {
-        name.serialize(version, xref, file)?;
-    } else if let Some(null) = value.as_any_mut().downcast_mut::<PdfNullObject>() {
-        null.serialize(version, xref, file)?;
-    }
-
-    Ok(())
 }
 
 //--------------------------- tests -------------------------//

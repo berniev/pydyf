@@ -73,7 +73,7 @@ fn encode_utf8(string: &str) -> Vec<u8> {
 
 impl Encode for PdfStringObject {
     fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
-        Ok(crate::objects::pdf_string::encode_text_string(
+        Ok(encode_text_string(
             &*self.value,
             version,
         ))
