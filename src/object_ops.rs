@@ -258,6 +258,27 @@ impl Encode for PdfArrayObject {}
 impl Encode for PdfDictionaryObject {}
 impl Encode for PdfStreamObject {}
 
+impl Encode for PdfNameObject {
+    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
+        // all #'s will be encoded
+        const HEX_CHARS: &[u8] = b"0123456789ABCDEF";
+        let mut result: Vec<u8> = vec![b'/'];
+        for &byte in &self.value {
+            if byte == b'#' || !(0x21..=0x7E).contains(&byte) {
+                result.push(b'#');
+                result.push(HEX_CHARS[(byte >> 4) as usize]);
+                result.push(HEX_CHARS[(byte & 0xF) as usize]);
+            } else {
+                if byte != 0x00 {
+                    result.push(byte); // silently strip nulls
+                }
+            }
+        }
+
+        Ok(result)
+    }
+}
+
 impl Encode for PdfStringObject {
     fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
         Ok(crate::objects::pdf_string::encode_text_string(
@@ -294,15 +315,6 @@ impl Encode for PdfBooleanObject {
         } else {
             Vec::from(b"false")
         })
-    }
-}
-
-impl Encode for PdfNameObject {
-    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
-        let mut result: Vec<u8> = vec![b'/'];
-        result.extend(&self.value);
-
-        Ok(result)
     }
 }
 
@@ -355,10 +367,7 @@ fn try_indirect_start(
     Ok(())
 }
 
-fn try_indirect_end(
-    file: &mut File,
-    object_number: Option<ObjectNumber>,
-) -> Result<(), PdfError> {
+fn try_indirect_end(file: &mut File, object_number: Option<ObjectNumber>) -> Result<(), PdfError> {
     if object_number.is_some() {
         file.write("endobj\n\n".to_string().as_bytes())?;
     }

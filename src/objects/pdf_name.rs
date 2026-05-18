@@ -7,30 +7,8 @@ impl PdfNameObject {
     pub fn new(value: impl AsRef<[u8]>) -> Self {
         let value = value.as_ref().to_vec();
         Self {
-            value: Self::fix(value),
+            value,
         }
-    }
-
-    pub fn value(&self) -> &Vec<u8> {
-        &self.value
-    }
-
-    // nb: all #'s will be encoded
-    fn fix(vec: Vec<u8>) -> Vec<u8> {
-        const HEX_CHARS: &[u8] = b"0123456789ABCDEF";
-        let mut result = vec![];
-        for &byte in &vec {
-            if byte == b'#' || !(0x21..=0x7E).contains(&byte) {
-                result.push(b'#');
-                result.push(HEX_CHARS[(byte >> 4) as usize]);
-                result.push(HEX_CHARS[(byte & 0xF) as usize]);
-            } else {
-                if byte != 0x00 {
-                    result.push(byte); // silently strip nulls
-                }
-            }
-        }
-        result
     }
 }
 
