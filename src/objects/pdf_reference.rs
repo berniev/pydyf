@@ -1,4 +1,6 @@
-use crate::object_ops::ObjectNumber;
+use crate::object_ops::{Encode, ObjectNumber, Serialize};
+use crate::PdfError;
+use crate::version::Version;
 
 #[derive(Clone)]
 pub enum HostType {
@@ -22,6 +24,24 @@ impl PdfReferenceObject {
         }
     }
 }
+
+impl Encode for PdfReferenceObject {
+    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
+        let gen_num = match &self.host_type {
+            HostType::Standard { generation_number } => *generation_number,
+            HostType::Stream { .. } => 0,
+        };
+        let mut vec: Vec<u8> = vec![];
+        vec.extend(self.object_number.unwrap().to_string().into_bytes());
+        vec.push(b' ');
+        vec.extend(gen_num.to_string().into_bytes());
+        vec.extend(" R".as_bytes());
+
+        Ok(vec)
+    }
+}
+
+impl Serialize for PdfReferenceObject {}
 
 #[cfg(test)]
 mod tests {

@@ -1,6 +1,10 @@
-use crate::object_ops::{ObjectNumber, PdfObject};
+use std::fs::File;
+use std::io::Write;
+use crate::object_ops::{serialize_pdf_object, try_indirect_end, try_indirect_start, Encode, ObjectNumber, PdfObject, Serialize};
 use crate::objects::pdf_number::PdfNumberObject;
 use crate::{PdfError, PdfNullObject};
+use crate::version::Version;
+use crate::xref_ops::XRefOps;
 
 pub struct PdfArrayObject {
     pub(crate) object_number: Option<ObjectNumber>,
@@ -49,6 +53,31 @@ impl PdfArrayObject {
 
     pub fn push(&mut self, value: impl Into<Box<dyn PdfObject>>) {
         self.elements.push(value.into());
+    }
+}
+
+impl Encode for PdfArrayObject {}
+
+impl Serialize for PdfArrayObject {
+    fn serialize(
+        &mut self,
+        version: Version,
+        xref: &mut XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError> {
+        try_indirect_start(xref, file, self.object_number)?;
+
+        file.write(b"[ ")?;
+
+        for pdf_object in &mut self.elements {
+            serialize_pdf_object(pdf_object, version, xref, file)?;
+            file.write(b" ")?;
+        }
+        file.write(b"]")?;
+
+        try_indirect_end(file, self.object_number)?;
+
+        Ok(())
     }
 }
 

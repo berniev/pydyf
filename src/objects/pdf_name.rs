@@ -1,3 +1,7 @@
+use crate::object_ops::{Encode, Serialize};
+use crate::PdfError;
+use crate::version::Version;
+
 #[derive(PartialEq)]
 pub struct PdfNameObject {
     pub(crate) value: Vec<u8>,
@@ -11,6 +15,29 @@ impl PdfNameObject {
         }
     }
 }
+
+impl Encode for PdfNameObject {
+    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
+        // all #'s will be encoded
+        const HEX_CHARS: &[u8] = b"0123456789ABCDEF";
+        let mut result: Vec<u8> = vec![b'/'];
+        for &byte in &self.value {
+            if byte == b'#' || !(0x21..=0x7E).contains(&byte) {
+                result.push(b'#');
+                result.push(HEX_CHARS[(byte >> 4) as usize]);
+                result.push(HEX_CHARS[(byte & 0xF) as usize]);
+            } else {
+                if byte != 0x00 {
+                    result.push(byte); // silently strip nulls
+                }
+            }
+        }
+
+        Ok(result)
+    }
+}
+
+impl Serialize for PdfNameObject {}
 
 #[cfg(test)]
 mod tests {

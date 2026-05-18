@@ -1,3 +1,7 @@
+use crate::object_ops::{Encode, Serialize};
+use crate::PdfError;
+use crate::version::Version;
+
 #[derive(Clone)]
 pub struct PdfNullObject {}
 
@@ -8,6 +12,14 @@ impl PdfNullObject {
 }
 
 impl PdfNullObject {}
+
+impl Encode for PdfNullObject {
+    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
+        Ok("null".to_string().into_bytes())
+    }
+}
+
+impl Serialize for PdfNullObject {}
 
 #[cfg(test)]
 mod tests {

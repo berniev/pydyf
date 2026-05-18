@@ -1,4 +1,6 @@
-use crate::PdfNumberType;
+use crate::object_ops::{Encode, Serialize};
+use crate::{PdfError, PdfNumberType};
+use crate::version::Version;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PdfNumberObject {
@@ -76,6 +78,28 @@ impl From<u32> for PdfNumberObject {
         Self::new(PdfNumberType::Integer(f as i64))
     }
 }
+
+impl Encode for PdfNumberObject {
+    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
+        let mut arr = vec![];
+        arr = match self.value {
+            PdfNumberType::Integer(i) => Vec::from(&*i.to_string().into_bytes()),
+            PdfNumberType::Real(f) => {
+                Vec::from(
+                    &*format!("{:.4}", f) // use a reasonable precision
+                        .trim_end_matches('0')
+                        .trim_end_matches('.')
+                        .to_string()
+                        .into_bytes(),
+                )
+            }
+        };
+
+        Ok(arr)
+    }
+}
+
+impl Serialize for PdfNumberObject {}
 
 #[cfg(test)]
 mod tests {

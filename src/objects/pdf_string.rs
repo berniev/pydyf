@@ -1,3 +1,5 @@
+use crate::object_ops::{Encode, Serialize};
+use crate::PdfError;
 use crate::version::Version;
 
 #[derive(Clone)]
@@ -68,6 +70,17 @@ fn encode_utf8(string: &str) -> Vec<u8> {
     bytes.extend(string.as_bytes());
     bytes
 }
+
+impl Encode for PdfStringObject {
+    fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
+        Ok(crate::objects::pdf_string::encode_text_string(
+            &*self.value,
+            version,
+        ))
+    }
+}
+
+impl Serialize for PdfStringObject {}
 
 //--------------------------- Tests -------------------------//
 

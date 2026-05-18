@@ -1,9 +1,15 @@
+use std::fs::File;
+use std::io::Write;
+use flate2::Compression;
+use flate2::write::ZlibEncoder;
 use crate::error::PdfError;
-use crate::object_ops::ObjectNumber;
+use crate::object_ops::{try_indirect_end, try_indirect_start, Encode, ObjectNumber, Serialize};
 pub use crate::util::{
     CompressionMethod, Dims, Matrix, Posn, StreamString, StrokeOrFill, WindingRule,
 };
 use crate::{PdfDictionaryObject, PdfNameObject};
+use crate::version::Version;
+use crate::xref_ops::XRefOps;
 
 /// PDF content stream
 ///
@@ -110,6 +116,45 @@ impl PdfStreamObject {
 
     pub fn append_content(&mut self, bytes: Vec<u8>) {
         self.content.extend(bytes);
+    }
+}
+
+impl Encode for PdfStreamObject {
+    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
+        let stream_bytes: Vec<u8> = match self.compression_method {
+            CompressionMethod::None => self.content.clone(),
+            CompressionMethod::Flate => {
+                let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+                encoder.write(&*self.content)?;
+                encoder.finish()?
+            }
+        };
+
+        Ok(stream_bytes)
+    }
+}
+
+impl Serialize for PdfStreamObject {
+    fn serialize(
+        &mut self,
+        version: Version,
+        xref: &mut XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError> {
+        let stream_bytes = self.encode(version)?;
+        self.dict.add("Length", stream_bytes.len())?;
+
+        try_indirect_start(xref, file, Some(self.object_number))?;
+
+        self.dict.serialize(version, xref, file)?; // dict is direct object (no object number)
+
+        file.write(b"stream\n")?;
+        file.write(&*stream_bytes)?;
+        file.write(b"\nendstream\n")?;
+
+        try_indirect_end(file, Some(self.object_number))?;
+
+        Ok(())
     }
 }
 

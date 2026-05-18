@@ -1,6 +1,10 @@
-use crate::object_ops::{ObjectNumber, PdfObject};
+use std::fs::File;
+use std::io::Write;
+use crate::object_ops::{serialize_pdf_object, try_indirect_end, try_indirect_start, Encode, ObjectNumber, PdfObject, Serialize};
 use crate::{PdfArrayObject, PdfError, PdfNameObject};
 use mockall::Any;
+use crate::version::Version;
+use crate::xref_ops::XRefOps;
 
 /// Spec:
 /// Dictionary:
@@ -157,6 +161,36 @@ impl PdfDictionaryObject {
         }
     }
 }
+
+impl Encode for PdfDictionaryObject {}
+
+impl Serialize for PdfDictionaryObject {
+    fn serialize(
+        &mut self,
+        version: Version,
+        xref: &mut XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError> {
+        try_indirect_start(xref, file, self.object_number)?;
+
+        file.write(b" <<\n")?;
+
+        for (name, pdf_object) in &mut self.entries {
+            let mut name_obj = PdfNameObject::new(name);
+            name_obj.serialize(version, xref, file)?;
+            file.write(b" ")?;
+            serialize_pdf_object(pdf_object, version, xref, file)?;
+            file.write(b"\n")?;
+        }
+
+        file.write(b">>\n")?;
+
+        try_indirect_end(file, self.object_number)?;
+
+        Ok(())
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

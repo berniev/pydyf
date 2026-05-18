@@ -1,16 +1,13 @@
 use crate::generation::Generation;
 pub(crate) use crate::object_number::ObjectNumber;
 use crate::objects::pdf_number::PdfNumberObject;
-use crate::objects::pdf_reference::HostType;
 use crate::version::Version;
 use crate::xref_ops::{ObjectStatus, XRefEntry, XRefOps};
 use crate::{
-    CompressionMethod, PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError,
-    PdfNameObject, PdfNullObject, PdfNumberType, PdfReferenceObject, PdfStreamObject,
+    PdfArrayObject, PdfBooleanObject, PdfDictionaryObject, PdfError,
+    PdfNameObject, PdfNullObject, PdfReferenceObject, PdfStreamObject,
     PdfStringObject,
 };
-use flate2::Compression;
-use flate2::write::ZlibEncoder;
 use std::fs::File;
 use std::io::{Seek, Write};
 //--------------------------- ObjectOps -------------------------//
@@ -46,6 +43,28 @@ pub fn indirect_xref_entry(object_number: ObjectNumber, offset: u64) -> XRefEntr
         ObjectStatus::InUse,
         Generation::Normal,
     )
+}
+
+pub(crate) fn try_indirect_start(
+    xref: &mut XRefOps,
+    file: &mut File,
+    object_number: Option<ObjectNumber>,
+) -> Result<(), PdfError> {
+    if object_number.is_some() {
+        let object_number = object_number.unwrap();
+        xref.add_entry(indirect_xref_entry(object_number, file.stream_position()?));
+        file.write(format!("{} 0 obj", object_number.to_string()).as_bytes())?;
+    }
+
+    Ok(())
+}
+
+pub(crate) fn try_indirect_end(file: &mut File, object_number: Option<ObjectNumber>) -> Result<(), PdfError> {
+    if object_number.is_some() {
+        file.write("endobj\n\n".to_string().as_bytes())?;
+    }
+
+    Ok(())
 }
 
 //--------------------------- PdfObject -------------------------//
@@ -217,7 +236,28 @@ impl From<PdfNumberObject> for Box<dyn PdfObject> {
     }
 }
 
-//--------------------------- serialize -------------------------//
+//--------------------------- Encode -------------------------//
+
+pub trait Encode {
+    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
+        Ok(Vec::new())
+    }
+}
+
+//--------------------------- Serialize -------------------------//
+
+pub trait Serialize: Encode {
+    fn serialize(
+        &mut self,
+        version: Version,
+        _xref: &mut XRefOps,
+        file: &mut File,
+    ) -> Result<(), PdfError> {
+        file.write(&*self.encode(version)?)?;
+
+        Ok(())
+    }
+}
 
 pub fn serialize_pdf_object(
     value: &mut Box<dyn PdfObject>,
@@ -248,227 +288,7 @@ pub fn serialize_pdf_object(
     Ok(())
 }
 
-pub trait Encode {
-    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
-        Ok(Vec::new())
-    }
-}
-
-impl Encode for PdfArrayObject {}
-impl Encode for PdfDictionaryObject {}
-
-impl Encode for PdfStreamObject {
-    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
-        let stream_bytes: Vec<u8> = match self.compression_method {
-            CompressionMethod::None => self.content.clone(),
-            CompressionMethod::Flate => {
-                let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-                encoder.write(&*self.content)?;
-                encoder.finish()?
-            }
-        };
-
-        Ok(stream_bytes)
-    }
-}
-
-impl Encode for PdfNameObject {
-    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
-        // all #'s will be encoded
-        const HEX_CHARS: &[u8] = b"0123456789ABCDEF";
-        let mut result: Vec<u8> = vec![b'/'];
-        for &byte in &self.value {
-            if byte == b'#' || !(0x21..=0x7E).contains(&byte) {
-                result.push(b'#');
-                result.push(HEX_CHARS[(byte >> 4) as usize]);
-                result.push(HEX_CHARS[(byte & 0xF) as usize]);
-            } else {
-                if byte != 0x00 {
-                    result.push(byte); // silently strip nulls
-                }
-            }
-        }
-
-        Ok(result)
-    }
-}
-
-impl Encode for PdfStringObject {
-    fn encode(&self, version: Version) -> Result<Vec<u8>, PdfError> {
-        Ok(crate::objects::pdf_string::encode_text_string(
-            &*self.value,
-            version,
-        ))
-    }
-}
-
-impl Encode for PdfNumberObject {
-    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
-        let mut arr = vec![];
-        arr = match self.value {
-            PdfNumberType::Integer(i) => Vec::from(&*i.to_string().into_bytes()),
-            PdfNumberType::Real(f) => {
-                Vec::from(
-                    &*format!("{:.4}", f) // use a reasonable precision
-                        .trim_end_matches('0')
-                        .trim_end_matches('.')
-                        .to_string()
-                        .into_bytes(),
-                )
-            }
-        };
-
-        Ok(arr)
-    }
-}
-
-impl Encode for PdfBooleanObject {
-    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
-        Ok(if self.value {
-            Vec::from(b"true")
-        } else {
-            Vec::from(b"false")
-        })
-    }
-}
-
-impl Encode for PdfNullObject {
-    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
-        Ok("null".to_string().into_bytes())
-    }
-}
-
-impl Encode for PdfReferenceObject {
-    fn encode(&self, _version: Version) -> Result<Vec<u8>, PdfError> {
-        let gen_num = match &self.host_type {
-            HostType::Standard { generation_number } => *generation_number,
-            HostType::Stream { .. } => 0,
-        };
-        let mut vec: Vec<u8> = vec![];
-        vec.extend(self.object_number.unwrap().to_string().into_bytes());
-        vec.push(b' ');
-        vec.extend(gen_num.to_string().into_bytes());
-        vec.extend(" R".as_bytes());
-
-        Ok(vec)
-    }
-}
-
-pub trait Serialize: Encode {
-    fn serialize(
-        &mut self,
-        version: Version,
-        _xref: &mut XRefOps,
-        file: &mut File,
-    ) -> Result<(), PdfError> {
-        file.write(&*self.encode(version)?)?;
-
-        Ok(())
-    }
-}
-
-fn try_indirect_start(
-    xref: &mut XRefOps,
-    file: &mut File,
-    object_number: Option<ObjectNumber>,
-) -> Result<(), PdfError> {
-    if object_number.is_some() {
-        let object_number = object_number.unwrap();
-        xref.add_entry(indirect_xref_entry(object_number, file.stream_position()?));
-        file.write(format!("{} 0 obj", object_number.to_string()).as_bytes())?;
-    }
-
-    Ok(())
-}
-
-fn try_indirect_end(file: &mut File, object_number: Option<ObjectNumber>) -> Result<(), PdfError> {
-    if object_number.is_some() {
-        file.write("endobj\n\n".to_string().as_bytes())?;
-    }
-
-    Ok(())
-}
-
-impl Serialize for PdfReferenceObject {}
-impl Serialize for PdfStringObject {}
-impl Serialize for PdfNumberObject {}
-impl Serialize for PdfBooleanObject {}
-impl Serialize for PdfNameObject {}
-impl Serialize for PdfNullObject {}
-
-impl Serialize for PdfDictionaryObject {
-    fn serialize(
-        &mut self,
-        version: Version,
-        xref: &mut XRefOps,
-        file: &mut File,
-    ) -> Result<(), PdfError> {
-        try_indirect_start(xref, file, self.object_number)?;
-
-        file.write(b" <<\n")?;
-
-        for (name, pdf_object) in &mut self.entries {
-            let mut name_obj = PdfNameObject::new(name);
-            name_obj.serialize(version, xref, file)?;
-            file.write(b" ")?;
-            serialize_pdf_object(pdf_object, version, xref, file)?;
-            file.write(b"\n")?;
-        }
-
-        file.write(b">>\n")?;
-
-        try_indirect_end(file, self.object_number)?;
-
-        Ok(())
-    }
-}
-
-impl Serialize for PdfStreamObject {
-    fn serialize(
-        &mut self,
-        version: Version,
-        xref: &mut XRefOps,
-        file: &mut File,
-    ) -> Result<(), PdfError> {
-        let stream_bytes = self.encode(version)?;
-        self.dict.add("Length", stream_bytes.len())?;
-
-        try_indirect_start(xref, file, Some(self.object_number))?;
-
-        self.dict.serialize(version, xref, file)?; // dict is direct object (no object number)
-
-        file.write(b"stream\n")?;
-        file.write(&*stream_bytes)?;
-        file.write(b"\nendstream\n")?;
-
-        try_indirect_end(file, Some(self.object_number))?;
-
-        Ok(())
-    }
-}
-
-impl Serialize for PdfArrayObject {
-    fn serialize(
-        &mut self,
-        version: Version,
-        xref: &mut XRefOps,
-        file: &mut File,
-    ) -> Result<(), PdfError> {
-        try_indirect_start(xref, file, self.object_number)?;
-
-        file.write(b"[ ")?;
-
-        for pdf_object in &mut self.elements {
-            serialize_pdf_object(pdf_object, version, xref, file)?;
-            file.write(b" ")?;
-        }
-        file.write(b"]")?;
-
-        try_indirect_end(file, self.object_number)?;
-
-        Ok(())
-    }
-}
+//--------------------------- tests -------------------------//
 
 #[cfg(test)]
 mod tests {
