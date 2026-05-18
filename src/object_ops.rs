@@ -74,8 +74,6 @@ pub trait PdfObject: std::any::Any {
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
 }
 
-//--------------------------- object -------------------------//
-
 macro_rules! pdf_object {
     ($ty:ty) => {
         impl PdfObject for $ty {

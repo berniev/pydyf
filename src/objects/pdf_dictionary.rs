@@ -126,7 +126,7 @@ impl PdfDictionaryObject {
             return Err(duplicate_key_error(key));
         }
         self.entries.push((key.to_string(), value.into()));
-        
+
         Ok(())
     }
 
