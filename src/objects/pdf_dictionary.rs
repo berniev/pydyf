@@ -1,6 +1,6 @@
-use mockall::Any;
 use crate::object_ops::{ObjectNumber, PdfObject};
 use crate::{PdfArrayObject, PdfError, PdfNameObject};
+use mockall::Any;
 
 /// Spec:
 /// Dictionary:
@@ -31,6 +31,10 @@ fn bad_type_error<T>(key: &str) -> PdfError {
         key,
         std::any::type_name::<T>()
     ))
+}
+
+fn not_found_error(key: &str) -> PdfError {
+    PdfError::StructureError(format!("Key '{}' not found", key))
 }
 
 impl PdfDictionaryObject {
@@ -85,12 +89,12 @@ impl PdfDictionaryObject {
 
     fn require_key(&self, key: &str) -> Result<&Box<dyn PdfObject>, PdfError> {
         self.get(key)
-            .ok_or_else(|| PdfError::StructureError(format!("Key '{}' not found", key)))
+            .ok_or_else(|| not_found_error(key))
     }
 
     fn require_key_mut(&mut self, key: &str) -> Result<&mut Box<dyn PdfObject>, PdfError> {
         self.get_mut(key)
-            .ok_or_else(|| PdfError::StructureError(format!("Key '{}' not found", key)))
+            .ok_or_else(|| not_found_error(key))
     }
 
     pub fn get_t<T: PdfObject>(&self, key: &str) -> Result<&T, PdfError> {
@@ -131,7 +135,7 @@ impl PdfDictionaryObject {
 
             Ok(())
         } else {
-            Err(PdfError::StructureError(format!("Key '{}' not found", key)))
+            Err(not_found_error(key))
         }
     }
 
@@ -140,7 +144,7 @@ impl PdfDictionaryObject {
             self.entries.remove(index);
             Ok(())
         } else {
-            Err(PdfError::StructureError(format!("Key '{}' not found", key)))
+            Err(not_found_error(key))
         }
     }
 }
