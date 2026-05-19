@@ -288,7 +288,7 @@ pub struct BoxStyle {
 impl BoxStyle {
     pub fn new() -> Result<Self, PdfError> {
         let mut dict = PdfDictionaryObject::new();
-        dict.add("C", RGB::BLACK.as_pdf_array())?;
+        dict.add("C", RGB::BLACK.as_vec())?;
         dict.add("W", 1.0)?;
         dict.add("S", PdfStringObject::new(GuidelineStyle::Solid.as_string()))?;
         let mut arr = PdfArrayObject::new();
@@ -299,7 +299,7 @@ impl BoxStyle {
     }
 
     pub fn with_color(&mut self, rgb: RGB) -> Result<&mut Self, PdfError> {
-        self.dict.add("C", rgb.as_pdf_array())?;
+        self.dict.add("C", rgb.as_vec())?;
         Ok(self)
     }
 

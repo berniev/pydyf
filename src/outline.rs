@@ -232,7 +232,7 @@ impl DocumentOutline {
         }
 
         if let Some(rgb) = item.color {
-            dict.add("C", rgb.as_pdf_array())?;
+            dict.add("C", rgb.as_vec())?;
         }
 
         if item.flags.bits() != 0 {

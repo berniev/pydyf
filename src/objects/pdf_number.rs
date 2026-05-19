@@ -26,13 +26,16 @@ impl PdfNumberObject {
     }
 }
 
-//---------------- From -----------------
+//---------------- Primitive to concrete -----------------
 
 impl From<i64> for PdfNumberObject {
     fn from(i: i64) -> Self { Self::Integer(i) }
 }
 impl From<f64> for PdfNumberObject {
     fn from(f: f64) -> Self { Self::Real(f) }
+}
+impl From<f32> for PdfNumberObject {
+    fn from(f: f32) -> Self { Self::Real(f as f64) }
 }
 impl From<u32> for PdfNumberObject {
     fn from(v: u32) -> Self { Self::Integer(v as i64) }

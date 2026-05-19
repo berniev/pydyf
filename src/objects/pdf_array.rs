@@ -73,6 +73,10 @@ impl From<Vec<f64>> for Box<dyn PdfObject> {
     fn from(v: Vec<f64>) -> Self { Box::new(PdfArrayObject::from_vec_number(v)) }
 }
 
+impl From<Vec<f32>> for Box<dyn PdfObject> {
+    fn from(v: Vec<f32>) -> Self { Box::new(PdfArrayObject::from_vec_number(v)) }
+}
+
 impl From<PdfArrayObject> for Box<dyn PdfObject> {
     fn from(v: PdfArrayObject) -> Self {
         Box::new(v)
