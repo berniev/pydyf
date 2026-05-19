@@ -42,6 +42,7 @@ impl From<ObjectNumber> for Box<dyn PdfObject> {
 
 //--------------------------- PdfObject -------------------------//
 
+/// Dynamic typing of PdfObjects.
 pub trait PdfObject: std::any::Any {
     fn as_any(&self) -> &dyn std::any::Any;
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
@@ -84,49 +85,6 @@ pdf_object!(PdfArrayObject);
 pdf_object!(PdfDictionaryObject);
 pdf_object!(PdfReferenceObject);
 pdf_object!(PdfStreamObject);
-
-//--------------------------- deduced objects -------------------------//
-
-impl From<usize> for Box<dyn PdfObject> {
-    fn from(v: usize) -> Self {
-        Box::new(PdfNumberObject::from(v))
-    }
-}
-impl From<i64> for Box<dyn PdfObject> {
-    fn from(v: i64) -> Self {
-        Box::new(PdfNumberObject::from(v))
-    }
-}
-impl From<f64> for Box<dyn PdfObject> {
-    fn from(v: f64) -> Self {
-        Box::new(PdfNumberObject::from(v))
-    }
-}
-impl From<u64> for Box<dyn PdfObject> {
-    fn from(v: u64) -> Self {
-        Box::new(PdfNumberObject::from(v))
-    }
-}
-impl From<i32> for Box<dyn PdfObject> {
-    fn from(v: i32) -> Self {
-        Box::new(PdfNumberObject::from(v))
-    }
-}
-impl From<f32> for Box<dyn PdfObject> {
-    fn from(v: f32) -> Self {
-        Box::new(PdfNumberObject::from(v))
-    }
-}
-impl From<u32> for Box<dyn PdfObject> {
-    fn from(v: u32) -> Self {
-        Box::new(PdfNumberObject::from(v))
-    }
-}
-impl From<u8> for Box<dyn PdfObject> {
-    fn from(v: u8) -> Self {
-        Box::new(PdfNumberObject::from(v as i64))
-    }
-}
 
 //--------------------------- Encode -------------------------//
 
@@ -186,6 +144,7 @@ pub trait Serialize: Encode {
         Ok(())
     }
 }
+
 //--------------------------- tests -------------------------//
 
 #[cfg(test)]

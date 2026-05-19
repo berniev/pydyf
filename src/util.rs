@@ -29,7 +29,7 @@ pub struct Line {
     pub start: Posn,
     pub end: Posn,
 }
-impl Line{
+impl Line {
     pub fn new(start: Posn, end: Posn) -> Self {
         Self { start, end }
     }
@@ -79,13 +79,16 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
+    fn as_array(&self) -> [f64; 4] {
+        [self.x1, self.y1, self.x2, self.y2]
+    }
+    
     pub fn as_pdf_array_object(&self) -> PdfArrayObject {
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfNumberObject::from(self.x1));
-        arr.push(PdfNumberObject::from(self.y1));
-        arr.push(PdfNumberObject::from(self.x2));
-        arr.push(PdfNumberObject::from(self.y2));
-
+        for val in self.as_array().iter() {
+            arr.push(PdfNumberObject::from(*val));
+        }
+        
         arr
     }
 }
