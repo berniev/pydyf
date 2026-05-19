@@ -4,7 +4,6 @@ pub mod pdf_dictionary;
 pub mod pdf_name;
 pub mod pdf_null;
 pub mod pdf_number;
-pub mod number_type;
 pub mod object_status;
 pub mod pdf_reference;
 pub mod pdf_stream;

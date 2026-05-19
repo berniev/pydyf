@@ -58,7 +58,6 @@ pub use error::{PdfError, PdfResult};
 pub use ext_g_state::{BlendMode, ExtGState, RenderingIntent};
 pub use graphics_ops::GraphicsOps;
 pub use metadata::{Metadata, TrappedState};
-pub use objects::number_type::PdfNumberType;
 pub use objects::pdf_array::PdfArrayObject;
 pub use objects::pdf_boolean::PdfBooleanObject;
 pub use objects::pdf_dictionary::PdfDictionaryObject;

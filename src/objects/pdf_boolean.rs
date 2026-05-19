@@ -1,4 +1,4 @@
-use crate::object_ops::{Encode, Serialize};
+use crate::object_ops::{Encode, PdfObject, Serialize};
 use crate::PdfError;
 use crate::version::Version;
 
@@ -28,3 +28,9 @@ impl Encode for PdfBooleanObject {
 }
 
 impl Serialize for PdfBooleanObject {}
+
+impl From<bool> for Box<dyn PdfObject> {
+    fn from(v: bool) -> Self {
+        Box::new(PdfBooleanObject::new(v))
+    }
+}

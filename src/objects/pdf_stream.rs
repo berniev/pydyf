@@ -3,7 +3,7 @@ use std::io::Write;
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
 use crate::error::PdfError;
-use crate::object_ops::{try_indirect_end, try_indirect_start, Encode, ObjectNumber, Serialize};
+use crate::object_ops::{Encode, ObjectNumber, PdfObject, Serialize};
 pub use crate::util::{
     CompressionMethod, Dims, Matrix, Posn, StreamString, StrokeOrFill, WindingRule,
 };
@@ -144,7 +144,7 @@ impl Serialize for PdfStreamObject {
         let stream_bytes = self.encode(version)?;
         self.dict.add("Length", stream_bytes.len())?;
 
-        try_indirect_start(xref, file, Some(self.object_number))?;
+        self.try_indirect_start(xref, file, Some(self.object_number))?;
 
         self.dict.serialize(version, xref, file)?; // dict is direct object (no object number)
 
@@ -152,11 +152,19 @@ impl Serialize for PdfStreamObject {
         file.write(&*stream_bytes)?;
         file.write(b"\nendstream\n")?;
 
-        try_indirect_end(file, Some(self.object_number))?;
+        self.try_indirect_end(file, Some(self.object_number))?;
 
         Ok(())
     }
 }
+
+impl From<PdfStreamObject> for Box<dyn PdfObject> {
+    fn from(v: PdfStreamObject) -> Self {
+        Box::new(v)
+    }
+}
+
+//--------------------------- Tests -------------------------//
 
 /*#[cfg(test)]
 mod tests {

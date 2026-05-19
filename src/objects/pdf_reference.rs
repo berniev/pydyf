@@ -1,4 +1,4 @@
-use crate::object_ops::{Encode, ObjectNumber, Serialize};
+use crate::object_ops::{Encode, ObjectNumber, PdfObject, Serialize};
 use crate::PdfError;
 use crate::version::Version;
 
@@ -42,6 +42,14 @@ impl Encode for PdfReferenceObject {
 }
 
 impl Serialize for PdfReferenceObject {}
+
+impl From<PdfReferenceObject> for Box<dyn PdfObject> {
+    fn from(v: PdfReferenceObject) -> Self {
+        Box::new(v)
+    }
+}
+
+//--------------------------- Tests -------------------------//
 
 #[cfg(test)]
 mod tests {

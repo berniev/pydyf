@@ -30,7 +30,7 @@
  */
 use crate::object_ops::{ObjectNumber, PdfObject};
 use crate::objects::pdf_number::PdfNumberObject;
-use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfNumberType, PdfStringObject};
+use crate::{PdfArrayObject, PdfDictionaryObject, PdfError, PdfStringObject};
 
 ///Usage:
 ///
@@ -113,7 +113,7 @@ impl TreeKey for String {
 impl TreeKey for i64 {
     type PdfObj = PdfNumberObject;
     fn to_pdf_obj(self) -> PdfNumberObject {
-        PdfNumberObject::new(PdfNumberType::from(self))
+        PdfNumberObject::from(self)
     }
 
     fn entry_key_name() -> &'static str {

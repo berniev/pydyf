@@ -1,6 +1,16 @@
-use crate::object_ops::{Encode, Serialize};
-use crate::{PdfError, PdfNumberType};
+use crate::object_ops::{Encode, PdfObject, Serialize};
+use crate::PdfError;
 use crate::version::Version;
+
+//---------------- NumberType -----------------
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum PdfNumberType {
+    Integer(i64),
+    Real(f64),
+}
+
+//---------------- PdfNumberObject -----------------
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PdfNumberObject {
@@ -28,12 +38,6 @@ impl PdfNumberObject {
             PdfNumberType::Integer(i) => i as f64,
             PdfNumberType::Real(f) => f,
         }
-    }
-}
-
-impl From<PdfNumberType> for PdfNumberObject {
-    fn from(value: PdfNumberType) -> Self {
-        Self::new(value)
     }
 }
 
@@ -100,6 +104,14 @@ impl Encode for PdfNumberObject {
 }
 
 impl Serialize for PdfNumberObject {}
+
+impl From<PdfNumberObject> for Box<dyn PdfObject> {
+    fn from(v: PdfNumberObject) -> Self {
+        Box::new(v)
+    }
+}
+
+//--------------------------- Tests -------------------------//
 
 #[cfg(test)]
 mod tests {

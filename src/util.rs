@@ -1,6 +1,7 @@
 use crate::encoding::f64_to_pdf_string;
 use crate::objects::pdf_number::PdfNumberObject;
-use crate::{PdfNumberType, PdfArrayObject};
+use crate::PdfArrayObject;
+
 //------------------------- ToPdf -----------------------------//
 
 pub trait StreamString {
@@ -80,10 +81,10 @@ pub struct Rectangle {
 impl Rectangle {
     pub fn as_pdf_array_object(&self) -> PdfArrayObject {
         let mut arr = PdfArrayObject::new();
-        arr.push(PdfNumberObject::new(PdfNumberType::from(self.x1)));
-        arr.push(PdfNumberObject::new(PdfNumberType::from(self.y1)));
-        arr.push(PdfNumberObject::new(PdfNumberType::from(self.x2)));
-        arr.push(PdfNumberObject::new(PdfNumberType::from(self.y2)));
+        arr.push(PdfNumberObject::from(self.x1));
+        arr.push(PdfNumberObject::from(self.y1));
+        arr.push(PdfNumberObject::from(self.x2));
+        arr.push(PdfNumberObject::from(self.y2));
 
         arr
     }

@@ -34,49 +34,10 @@ impl ObjectOps {
     }
 }
 
-//--------------------------- Free functions   -------------------------//
-
-pub fn indirect_xref_entry(object_number: ObjectNumber, offset: u64) -> XRefEntry {
-    XRefEntry::new(
-        object_number,
-        offset,
-        ObjectStatus::InUse,
-        Generation::Normal,
-    )
-}
-
-pub(crate) fn try_indirect_start(
-    xref: &mut XRefOps,
-    file: &mut File,
-    object_number: Option<ObjectNumber>,
-) -> Result<(), PdfError> {
-    if object_number.is_some() {
-        let object_number = object_number.unwrap();
-        xref.add_entry(indirect_xref_entry(object_number, file.stream_position()?));
-        file.write(format!("{} 0 obj", object_number.to_string()).as_bytes())?;
+impl From<ObjectNumber> for Box<dyn PdfObject> {
+    fn from(v: ObjectNumber) -> Self {
+        Box::new(PdfReferenceObject::new(v))
     }
-
-    Ok(())
-}
-
-pub(crate) fn try_indirect_end(
-    file: &mut File,
-    object_number: Option<ObjectNumber>,
-) -> Result<(), PdfError> {
-    if object_number.is_some() {
-        file.write("endobj\n\n".to_string().as_bytes())?;
-    }
-
-    Ok(())
-}
-
-pub fn serialize_pdf_object(
-    value: &mut Box<dyn PdfObject>,
-    version: Version,
-    xref: &mut XRefOps,
-    file: &mut File,
-) -> Result<(), PdfError> {
-    value.serialize_object(version, xref, file)
 }
 
 //--------------------------- PdfObject -------------------------//
@@ -166,64 +127,6 @@ impl From<u8> for Box<dyn PdfObject> {
         Box::new(PdfNumberObject::from(v as i64))
     }
 }
-impl From<bool> for Box<dyn PdfObject> {
-    fn from(v: bool) -> Self {
-        Box::new(PdfBooleanObject::new(v))
-    }
-}
-impl From<ObjectNumber> for Box<dyn PdfObject> {
-    fn from(v: ObjectNumber) -> Self {
-        Box::new(PdfReferenceObject::new(v))
-    }
-}
-
-impl From<PdfNameObject> for Box<dyn PdfObject> {
-    fn from(v: PdfNameObject) -> Self {
-        Box::new(v)
-    }
-}
-
-impl From<PdfStringObject> for Box<dyn PdfObject> {
-    fn from(v: PdfStringObject) -> Self {
-        Box::new(v)
-    }
-}
-
-impl From<PdfArrayObject> for Box<dyn PdfObject> {
-    fn from(v: PdfArrayObject) -> Self {
-        Box::new(v)
-    }
-}
-
-impl From<PdfDictionaryObject> for Box<dyn PdfObject> {
-    fn from(v: PdfDictionaryObject) -> Self {
-        Box::new(v)
-    }
-}
-
-impl From<PdfStreamObject> for Box<dyn PdfObject> {
-    fn from(v: PdfStreamObject) -> Self {
-        Box::new(v)
-    }
-}
-
-impl From<PdfReferenceObject> for Box<dyn PdfObject> {
-    fn from(v: PdfReferenceObject) -> Self {
-        Box::new(v)
-    }
-}
-
-impl From<PdfNullObject> for Box<dyn PdfObject> {
-    fn from(v: PdfNullObject) -> Self {
-        Box::new(v)
-    }
-}
-
-impl From<PdfNumberObject> for Box<dyn PdfObject> {
-    fn from(v: PdfNumberObject) -> Self {
-        Box::new(v)
-    }
-}
 
 //--------------------------- Encode -------------------------//
 
@@ -246,8 +149,43 @@ pub trait Serialize: Encode {
 
         Ok(())
     }
-}
 
+    fn indirect_xref_entry(&self, object_number: ObjectNumber, offset: u64) -> XRefEntry {
+        XRefEntry::new(
+            object_number,
+            offset,
+            ObjectStatus::InUse,
+            Generation::Normal,
+        )
+    }
+
+    fn try_indirect_start(
+        &self,
+        xref: &mut XRefOps,
+        file: &mut File,
+        object_number: Option<ObjectNumber>,
+    ) -> Result<(), PdfError> {
+        if object_number.is_some() {
+            let object_number = object_number.unwrap();
+            xref.add_entry(self.indirect_xref_entry(object_number, file.stream_position()?));
+            file.write(format!("{} 0 obj", object_number.to_string()).as_bytes())?;
+        }
+
+        Ok(())
+    }
+
+    fn try_indirect_end(
+        &self,
+        file: &mut File,
+        object_number: Option<ObjectNumber>,
+    ) -> Result<(), PdfError> {
+        if object_number.is_some() {
+            file.write("endobj\n\n".to_string().as_bytes())?;
+        }
+
+        Ok(())
+    }
+}
 //--------------------------- tests -------------------------//
 
 #[cfg(test)]

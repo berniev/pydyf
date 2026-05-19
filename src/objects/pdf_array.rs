@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::Write;
-use crate::object_ops::{serialize_pdf_object, try_indirect_end, try_indirect_start, Encode, ObjectNumber, PdfObject, Serialize};
+use crate::object_ops::{Encode, ObjectNumber, PdfObject, Serialize};
 use crate::objects::pdf_number::PdfNumberObject;
 use crate::{PdfError, PdfNullObject};
 use crate::version::Version;
@@ -39,18 +39,6 @@ impl PdfArrayObject {
         }
     }
 
-   pub fn to_vec_i64(&self) -> Result<Vec<i64>, PdfError> {
-        self.elements
-            .iter()
-            .map(|v| {
-                v.as_any()
-                    .downcast_ref::<PdfNumberObject>()
-                    .map(|n| n.as_int())
-                    .ok_or_else(|| PdfError::StructureError("expected Number".to_string()))
-            })
-            .collect()
-    }
-
     pub fn push(&mut self, value: impl Into<Box<dyn PdfObject>>) {
         self.elements.push(value.into());
     }
@@ -65,21 +53,29 @@ impl Serialize for PdfArrayObject {
         xref: &mut XRefOps,
         file: &mut File,
     ) -> Result<(), PdfError> {
-        try_indirect_start(xref, file, self.object_number)?;
+        self.try_indirect_start(xref, file, self.object_number)?;
 
         file.write(b"[ ")?;
 
         for pdf_object in &mut self.elements {
-            serialize_pdf_object(pdf_object, version, xref, file)?;
+            pdf_object.serialize_object(version, xref, file)?;
             file.write(b" ")?;
         }
         file.write(b"]")?;
 
-        try_indirect_end(file, self.object_number)?;
+        self.try_indirect_end(file, self.object_number)?;
 
         Ok(())
     }
 }
+
+impl From<PdfArrayObject> for Box<dyn PdfObject> {
+    fn from(v: PdfArrayObject) -> Self {
+        Box::new(v)
+    }
+}
+
+//--------------------------- tests -------------------------//
 
 /*
 #[cfg(test)]

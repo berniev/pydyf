@@ -1,28 +1,11 @@
 use std::fs::File;
 use std::io::Write;
-use crate::object_ops::{serialize_pdf_object, try_indirect_end, try_indirect_start, Encode, ObjectNumber, PdfObject, Serialize};
+use crate::object_ops::{Encode, ObjectNumber, PdfObject, Serialize};
 use crate::{PdfArrayObject, PdfError, PdfNameObject};
-use mockall::Any;
 use crate::version::Version;
 use crate::xref_ops::XRefOps;
 
-/// Spec:
-/// Dictionary:
-///     An associative table containing pairs of objects, the first object being a name object
-///     serving as the key and the second object serving as the value and may be any kind of object
-///     including another dictionary.
-/// Entries:
-///     The entries in a dictionary represent an associative table and as such shall be unordered
-///     even though an arbitrary order may be imposed upon them when written in a file. That
-///     ordering shall be ignored.
-///
-///     Multiple entries in the same dictionary shall not have the same key.
-///     A dictionary shall be written as a sequence of key-value pairs enclosed in double angle
-///     brackets (<< … >>) (using LESS-THAN SIGNs (3Ch) and GREATER-THAN SIGNs (3Eh)).
-///     The value of a Type entry shall be either defined in this standard or a registered name.
-///         name "Type"    Opt
-///         name "Subtype" Opt (requires Type)
-///
+//--------------------------- PdfDictionaryObject -------------------------//
 
 pub struct PdfDictionaryObject {
     pub(crate) entries: Vec<(String, Box<dyn PdfObject>)>,
@@ -95,28 +78,26 @@ impl PdfDictionaryObject {
             .find_map(|(k, v)| if k == key { Some(v) } else { None })
     }
 
-    fn require_key(&self, key: &str) -> Result<&Box<dyn PdfObject>, PdfError> {
+    fn require_key(&self, key: &str) -> Result<&dyn PdfObject, PdfError> {
         self.get(key)
+            .map(|v| v.as_ref())
             .ok_or_else(|| not_found_error(key))
     }
 
-    fn require_key_mut(&mut self, key: &str) -> Result<&mut Box<dyn PdfObject>, PdfError> {
+    fn require_key_mut(&mut self, key: &str) -> Result<&mut dyn PdfObject, PdfError> {
         self.get_mut(key)
+            .map(|v| v.as_mut())
             .ok_or_else(|| not_found_error(key))
     }
 
     pub fn get_t<T: PdfObject>(&self, key: &str) -> Result<&T, PdfError> {
-        let value = self.require_key(key)?;
-        value
-            .as_any()
+        self.require_key(key)?.as_any()
             .downcast_ref::<T>()
             .ok_or_else(|| bad_type_error::<T>(key))
     }
 
     pub fn get_t_mut<T: PdfObject>(&mut self, key: &str) -> Result<&mut T, PdfError> {
-        let value = self.require_key_mut(key)?;
-        value
-            .as_any_mut()
+        self.require_key_mut(key)?.as_any_mut()
             .downcast_mut::<T>()
             .ok_or_else(|| bad_type_error::<T>(key))
     }
@@ -171,7 +152,7 @@ impl Serialize for PdfDictionaryObject {
         xref: &mut XRefOps,
         file: &mut File,
     ) -> Result<(), PdfError> {
-        try_indirect_start(xref, file, self.object_number)?;
+        self.try_indirect_start(xref, file, self.object_number)?;
 
         file.write(b" <<\n")?;
 
@@ -179,18 +160,25 @@ impl Serialize for PdfDictionaryObject {
             let mut name_obj = PdfNameObject::new(name);
             name_obj.serialize(version, xref, file)?;
             file.write(b" ")?;
-            serialize_pdf_object(pdf_object, version, xref, file)?;
+            pdf_object.serialize_object(version, xref, file)?;
             file.write(b"\n")?;
         }
 
         file.write(b">>\n")?;
 
-        try_indirect_end(file, self.object_number)?;
+        self.try_indirect_end(file, self.object_number)?;
 
         Ok(())
     }
 }
 
+impl From<PdfDictionaryObject> for Box<dyn PdfObject> {
+    fn from(v: PdfDictionaryObject) -> Self {
+        Box::new(v)
+    }
+}
+
+//--------------------------- tests -------------------------//
 
 #[cfg(test)]
 mod tests {
