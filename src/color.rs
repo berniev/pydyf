@@ -1,8 +1,6 @@
 use std::cmp::Ordering;
 use std::fmt::{self, Display};
-
-use crate::encoding::f64_to_pdf_string;
-use crate::util::{StreamString};
+use crate::util::{f64_to_pdf_string, StreamString};
 use crate::{PdfArrayObject, PdfError};
 
 //------------------------ ColorSpace -------------------------------

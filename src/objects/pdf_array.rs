@@ -8,14 +8,14 @@ use crate::xref_ops::XRefOps;
 
 pub struct PdfArrayObject {
     pub(crate) object_number: Option<ObjectNumber>,
-    pub(crate) elements: Vec<Box<dyn PdfObject>>,
+    pub(crate) pdf_objects: Vec<Box<dyn PdfObject>>,
 }
 
 impl PdfArrayObject {
     pub fn new() -> Self {
         Self {
             object_number: None,
-            elements: vec![],
+            pdf_objects: vec![],
         }
     }
 
@@ -25,7 +25,7 @@ impl PdfArrayObject {
     {
         PdfArrayObject {
             object_number: None,
-            elements: values
+            pdf_objects: values
                 .into_iter()
                 .map(|v| Box::new(v.into()) as Box<dyn PdfObject>)
                 .collect(),
@@ -34,13 +34,13 @@ impl PdfArrayObject {
 
     pub fn push_num_or_null(&mut self, v: Option<f64>) {
         match v {
-            Some(n) => self.elements.push(Box::new(PdfNumberObject::from(n))),
-            None => self.elements.push(Box::new(PdfNullObject {})),
+            Some(n) => self.pdf_objects.push(Box::new(PdfNumberObject::from(n))),
+            None => self.pdf_objects.push(Box::new(PdfNullObject {})),
         }
     }
 
     pub fn push(&mut self, value: impl Into<Box<dyn PdfObject>>) {
-        self.elements.push(value.into());
+        self.pdf_objects.push(value.into());
     }
 }
 
@@ -57,7 +57,7 @@ impl Serialize for PdfArrayObject {
 
         file.write(b"[ ")?;
 
-        for pdf_object in &mut self.elements {
+        for pdf_object in &mut self.pdf_objects {
             pdf_object.serialize_object(version, xref, file)?;
             file.write(b" ")?;
         }
@@ -67,6 +67,10 @@ impl Serialize for PdfArrayObject {
 
         Ok(())
     }
+}
+
+impl From<Vec<f64>> for Box<dyn PdfObject> {
+    fn from(v: Vec<f64>) -> Self { Box::new(PdfArrayObject::from_vec_number(v)) }
 }
 
 impl From<PdfArrayObject> for Box<dyn PdfObject> {

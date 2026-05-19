@@ -29,7 +29,6 @@ impl PdfStringObject {
 
 pub(crate) fn encode_text_string(string: &str, version: Version) -> Vec<u8> {
     if string.is_ascii() {
-        // < 128
         encode_ascii(string)
     } else if version >= Version::V2_2017 {
         encode_utf8(string)

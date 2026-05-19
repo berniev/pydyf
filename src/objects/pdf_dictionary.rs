@@ -38,7 +38,6 @@ impl PdfDictionaryObject {
 
     pub(crate) fn typed(mut self, name: &str) -> Self {
         self.add("Type", PdfNameObject::new(name)).unwrap();
-
         self
     }
 
@@ -57,8 +56,7 @@ impl PdfDictionaryObject {
 
     pub fn push_to_array(&mut self, key: &str, value: impl PdfObject) -> Result<(), PdfError> {
         let arr = self.get_t_mut::<PdfArrayObject>(key)?;
-        arr.elements.push(Box::new(value));
-
+        arr.pdf_objects.push(Box::new(value));
         Ok(())
     }
 
@@ -107,7 +105,6 @@ impl PdfDictionaryObject {
             return Err(duplicate_key_error(key));
         }
         self.entries.push((key.to_string(), value.into()));
-
         Ok(())
     }
 
@@ -126,7 +123,6 @@ impl PdfDictionaryObject {
     ) -> Result<(), PdfError> {
         if let Some(existing) = self.entries.iter_mut().find(|(k, _)| k == key) {
             existing.1 = value.into();
-
             Ok(())
         } else {
             Err(not_found_error(key))

@@ -1,9 +1,9 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
+use crate::object_number::ObjectNumber;
 use crate::util::{Matrix, Rectangle};
 use crate::{PdfError, PdfNameObject, PdfStreamObject};
-use crate::object_number::ObjectNumber;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PatternType {
@@ -52,7 +52,7 @@ impl TilingPattern {
         pat.stream
             .dict
             .add("Type", PdfNameObject::new("Pattern"))?;
-        pat.stream.dict.add("BBox", bbox.as_pdf_array_object())?;
+        pat.stream.dict.add("BBox", bbox.as_vec())?;
         pat.stream.dict.add("XStep", x_step)?;
         pat.stream.dict.add("YStep", y_step)?;
         pat.stream.dict.add("PaintType", paint_type as i64)?;
@@ -63,7 +63,7 @@ impl TilingPattern {
     }
 
     pub fn with_matrix(mut self, matrix: Matrix) -> Result<Self, PdfError> {
-        self.stream.dict.add("Matrix", matrix.as_pdf_array())?;
+        self.stream.dict.add("Matrix", matrix.as_vec())?;
 
         Ok(self)
     }

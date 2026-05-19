@@ -22,7 +22,7 @@ pub fn make_annotation_dict(
 ) -> Result<PdfDictionaryObject, PdfError> {
     let mut dict = PdfDictionaryObject::new().typed("Annot");
     dict.add("Subtype", PdfStringObject::new(subtype))?;
-    dict.add("Rect", rect.as_pdf_array_object())?;
+    dict.add("Rect", rect.as_vec())?;
     dict.add(
         "Border",
         PdfArrayObject::from_vec_number(Vec::from([0u32, 0u32, 1u32])),
@@ -288,7 +288,7 @@ impl FreeTextAnnotation {
     }
 
     pub fn with_rectangle_diffs(mut self, rect_diffs_arr: Rectangle) -> Result<Self, PdfError> {
-        self.dict.add("RD", rect_diffs_arr.as_pdf_array_object())?;
+        self.dict.add("RD", rect_diffs_arr.as_vec())?;
         Ok(self)
     }
 
@@ -311,7 +311,7 @@ pub struct LineAnnotation {
 impl LineAnnotation {
     pub fn new(rect: Rectangle, line: Line) -> Result<Self, PdfError> {
         let mut dict = make_annotation_dict("Line", rect)?;
-        dict.add("L", line.as_pdf_array_object())?;
+        dict.add("L", line.as_vec())?;
         let mut arr = PdfArrayObject::new();
         arr.push(PdfNameObject::new("None"));
         arr.push(PdfNameObject::new("None"));

@@ -88,8 +88,8 @@
 ///     system to the original (untransformed) coordinate system
 ///
 use crate::color::{Color, ColorSpace, CMYK, RGB};
-use crate::encoding::{ascii85_encode, f64_to_pdf_string};
-use crate::util::{Dims, Matrix, Posn, StreamString, StrokeOrFill, WindingRule};
+use crate::encoding::ascii85_encode;
+use crate::util::{f64_to_pdf_string, Dims, Matrix, Posn, StreamString, StrokeOrFill, WindingRule};
 use crate::{CompressionMethod, PdfError};
 use flate2::write::ZlibEncoder;
 use flate2::Compression;

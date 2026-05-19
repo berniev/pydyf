@@ -1,6 +1,16 @@
-use crate::encoding::f64_to_pdf_string;
-use crate::objects::pdf_number::PdfNumberObject;
-use crate::PdfArrayObject;
+pub fn f64_to_pdf_string(val: f64) -> String {
+    if val.fract() == 0.0 {
+        format!("{}", val as i64)
+    } else {
+        let s = format!("{:.4}", val);
+        let trimmed = s.trim_end_matches('0').trim_end_matches('.');
+        if trimmed.is_empty() || trimmed == "-0" {
+            "0".to_string()
+        } else {
+            trimmed.to_string()
+        }
+    }
+}
 
 //------------------------- ToPdf -----------------------------//
 
@@ -34,14 +44,8 @@ impl Line {
         Self { start, end }
     }
 
-    pub fn as_pdf_array_object(&self) -> PdfArrayObject {
-        let mut arr = PdfArrayObject::new();
-        arr.push(self.start.x);
-        arr.push(self.start.y);
-        arr.push(self.end.x);
-        arr.push(self.end.y);
-
-        arr
+    pub fn as_vec(&self) -> Vec<f64> {
+        vec![self.start.x, self.start.y, self.end.x, self.end.y]
     }
 }
 //------------------------ Dims -------------------------------//
@@ -79,17 +83,8 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
-    fn as_array(&self) -> [f64; 4] {
-        [self.x1, self.y1, self.x2, self.y2]
-    }
-    
-    pub fn as_pdf_array_object(&self) -> PdfArrayObject {
-        let mut arr = PdfArrayObject::new();
-        for val in self.as_array().iter() {
-            arr.push(PdfNumberObject::from(*val));
-        }
-        
-        arr
+    pub fn as_vec(&self) -> Vec<f64> {
+        vec![self.x1, self.y1, self.x2, self.y2]
     }
 }
 
@@ -126,16 +121,9 @@ impl Matrix {
             vec![self.a, self.b, self.c, self.d, self.e, self.f]
         }
     */
-    pub fn as_pdf_array(&self) -> PdfArrayObject {
-        let mut arr = PdfArrayObject::new();
-        arr.push(self.a);
-        arr.push(self.b);
-        arr.push(self.c);
-        arr.push(self.d);
-        arr.push(self.e);
-        arr.push(self.f);
 
-        arr
+    pub fn as_vec(&self) -> Vec<f64> {
+        vec![self.a, self.b, self.c, self.d, self.e, self.f]
     }
 }
 

@@ -1,17 +1,3 @@
-pub fn f64_to_pdf_string(val: f64) -> String {
-    if val.fract() == 0.0 {
-        format!("{}", val as i64)
-    } else {
-        let s = format!("{:.4}", val);
-        let trimmed = s.trim_end_matches('0').trim_end_matches('.');
-        if trimmed.is_empty() || trimmed == "-0" {
-            "0".to_string()
-        } else {
-            trimmed.to_string()
-        }
-    }
-}
-
 /// ASCII85 encode data (equivalent to Python's base64.a85encode)
 pub fn ascii85_encode(data: &[u8]) -> Vec<u8> {
     let mut result = Vec::new();
